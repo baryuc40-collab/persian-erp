@@ -2,7 +2,7 @@
 id: STORY-010
 epic: EPIC-003
 title: راهنمای سبک نگارش فارسی UI
-status: todo
+status: in-review
 model: opus
 ---
 
