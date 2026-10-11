@@ -1,0 +1,17 @@
+{
+  "Connect to foreign data": "اتصال به داده‌ی خارجی",
+  "Connection successful": "اتصال با موفقیت برقرار شد",
+  "Create database server": "ایجاد سرور پایگاه داده",
+  "Database": "پایگاه داده",
+  "Database server": "سرور پایگاه داده",
+  "Display name": "نام نمایشی",
+  "Edit database server": "ویرایش سرور پایگاه داده",
+  "Host": "میزبان",
+  "Password": "رمز عبور",
+  "Port": "پورت",
+  "Remote table": "جدول راه‌دور",
+  "Server name": "نام سرور",
+  "Sync from remote table": "همگام‌سازی از جدول راه‌دور",
+  "Test Connection": "آزمایش اتصال",
+  "Username": "نام کاربری"
+}

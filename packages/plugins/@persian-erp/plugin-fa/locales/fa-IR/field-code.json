@@ -1,0 +1,15 @@
+{
+  "Auto": "خودکار",
+  "Code": "کد",
+  "Code editor": "ویرایشگر کد",
+  "Choose language": "انتخاب زبان",
+  "Content settings": "تنظیمات محتوا",
+  "Content height": "ارتفاع محتوا",
+  "Custom height": "ارتفاع سفارشی",
+  "Custom indent unit": "واحد تورفتگی سفارشی",
+  "e.g. 300px or 50%": "مثلاً 300px یا 50%",
+  "Could use CSS values (e.g., \"300px\" or \"50%\"). Use \"auto\" for automatic height adjustment based on content.": "می‌توانید از مقدارهای CSS استفاده کنید (مثلاً \"300px\" یا \"50%\"). برای تنظیم خودکار ارتفاع بر اساس محتوا از \"auto\" استفاده کنید.",
+  "Indent unit": "واحد تورفتگی",
+  "Programming code editor with syntax highlighting.": "ویرایشگر کد برنامه‌نویسی با برجسته‌سازی نحو.",
+  "Programming language": "زبان برنامه‌نویسی"
+}
