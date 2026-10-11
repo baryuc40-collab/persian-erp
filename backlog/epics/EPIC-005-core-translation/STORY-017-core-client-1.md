@@ -2,7 +2,7 @@
 id: STORY-017
 epic: EPIC-005
 title: ترجمه‌ی هسته‌ی کلاینت، بخش ۱
-status: todo
+status: in-progress
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 

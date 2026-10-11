@@ -40,7 +40,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-017](STORY-017-core-client-1.md) | ترجمه‌ی هسته‌ی کلاینت، بخش ۱ | todo |
+| [STORY-017](STORY-017-core-client-1.md) | ترجمه‌ی هسته‌ی کلاینت، بخش ۱ | in-progress |
 | [STORY-018](STORY-018-core-client-2.md) | ترجمه‌ی هسته‌ی کلاینت، بخش ۲ | todo |
 | [STORY-019](STORY-019-core-client-3.md) | ترجمه‌ی هسته‌ی کلاینت، بخش ۳ | todo |
 | [STORY-020](STORY-020-core-adjacent.md) | ترجمه‌ی موتور Flow، چیدمان، ورود و دسترسی | todo |
