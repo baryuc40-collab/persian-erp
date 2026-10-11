@@ -1,11 +1,17 @@
 import { render, screen } from '@testing-library/react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
 import i18next from 'i18next';
 import React, { useContext } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { FaProvider, isRtlLanguage } from '../FaProvider';
 
-const Direction = () => <span data-testid="dir">{useContext(ConfigProvider.ConfigContext).direction || 'ltr'}</span>;
+const Direction = () => (
+  <>
+    <span data-testid="dir">{useContext(ConfigProvider.ConfigContext).direction || 'ltr'}</span>
+    <span data-testid="font">{theme.useToken().token.fontFamily}</span>
+  </>
+);
+const fontStyle = () => document.getElementById('persian-erp-fa-font');
 
 async function renderIn(lang: string) {
   const i18n = i18next.createInstance();
@@ -40,11 +46,24 @@ describe('FaProvider', () => {
     expect(screen.getByTestId('dir').textContent).toBe('rtl');
   });
 
+  it('loads Vazirmatn from the plugin, not a CDN, for Persian', async () => {
+    const { unmount } = await renderIn('fa-IR');
+    expect(screen.getByTestId('font').textContent).toMatch(/^Vazirmatn, /);
+    const css = fontStyle()?.textContent || '';
+    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/fonts/Vazirmatn-Regular.woff2')");
+    expect(css).toContain('font-weight:700');
+    expect(css).not.toMatch(/https?:/);
+    unmount();
+    expect(fontStyle()).toBeNull();
+  });
+
   it('leaves English untouched', async () => {
     document.documentElement.setAttribute('lang', 'en');
     await renderIn('en-US');
     expect(document.documentElement.hasAttribute('dir')).toBe(false);
     expect(document.documentElement.getAttribute('lang')).toBe('en');
     expect(screen.getByTestId('dir').textContent).toBe('ltr');
+    expect(screen.getByTestId('font').textContent).not.toContain('Vazirmatn');
+    expect(fontStyle()).toBeNull();
   });
 });
