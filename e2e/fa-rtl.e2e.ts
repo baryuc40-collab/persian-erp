@@ -15,6 +15,23 @@ async function openAs(page: Page, locale: string, path: string) {
   await page.goto(path);
 }
 
+// A fresh install only enables en-US; Persian has to be enabled in system settings before it can be chosen.
+test.beforeAll(async ({ playwright, baseURL }) => {
+  const api = await playwright.request.newContext({ baseURL });
+  const signIn = await api.post('/api/auth:signIn', {
+    headers: { 'X-Authenticator': 'basic' },
+    data: { account: EMAIL, password: PASSWORD },
+  });
+  expect(signIn.ok()).toBeTruthy();
+  const { token } = (await signIn.json()).data;
+  const update = await api.post('/api/systemSettings:update?filterByTk=1', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { enabledLanguages: ['en-US', 'fa-IR'] },
+  });
+  expect(update.ok()).toBeTruthy();
+  await api.dispose();
+});
+
 const loadedFonts = (page: Page) =>
   page.evaluate(async () => {
     await document.fonts.ready;

@@ -9,7 +9,7 @@ export default defineConfig({
   expect: { timeout: 30 * 1000 },
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: process.env.CI ? [['list'], ['html', { outputFolder: '../storage/playwright/e2e-report', open: 'never' }]] : 'list',
+  reporter: process.env.CI ? [['list'], ['github'], ['html', { outputFolder: '../storage/playwright/e2e-report', open: 'never' }]] : 'list',
   outputDir: '../storage/playwright/e2e-results',
   use: {
     baseURL: process.env.APP_BASE_URL || `http://localhost:${process.env.APP_PORT || 13000}`,
