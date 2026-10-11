@@ -43,3 +43,32 @@ test('warns about keys missing from en-US', () => {
   const { warnings } = checkPair({}, { Extra: 'اضافه' }, glossary);
   assert.ok(warnings.some((w) => w.message.includes('not in en-US')));
 });
+
+test('does not warn about unknown keys when the source is not installed', () => {
+  const { warnings } = checkPair({}, { Extra: 'اضافه' }, glossary, { sourceKnown: false });
+  assert.deepStrictEqual(warnings, []);
+});
+
+test('finds locale pack files and maps them to their @nocobase/plugin-* source', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { findFaFiles, sourceFile } = require('..');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'glossary-check-'));
+  try {
+    fs.mkdirSync(path.join(root, 'locales', 'fa-IR'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'src', 'locale'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'locales', 'fa-IR', 'client.json'), '{}');
+    fs.writeFileSync(path.join(root, 'src', 'locale', 'fa-IR.json'), '{}');
+    fs.writeFileSync(path.join(root, 'src', 'locale', 'en-US.json'), '{}');
+    const files = findFaFiles(root).map((f) => path.relative(root, f)).sort();
+    assert.deepStrictEqual(files, [path.join('locales', 'fa-IR', 'client.json'), path.join('src', 'locale', 'fa-IR.json')]);
+    assert.strictEqual(
+      sourceFile(path.join(root, 'locales', 'fa-IR', 'client.json'), '/nm'),
+      path.join('/nm', '@nocobase', 'plugin-client', 'dist', 'locale', 'en-US.json'),
+    );
+    assert.strictEqual(sourceFile(path.join(root, 'src', 'locale', 'fa-IR.json'), '/nm'), path.join(root, 'src', 'locale', 'en-US.json'));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
