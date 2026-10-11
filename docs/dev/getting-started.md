@@ -41,6 +41,7 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 | بررسی نسخه‌ی NocoBase | `yarn check:version` |
 | بررسی قالب واژه‌نامه | `yarn check:glossary` |
 | بررسی ترجمه‌ها با واژه‌نامه | `yarn check:i18n` |
+| گزارش پوشش ترجمه | `yarn i18n:report` (گزینه‌ها: `--missing`، `--package <namespace>`، `--json`، `--min <درصد>`) |
 | آزمون ابزارها | `yarn test:tools` |
 
 برای آزمون، فایل `.env.test` لازم است: `sed 's#^APP_ENV=.*#APP_ENV=test#' .env > .env.test`
@@ -69,6 +70,6 @@ yarn pm create @persian-erp/plugin-<نام>
 
 ## جلسه‌های ابری Claude
 
-`.claude/hooks/session-start.sh` در شروع هر جلسه‌ی ابری Claude Code روی این مخزن اجرا می‌شود. این hook فایل‌های `.env` و `.env.test` را می‌سازد، یک PostgreSQL محلی راه می‌اندازد و وابستگی‌ها را نصب می‌کند. روی سیستم خودتان کاری نمی‌کند.
+`.claude/hooks/session-start.sh` در شروع هر جلسه‌ی ابری Claude Code روی این مخزن اجرا می‌شود. این hook فایل‌های `.env` و `.env.test` را می‌سازد، یک PostgreSQL محلی راه می‌اندازد و وابستگی‌ها را نصب می‌کند. برنامه‌ی توسعه از پایگاه داده‌ی `nocobase_dev` و آزمون‌ها از `nocobase` استفاده می‌کنند، چون آزمون‌ها پایگاه داده‌ی خود را پاک می‌کنند. روی سیستم خودتان کاری نمی‌کند.
 
 نصب وابستگی‌ها به دامنه‌ی `cdn.sheetjs.com` نیاز دارد (کتابخانه‌ی xlsx که NocoBase استفاده می‌کند). اگر محیط ابری آن را مسدود کند، نصب ناموفق می‌شود و پیامش در `/tmp/persian-erp-install.log` می‌آید. برای رفع آن، این دامنه را در تنظیمات شبکه‌ی محیط ابری پروژه به فهرست دامنه‌های مجاز اضافه کنید.
