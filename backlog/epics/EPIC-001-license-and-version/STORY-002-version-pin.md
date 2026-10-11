@@ -2,7 +2,7 @@
 id: STORY-002
 epic: EPIC-001
 title: قفل نسخه و سیاست ارتقا
-status: todo
+status: in-review
 model: sonnet
 ---
 

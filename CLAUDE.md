@@ -1,7 +1,7 @@
 # راهنمای عامل‌های هوش مصنوعی در این مخزن
 
 ## پروژه
-ERP بدون‌کد فارسی بر پایه‌ی NocoBase. گام فعلی: فارسی‌سازی NocoBase **v2.2.22** (ترجمه، RTL، تقویم جلالی، فونت، اعداد).
+ERP بدون‌کد فارسی بر پایه‌ی NocoBase. گام فعلی: فارسی‌سازی NocoBase (ترجمه، RTL، تقویم جلالی، فونت، اعداد). نسخه‌ی NocoBase فقط در فایل `NOCOBASE_VERSION` تعریف می‌شود؛ سیاست ارتقا در `docs/decisions/0002-version-policy.md`.
 پیش از هر کار این‌ها را بخوان: `docs/plan/01-roadmap.md`، `docs/research/nocobase-i18n.md`، `backlog/BACKLOG.md`.
 
 ## قواعد
