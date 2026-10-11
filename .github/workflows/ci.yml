@@ -104,3 +104,63 @@ jobs:
         run: yarn test --server packages/plugins/@persian-erp --run
       - name: Client tests
         run: yarn test --client packages/plugins/@persian-erp --run
+
+  e2e:
+    name: E2E (Persian and RTL)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nocobase
+          POSTGRES_PASSWORD: nocobase
+          POSTGRES_DB: nocobase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nocobase"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yarn
+          key: yarn-${{ runner.os }}-${{ hashFiles('package.json', 'yarn.lock', 'packages/plugins/**/package.json') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - name: Prepare env file
+        run: |
+          cp .env.example .env
+          sed -i "s#^APP_KEY=.*#APP_KEY=ci-$(openssl rand -hex 32)#" .env
+      - name: Install
+        run: yarn install --ignore-engines --network-timeout 600000
+      - name: Build plugins
+        run: yarn build @persian-erp/plugin-fa --no-dts
+      - name: Install and start NocoBase
+        run: |
+          yarn start --quickstart -d
+          for i in $(seq 1 120); do
+            curl -sf http://localhost:13000/api/__health_check && exit 0
+            sleep 5
+          done
+          echo "NocoBase did not start"; yarn pm2 logs --nostream --lines 200 || true; exit 1
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Run e2e tests
+        run: npx playwright test -c e2e/playwright.config.ts
+      - name: Upload screenshots and report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            storage/playwright/e2e-results
+            storage/playwright/e2e-report

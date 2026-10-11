@@ -43,4 +43,4 @@ owner: mmsh
 | --- | --- | --- |
 | [STORY-029](STORY-029-rtl-direction.md) | جهت راست‌به‌چپ هنگام انتخاب فارسی | in-progress |
 | [STORY-030](STORY-030-vazirmatn-font.md) | فونت Vazirmatn محلی | in-progress |
-| [STORY-031](STORY-031-rtl-e2e.md) | آزمون e2e پایه برای فارسی و RTL | todo |
+| [STORY-031](STORY-031-rtl-e2e.md) | آزمون e2e پایه برای فارسی و RTL | in-progress |
