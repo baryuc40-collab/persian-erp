@@ -45,7 +45,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-004](STORY-004-app-scaffold.md) | اسکلت پروژه‌ی NocoBase در ریشه‌ی مخزن | todo |
+| [STORY-004](STORY-004-app-scaffold.md) | اسکلت پروژه‌ی NocoBase در ریشه‌ی مخزن | in-review |
 | [STORY-005](STORY-005-docker-compose.md) | Docker Compose با PostgreSQL | todo |
 | [STORY-006](STORY-006-plugin-fa-skeleton.md) | اسکلت پلاگین plugin-fa | todo |
 | [STORY-007](STORY-007-ci.md) | CI روی Pull Request | todo |

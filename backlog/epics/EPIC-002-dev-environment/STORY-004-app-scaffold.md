@@ -2,7 +2,7 @@
 id: STORY-004
 epic: EPIC-002
 title: اسکلت پروژه‌ی NocoBase در ریشه‌ی مخزن
-status: todo
+status: in-review
 model: sonnet
 ---
 
