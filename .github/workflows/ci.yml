@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - '**'
+              - '!docs/**'
+              - '!backlog/**'
+              - '!glossary/**'
+              - '!**/*.md'
+
+  checks:
+    name: Lightweight checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Glossary format
+        run: node tools/check-glossary.js
+      - name: NocoBase version pin
+        run: node tools/check-nocobase-version.js
+
+  build-test:
+    name: Install, lint, build, test
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nocobase
+          POSTGRES_PASSWORD: nocobase
+          POSTGRES_DB: nocobase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nocobase"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yarn
+          key: yarn-${{ runner.os }}-${{ hashFiles('package.json', 'yarn.lock', 'packages/plugins/**/package.json') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - name: Prepare env files
+        run: |
+          cp .env.example .env
+          sed -i "s#^APP_KEY=.*#APP_KEY=ci-$(openssl rand -hex 32)#" .env
+          cp .env .env.test
+          sed -i "s#^APP_ENV=.*#APP_ENV=test#" .env.test
+      - name: Install
+        run: yarn install --ignore-engines --network-timeout 600000
+      - name: Upload generated yarn.lock
+        if: hashFiles('yarn.lock') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: yarn-lock
+          path: yarn.lock
+      - name: Lint
+        run: yarn eslint packages/plugins/@persian-erp tools
+      - name: Build plugins
+        run: yarn build @persian-erp/plugin-fa --no-dts
+      - name: Test
+        run: yarn test --server packages/plugins/@persian-erp --run
