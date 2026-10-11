@@ -2,7 +2,7 @@
 id: STORY-032
 epic: EPIC-009
 title: فهرست‌برداری استایل‌های فیزیکی هسته
-status: todo
+status: in-progress
 model: opus
 ---
 
@@ -21,6 +21,11 @@ model: opus
 
 ## آزمون
 - بازبینی فهرست توسط صاحب پروژه
+
+## پرسش‌های باز
+- نتیجه در [`docs/research/rtl-audit.md`](../../../docs/research/rtl-audit.md) و فهرست کامل در [`rtl-audit-inventory.md`](../../../docs/research/rtl-audit-inventory.md) است.
+- برای بوم گردش‌کار پیشنهاد شده که بوم RTL بماند و فقط دو اصلاح کوچک (a و k) انجام شود. تصمیم نهایی در STORY-035 گرفته می‌شود.
+- سه یافته‌ی ترجمه (نام پلاگین‌ها، «Back Home» و «Ok») خارج از دامنه‌ی این اپیک‌اند و استوری جدا لازم دارند.
 
 ## تعریف انجام‌شده
 - [ ] تغییرات در یک PR
