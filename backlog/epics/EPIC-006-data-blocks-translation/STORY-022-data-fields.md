@@ -2,7 +2,7 @@
 id: STORY-022
 epic: EPIC-006
 title: ترجمه‌ی مدیریت داده و فیلدها
-status: todo
+status: in-progress
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 

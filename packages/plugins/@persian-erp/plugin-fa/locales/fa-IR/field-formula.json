@@ -1,0 +1,9 @@
+{
+  "Calculation engine": "موتور محاسبه",
+  "Compute a value based on the other fields": "محاسبه‌ی یک مقدار بر اساس فیلدهای دیگر",
+  "Configure and store the results of calculations between multiple field values in the same record, supporting both Math.js and Excel formula functions.": "پیکربندی و ذخیره‌ی نتیجه‌ی محاسبه میان مقدار چند فیلد در همان رکورد، با پشتیبانی از تابع‌های فرمول Math.js و Excel.",
+  "Expression": "عبارت",
+  "Expression syntax error": "خطای نحوی در عبارت",
+  "Formula": "فرمول",
+  "Syntax references": "مرجع‌های نحو"
+}
