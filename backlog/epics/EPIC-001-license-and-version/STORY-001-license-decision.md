@@ -2,7 +2,7 @@
 id: STORY-001
 epic: EPIC-001
 title: ثبت تصمیم مجوز (ADR)
-status: todo
+status: in-review
 model: opus
 ---
 
