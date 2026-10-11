@@ -2,7 +2,7 @@
 id: STORY-013
 epic: EPIC-004
 title: تصمیم روش بارگذاری ترجمه‌ی فارسی (ADR)
-status: todo
+status: in-review
 model: opus
 ---
 
