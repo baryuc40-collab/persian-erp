@@ -1,35 +1,10 @@
 import { expect, Page, test } from '@playwright/test';
+import { apiAs, enablePersian, openAs } from './helpers';
 
-const EMAIL = process.env.INIT_ROOT_EMAIL || 'admin@nocobase.com';
-const PASSWORD = process.env.INIT_ROOT_PASSWORD || 'admin123';
-
-// The client reads the UI language from localStorage before it talks to the server.
-async function openAs(page: Page, locale: string, path: string) {
-  await page.addInitScript((value) => localStorage.setItem('NOCOBASE_LOCALE', value), locale);
-  await page.goto('/signin');
-  await page.locator('input[type="password"]').waitFor();
-  await page.locator('input:not([type="password"])').first().fill(EMAIL);
-  await page.locator('input[type="password"]').fill(PASSWORD);
-  await page.keyboard.press('Enter');
-  await page.waitForURL((url) => !url.pathname.startsWith('/signin'));
-  await page.goto(path);
-}
-
-// A fresh install only enables en-US; Persian has to be enabled in system settings before it can be chosen.
 test.beforeAll(async ({ playwright, baseURL }) => {
-  const api = await playwright.request.newContext({ baseURL });
-  const signIn = await api.post('/api/auth:signIn', {
-    headers: { 'X-Authenticator': 'basic' },
-    data: { account: EMAIL, password: PASSWORD },
-  });
-  expect(signIn.ok()).toBeTruthy();
-  const { token } = (await signIn.json()).data;
-  const update = await api.post('/api/systemSettings:update?filterByTk=1', {
-    headers: { Authorization: `Bearer ${token}` },
-    data: { enabledLanguages: ['en-US', 'fa-IR'] },
-  });
-  expect(update.ok()).toBeTruthy();
-  await api.dispose();
+  const api = await apiAs(playwright, baseURL!);
+  await enablePersian(api);
+  await api.request.dispose();
 });
 
 const loadedFonts = (page: Page) =>

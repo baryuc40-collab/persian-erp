@@ -2,7 +2,7 @@
 id: STORY-032
 epic: EPIC-009
 title: فهرست‌برداری استایل‌های فیزیکی هسته
-status: in-progress
+status: done
 model: opus
 ---
 

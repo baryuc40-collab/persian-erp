@@ -2,8 +2,12 @@ name: CI
 
 on:
   pull_request:
+    # labeled: adding the update-snapshots label regenerates the reference screenshots (see the e2e job).
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
+  # Run by the e2e job after it pushes new reference screenshots: a push made with GITHUB_TOKEN starts no workflow.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -11,6 +15,7 @@ concurrency:
 
 jobs:
   changes:
+    if: github.event.action != 'labeled' || github.event.label.name == 'update-snapshots'
     runs-on: ubuntu-latest
     outputs:
       app: ${{ steps.filter.outputs.app }}
@@ -29,6 +34,7 @@ jobs:
 
   checks:
     name: Lightweight checks
+    if: github.event.action != 'labeled' || github.event.label.name == 'update-snapshots'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,6 +72,9 @@ jobs:
           --health-retries 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The branch itself, not the merge commit, so new reference screenshots can be pushed back to it.
+          ref: ${{ env.CAN_PUSH == 'true' && github.head_ref || '' }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -111,6 +120,14 @@ jobs:
     if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      # Same-repo pull requests can receive commits with new reference screenshots; forks only compare.
+      CAN_PUSH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+      UPDATE_ALL: ${{ contains(github.event.pull_request.labels.*.name, 'update-snapshots') }}
     services:
       postgres:
         image: postgres:16
@@ -127,6 +144,9 @@ jobs:
           --health-retries 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The branch itself, not the merge commit, so new reference screenshots can be pushed back to it.
+          ref: ${{ env.CAN_PUSH == 'true' && github.head_ref || '' }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -154,8 +174,27 @@ jobs:
           echo "NocoBase did not start"; yarn pm2 logs --nostream --lines 200 || true; exit 1
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
+      # Missing reference screenshots are written instead of failing; with the update-snapshots label all of them
+      # are rewritten. Existing references are compared otherwise.
       - name: Run e2e tests
-        run: npx playwright test -c e2e/playwright.config.ts
+        run: npx playwright test -c e2e/playwright.config.ts --update-snapshots=${{ env.UPDATE_ALL == 'true' && 'changed' || 'missing' }}
+      - name: Commit reference screenshots
+        if: env.CAN_PUSH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$(git status --porcelain e2e/__screenshots__)" ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add e2e/__screenshots__
+            git commit -m "Update e2e reference screenshots"
+            git push origin HEAD:${{ github.head_ref }}
+            gh workflow run ci.yml --ref ${{ github.head_ref }} || echo "Could not start CI on the new commit; push again to run it."
+            echo "### Reference screenshots updated and pushed to ${{ github.head_ref }}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "$UPDATE_ALL" = 'true' ]; then
+            gh api -X DELETE "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/update-snapshots" || true
+          fi
       - name: Upload screenshots and report
         if: failure()
         uses: actions/upload-artifact@v4
