@@ -2,7 +2,7 @@
 id: EPIC-009
 title: اصلاح استایل‌های هسته برای RTL و آزمون تصویری
 phase: 2
-status: approved
+status: in-progress
 owner: mmsh
 ---
 
@@ -40,7 +40,7 @@ NocoBase در بسیاری جاها از استایل‌های فیزیکی (`le
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-032](STORY-032-rtl-audit.md) | فهرست‌برداری استایل‌های فیزیکی هسته | todo |
+| [STORY-032](STORY-032-rtl-audit.md) | فهرست‌برداری استایل‌های فیزیکی هسته | in-progress |
 | [STORY-033](STORY-033-visual-tests.md) | آزمون تصویری صفحه‌های کلیدی در RTL | todo |
 | [STORY-034](STORY-034-rtl-fix-shell.md) | اصلاح RTL در پوسته، منو، جدول و فرم | todo |
 | [STORY-035](STORY-035-rtl-fix-designers.md) | اصلاح RTL در طراح رابط و طراح گردش‌کار | todo |
