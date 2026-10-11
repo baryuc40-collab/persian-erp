@@ -1,0 +1,14 @@
+{
+  "Add branch": "افزودن شاخه",
+  "All succeeded": "موفقیت همه",
+  "Always continue after all branches end, regardless of success or failure.": "پس از پایان همه‌ی شاخه‌ها، صرف‌نظر از موفقیت یا شکست، همیشه ادامه می‌دهد.",
+  "Any succeeded": "موفقیت هر کدام",
+  "Any succeeded or failed": "موفقیت یا شکست هر کدام",
+  "Continue after all branches succeeded": "ادامه پس از موفقیت همه‌ی شاخه‌ها",
+  "Continue after any branch succeeded": "ادامه پس از موفقیت هر یک از شاخه‌ها",
+  "Continue after any branch succeeded, or exit after any branch failed.": "ادامه پس از موفقیت هر یک از شاخه‌ها، یا خروج پس از شکست هر یک از شاخه‌ها.",
+  "Mode": "حالت",
+  "Parallel branch": "شاخه‌ی موازی",
+  "Run all branches (ignore failures)": "اجرای همه‌ی شاخه‌ها (نادیده گرفتن شکست‌ها)",
+  "Run multiple branch processes in parallel.": "اجرای هم‌زمان چند فرایند شاخه‌ای به‌صورت موازی."
+}

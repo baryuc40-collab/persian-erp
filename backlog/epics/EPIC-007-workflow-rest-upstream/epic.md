@@ -2,7 +2,7 @@
 id: EPIC-007
 title: ترجمه‌ی گردش‌کار و بقیه‌ی پلاگین‌ها و ارسال به NocoBase
 phase: 1
-status: approved
+status: in-progress
 owner: mmsh
 ---
 
@@ -40,7 +40,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-025](STORY-025-workflow.md) | ترجمه‌ی گردش‌کار | todo |
+| [STORY-025](STORY-025-workflow.md) | ترجمه‌ی گردش‌کار | in-progress |
 | [STORY-026](STORY-026-ai.md) | ترجمه‌ی هوش مصنوعی | todo |
 | [STORY-027](STORY-027-remaining.md) | ترجمه‌ی بقیه‌ی پلاگین‌ها | todo |
 | [STORY-028](STORY-028-upstream-pr.md) | ارسال ترجمه‌ی فارسی به مخزن NocoBase | todo |

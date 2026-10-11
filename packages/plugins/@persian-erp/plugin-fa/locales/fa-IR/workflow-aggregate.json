@@ -1,0 +1,13 @@
+{
+  "Aggregate": "تجمیع",
+  "Aggregator function": "تابع تجمیع",
+  "Counting, summing, finding maximum, minimum, and average values for multiple records of a collection or associated data of a record.": "شمارش، جمع، و یافتن مقادیر بیشینه، کمینه و میانگین برای چند رکورد از یک مجموعه یا داده‌های مرتبط یک رکورد.",
+  "Data of associated collection": "داده‌های مجموعه‌ی مرتبط",
+  "Data of collection": "داده‌های مجموعه",
+  "Distinct": "یکتا",
+  "Field to aggregate": "فیلد تجمیع",
+  "Number of decimal places for query result.": "تعداد ارقام اعشار برای نتیجه‌ی پرس‌وجو.",
+  "Query result": "نتیجه‌ی پرس‌وجو",
+  "Result precision": "دقت نتیجه",
+  "Target type": "نوع هدف"
+}

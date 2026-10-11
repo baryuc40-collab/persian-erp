@@ -1,0 +1,7 @@
+{
+  "Ignore failed sending and continue workflow": "نادیده گرفتن ارسال ناموفق و ادامه‌ی گردش‌کار",
+  "Ignore failure and continue workflow": "نادیده گرفتن شکست و ادامه‌ی گردش‌کار",
+  "Notification": "اعلان",
+  "Send email. You can use the variables in the upstream nodes as receivers, subject and content of the email.": "ارسال ایمیل با فراخوانی سرویس SMTP. می‌توانید از متغیرهای نودهای بالادستی به‌عنوان گیرندگان، موضوع و محتوای ایمیل استفاده کنید.",
+  "Send notification. You can use the variables in the upstream nodes as content and ohter config.": "ارسال اعلان. می‌توانید از متغیرهای نودهای بالادستی به‌عنوان محتوا و سایر تنظیمات استفاده کنید."
+}

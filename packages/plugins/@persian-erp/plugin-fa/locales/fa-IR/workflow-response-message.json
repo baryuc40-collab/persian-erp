@@ -1,0 +1,8 @@
+{
+  "Add response message, will be send to client when process of request ends.": "افزودن پیام پاسخ؛ هنگام پایان پردازش درخواست به کلاینت ارسال می‌شود.",
+  "If the workflow ends normally, the response message will return a success status by default.": "اگر گردش‌کار به‌طور عادی پایان یابد، پیام پاسخ به‌صورت پیش‌فرض وضعیت موفق برمی‌گرداند.",
+  "If you want to return a failure status, please add an \"End Process\" node downstream to terminate the workflow.": "اگر می‌خواهید وضعیت ناموفق برگردانده شود، لطفاً یک نود «پایان فرایند» در پایین‌دست اضافه کنید تا گردش‌کار خاتمه یابد.",
+  "Message content": "محتوای پیام",
+  "Response message": "پیام پاسخ",
+  "Supports variables in template.": "از متغیرها در قالب پشتیبانی می‌کند."
+}
