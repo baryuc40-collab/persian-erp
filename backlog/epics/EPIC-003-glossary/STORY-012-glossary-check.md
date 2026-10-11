@@ -2,7 +2,7 @@
 id: STORY-012
 epic: EPIC-003
 title: ابزار بررسی تطابق با واژه‌نامه
-status: todo
+status: in-review
 model: sonnet   # اجرای دوره‌ای و بررسی موارد مرزی با haiku
 ---
 

@@ -22,7 +22,9 @@
     "postinstall": "nocobase-v1 postinstall",
     "lint": "eslint .",
     "check:version": "node tools/check-nocobase-version.js",
-    "check:glossary": "node tools/check-glossary.js"
+    "check:glossary": "node tools/check-glossary.js",
+    "check:i18n": "node tools/glossary-check packages/plugins/@persian-erp",
+    "test:tools": "node --test 'tools/**/__tests__/*.test.js'"
   },
   "resolutions": {
     "cytoscape": "3.28.0",
