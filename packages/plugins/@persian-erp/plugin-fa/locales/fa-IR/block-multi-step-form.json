@@ -1,0 +1,14 @@
+{
+  "AddStep": "افزودن گام",
+  "Delete": "حذف",
+  "Edit step title": "ویرایش عنوان گام",
+  "Next": "بعدی",
+  "Previous": "قبلی",
+  "Step": "گام",
+  "Step title": "عنوان گام",
+  "StepsForm": "فرم چندگامی",
+  "StepsForm(Add new)": "فرم چندگامی (افزودن)",
+  "StepsForm(Edit)": "فرم چندگامی (ویرایش)",
+  "The last step cannot be deleted": "آخرین گام را نمی‌توان حذف کرد",
+  "Whether to delete this step": "این گام حذف شود؟"
+}

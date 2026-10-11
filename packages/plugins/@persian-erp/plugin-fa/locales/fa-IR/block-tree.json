@@ -1,0 +1,15 @@
+{
+  "Connect data blocks": "اتصال بلوک‌های داده",
+  "Configured": "پیکربندی‌شده",
+  "Expand all": "باز کردن همه",
+  "Foreign key": "کلید خارجی",
+  "No supported data blocks": "بلوک داده‌ی پشتیبانی‌شده‌ای وجود ندارد",
+  "Root records per page": "تعداد رکوردهای ریشه در هر صفحه",
+  "Search": "جست‌وجو",
+  "Searchable": "قابل جست‌وجو",
+  "Select field": "انتخاب فیلد",
+  "Tree settings": "تنظیمات درخت",
+  "Tree": "درخت",
+  "Unconnected": "متصل‌نشده",
+  "Include child nodes when filtering": "لحاظ کردن گره‌های فرزند هنگام فیلتر"
+}
