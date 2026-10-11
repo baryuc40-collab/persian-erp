@@ -12,8 +12,10 @@ cd "$CLAUDE_PROJECT_DIR"
 if [ ! -f .env ]; then
   cp .env.example .env
   sed -i "s#^APP_KEY=.*#APP_KEY=$(openssl rand -hex 32)#" .env
+  # Tests wipe their database, so the dev app gets its own.
+  sed -i "s#^DB_DATABASE=.*#DB_DATABASE=nocobase_dev#" .env
 fi
-[ -f .env.test ] || sed 's#^APP_ENV=.*#APP_ENV=test#' .env > .env.test
+[ -f .env.test ] || sed 's#^APP_ENV=.*#APP_ENV=test#; s#^DB_DATABASE=.*#DB_DATABASE=nocobase#' .env > .env.test
 
 # Start a throwaway PostgreSQL when the binaries exist and nothing listens on 5432 yet.
 PG_BIN=$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -n1 || true)
@@ -28,8 +30,10 @@ if [ -n "$PG_BIN" ] && ! pg_isready -h localhost -q 2>/dev/null; then
   sleep 2
   psql -h localhost -U postgres -tc "select 1 from pg_roles where rolname='nocobase'" | grep -q 1 \
     || psql -h localhost -U postgres -c "create user nocobase password 'nocobase' superuser" >/dev/null
-  psql -h localhost -U postgres -tc "select 1 from pg_database where datname='nocobase'" | grep -q 1 \
-    || psql -h localhost -U postgres -c "create database nocobase owner nocobase" >/dev/null
+  for db in nocobase nocobase_dev; do
+    psql -h localhost -U postgres -tc "select 1 from pg_database where datname='$db'" | grep -q 1 \
+      || psql -h localhost -U postgres -c "create database $db owner nocobase" >/dev/null
+  done
 fi
 
 # Dependency install can fail when the session's network policy blocks a host
