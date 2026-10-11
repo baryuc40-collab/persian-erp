@@ -1,12 +1,14 @@
 # بک‌لاگ
 
-اولویت از بالا به پایین. اپیک‌ها فعلاً پیش‌نویس‌اند تا صاحب پروژه تأیید کند؛ جزئیات هر اپیک را عامل اپیک‌نویس با قالب [epic.md](templates/epic.md) می‌سازد.
+اولویت از بالا به پایین. اپیک‌ها فعلاً پیش‌نویس‌اند تا صاحب پروژه تأیید کند. اپیک‌های فاز ۰ با استوری‌هایشان نوشته شده‌اند (STORY-001 تا STORY-012)؛ بقیه را عامل اپیک‌نویس با قالب [epic.md](templates/epic.md) می‌سازد.
+
+ترتیب پیشنهادی اجرای فاز ۰: STORY-011 (بازبینی واژه‌نامه، کار شما) هم‌زمان با STORY-001 و STORY-002، سپس STORY-004 تا STORY-008، سپس STORY-010، STORY-012 و STORY-003.
 
 | شناسه | عنوان | فاز | وضعیت |
 | --- | --- | --- | --- |
-| EPIC-001 | تصمیم مجوز و قفل نسخه‌ی NocoBase v2.2.22 | 0 | draft |
-| EPIC-002 | محیط توسعه (Docker Compose، PostgreSQL، CI) | 0 | draft |
-| EPIC-003 | واژه‌نامه‌ی فارسی اصطلاحات NocoBase | 0 | draft |
+| [EPIC-001](epics/EPIC-001-license-and-version/epic.md) | تصمیم مجوز و قفل نسخه‌ی NocoBase v2.2.22 | 0 | draft |
+| [EPIC-002](epics/EPIC-002-dev-environment/epic.md) | محیط توسعه (Docker Compose، PostgreSQL، CI) | 0 | draft |
+| [EPIC-003](epics/EPIC-003-glossary/epic.md) | واژه‌نامه و راهنمای سبک فارسی | 0 | draft |
 | EPIC-004 | ابزار گزارش پوشش ترجمه (i18n-report) | 1 | draft |
 | EPIC-005 | ترجمه‌ی هسته‌ی کلاینت (legacy و modern) | 1 | draft |
 | EPIC-006 | ترجمه‌ی پلاگین‌های داده، فیلد، بلوک و اکشن | 1 | draft |
