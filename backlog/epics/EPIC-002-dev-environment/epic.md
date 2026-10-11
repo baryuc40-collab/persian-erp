@@ -48,5 +48,5 @@ owner: mmsh
 | [STORY-004](STORY-004-app-scaffold.md) | اسکلت پروژه‌ی NocoBase در ریشه‌ی مخزن | in-review |
 | [STORY-005](STORY-005-docker-compose.md) | Docker Compose با PostgreSQL | in-review |
 | [STORY-006](STORY-006-plugin-fa-skeleton.md) | اسکلت پلاگین plugin-fa | in-review |
-| [STORY-007](STORY-007-ci.md) | CI روی Pull Request | todo |
+| [STORY-007](STORY-007-ci.md) | CI روی Pull Request | in-review |
 | [STORY-008](STORY-008-dev-guide.md) | راهنمای اجرا و آماده‌سازی جلسه‌های ابری | todo |

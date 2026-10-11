@@ -2,7 +2,7 @@
 id: STORY-007
 epic: EPIC-002
 title: CI روی Pull Request
-status: todo
+status: in-review
 model: sonnet
 ---
 

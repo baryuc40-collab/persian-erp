@@ -21,7 +21,8 @@
     "tar": "nocobase-v1 tar",
     "postinstall": "nocobase-v1 postinstall",
     "lint": "eslint .",
-    "check:version": "node tools/check-nocobase-version.js"
+    "check:version": "node tools/check-nocobase-version.js",
+    "check:glossary": "node tools/check-glossary.js"
   },
   "resolutions": {
     "cytoscape": "3.28.0",
