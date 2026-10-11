@@ -2,7 +2,7 @@
 id: EPIC-001
 title: تصمیم مجوز و قفل نسخه‌ی NocoBase
 phase: 0
-status: draft
+status: done
 owner: mmsh
 ---
 

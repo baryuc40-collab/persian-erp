@@ -2,7 +2,7 @@
 id: STORY-005
 epic: EPIC-002
 title: Docker Compose با PostgreSQL
-status: in-review
+status: done
 model: sonnet
 ---
 
@@ -25,6 +25,6 @@ model: sonnet
 - اجرای دستی روی سیستم تمیز؛ مستندسازی در README
 
 ## تعریف انجام‌شده
-- [ ] تغییرات در یک PR
-- [ ] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] تغییرات در یک PR
+- [x] PR به این استوری لینک دارد
+- [x] بازبینی شد و ادغام شد
