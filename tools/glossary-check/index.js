@@ -72,12 +72,20 @@ function checkPair(enMap, faMap, glossary, { sourceKnown = true } = {}) {
     if (!inSource && sourceKnown) warnings.push({ key, message: 'key is not in en-US.json' });
     // NocoBase keys are usually the English text itself.
     const en = inSource && typeof enMap[key] === 'string' && enMap[key] ? enMap[key] : key;
+    // Without the en-US file, a key with no placeholders or tags may be an identifier such as
+    // "RunJS deprecated since" whose English text has them, so a mismatch cannot be judged here.
+    const guessed = !inSource && !sourceKnown && !placeholders(key).length && !tags(key).length;
+    const report = guessed ? warnings : errors;
+    const unsure = guessed ? ' (en-US source not installed; check again after yarn install)' : '';
 
     if (!sameList(placeholders(en), placeholders(fa))) {
-      errors.push({ key, message: `placeholders differ: en ${placeholders(en).join(' ')} / fa ${placeholders(fa).join(' ')}` });
+      report.push({
+        key,
+        message: `placeholders differ: en ${placeholders(en).join(' ')} / fa ${placeholders(fa).join(' ')}${unsure}`,
+      });
     }
     if (!sameList(tags(en), tags(fa))) {
-      errors.push({ key, message: `HTML tags differ: en ${tags(en).join(' ')} / fa ${tags(fa).join(' ')}` });
+      report.push({ key, message: `HTML tags differ: en ${tags(en).join(' ')} / fa ${tags(fa).join(' ')}${unsure}` });
     }
     if (/[يك]/.test(fa)) errors.push({ key, message: 'uses Arabic ي or ك instead of Persian ی or ک' });
 
