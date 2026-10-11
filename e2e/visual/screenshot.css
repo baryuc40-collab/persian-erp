@@ -1,0 +1,6 @@
+/* Applied only while a reference screenshot is taken. Hides things that come and go on their own. */
+.ant-notification,
+.ant-message,
+.ant-tooltip {
+  display: none !important;
+}

@@ -6,7 +6,12 @@ export default defineConfig({
   testDir: '.',
   testMatch: /.*\.e2e\.ts$/,
   timeout: 120 * 1000,
-  expect: { timeout: 30 * 1000 },
+  // One reference image per test, without the platform suffix: the references are generated on the CI runner.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
+  expect: {
+    timeout: 30 * 1000,
+    toHaveScreenshot: { maxDiffPixelRatio: 0.002, animations: 'disabled', caret: 'hide' },
+  },
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: process.env.CI ? [['list'], ['github'], ['html', { outputFolder: '../storage/playwright/e2e-report', open: 'never' }]] : 'list',
