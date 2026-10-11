@@ -2,7 +2,7 @@
 id: EPIC-007
 title: ترجمه‌ی گردش‌کار و بقیه‌ی پلاگین‌ها و ارسال به NocoBase
 phase: 1
-status: draft
+status: approved
 owner: mmsh
 ---
 

@@ -2,7 +2,7 @@
 id: EPIC-008
 title: پلاگین plugin-fa: جهت RTL و فونت Vazirmatn
 phase: 2
-status: draft
+status: approved
 owner: mmsh
 ---
 

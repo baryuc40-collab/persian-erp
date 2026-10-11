@@ -2,7 +2,7 @@
 id: EPIC-006
 title: ترجمه‌ی پلاگین‌های داده، فیلد، بلوک و اکشن
 phase: 1
-status: draft
+status: approved
 owner: mmsh
 ---
 

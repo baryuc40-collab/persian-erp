@@ -2,7 +2,7 @@
 id: EPIC-005
 title: ترجمه‌ی هسته‌ی کلاینت (legacy و modern)
 phase: 1
-status: draft
+status: approved
 owner: mmsh
 ---
 

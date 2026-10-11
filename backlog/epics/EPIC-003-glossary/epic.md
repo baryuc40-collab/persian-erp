@@ -2,7 +2,7 @@
 id: EPIC-003
 title: واژه‌نامه و راهنمای سبک فارسی
 phase: 0
-status: draft
+status: in-progress
 owner: mmsh
 ---
 
@@ -42,7 +42,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-009](STORY-009-glossary-draft.md) | پیش‌نویس واژه‌نامه | in-review |
-| [STORY-010](STORY-010-style-guide.md) | راهنمای سبک نگارش فارسی UI | in-review |
+| [STORY-009](STORY-009-glossary-draft.md) | پیش‌نویس واژه‌نامه | done |
+| [STORY-010](STORY-010-style-guide.md) | راهنمای سبک نگارش فارسی UI | done |
 | [STORY-011](STORY-011-glossary-approval.md) | بازبینی و تأیید واژه‌نامه (صاحب پروژه) | todo |
-| [STORY-012](STORY-012-glossary-check.md) | ابزار بررسی تطابق با واژه‌نامه | in-review |
+| [STORY-012](STORY-012-glossary-check.md) | ابزار بررسی تطابق با واژه‌نامه | done |

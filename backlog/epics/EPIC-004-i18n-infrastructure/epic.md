@@ -2,7 +2,7 @@
 id: EPIC-004
 title: زیرساخت ترجمه: بارگذاری، گزارش و خط لوله
 phase: 1
-status: draft
+status: approved
 owner: mmsh
 ---
 

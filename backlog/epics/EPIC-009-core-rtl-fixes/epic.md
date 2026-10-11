@@ -2,7 +2,7 @@
 id: EPIC-009
 title: اصلاح استایل‌های هسته برای RTL و آزمون تصویری
 phase: 2
-status: draft
+status: approved
 owner: mmsh
 ---
 
