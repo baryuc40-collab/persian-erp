@@ -2,7 +2,7 @@
 id: STORY-003
 epic: EPIC-001
 title: گزارش خودکار نسخه‌ی پایدار جدید
-status: todo
+status: in-review
 model: sonnet
 ---
 

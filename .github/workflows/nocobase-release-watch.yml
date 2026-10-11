@@ -1,0 +1,61 @@
+name: NocoBase release watch
+
+on:
+  schedule:
+    - cron: '0 6 * * 6' # Saturdays 06:00 UTC (09:30 Tehran)
+  workflow_dispatch:
+    inputs:
+      current_version:
+        description: 'Compare against this version instead of NOCOBASE_VERSION (for testing)'
+        required: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find newer stable releases
+        id: releases
+        env:
+          INPUT_VERSION: ${{ inputs.current_version }}
+        run: |
+          current="${INPUT_VERSION:-$(tr -d '[:space:]' < NOCOBASE_VERSION)}"
+          # Stable tags only: vX.Y.Z without alpha/beta/rc suffixes.
+          newer=$(git ls-remote --tags https://github.com/nocobase/nocobase 'v*' \
+            | awk '{print $2}' | sed 's#refs/tags/v##; s#\^{}##' \
+            | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -uV \
+            | awk -v cur="$current" 'BEGIN{found=0} { if (found) print; if ($0 == cur) found=1 }')
+          latest=$(echo "$newer" | tail -n1)
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          { echo 'newer<<EOF'; echo "$newer"; echo 'EOF'; } >> "$GITHUB_OUTPUT"
+          echo "current=$current latest=${latest:-none}"
+      - name: Open upgrade issue
+        if: steps.releases.outputs.latest != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT: ${{ steps.releases.outputs.current }}
+          LATEST: ${{ steps.releases.outputs.latest }}
+          NEWER: ${{ steps.releases.outputs.newer }}
+        run: |
+          title="ارتقای NocoBase به v$LATEST"
+          if gh issue list --label upgrade --state open --search "in:title v$LATEST" --json number --jq '.[0].number' | grep -q .; then
+            echo "Issue for v$LATEST already open"; exit 0
+          fi
+          gh label create upgrade --color 0E8A16 --description "NocoBase upgrade" --force
+          list=$(echo "$NEWER" | sed 's/^/- v/')
+          body=$(cat <<EOT
+          نسخه‌ی فعلی در \`NOCOBASE_VERSION\`: **v$CURRENT**
+
+          نسخه‌های پایدار جدید:
+          $list
+
+          - تغییرات: https://github.com/nocobase/nocobase/blob/main/CHANGELOG.md
+          - سیاست ارتقا: docs/decisions/0002-version-policy.md
+          EOT
+          )
+          gh issue create --title "$title" --label upgrade --body "$body"
