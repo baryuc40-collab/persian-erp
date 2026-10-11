@@ -51,6 +51,16 @@ function loadGlossary(file = GLOSSARY) {
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const placeholders = (s) => (s.match(/\{\{\s*[^}]+?\s*\}\}/g) || []).map((p) => p.replace(/\s+/g, '')).sort();
 const tags = (s) => (s.match(/<\/?[a-zA-Z][^>]*>/g) || []).map((t) => t.replace(/\s.*?>/, '>')).sort();
+// "بلوک داده" also matches its plural and ezafe forms: "بلوک‌های داده"، "مجموعه‌ی داده".
+const termPatterns = new Map();
+function hasTerm(fa, term) {
+  if (fa.includes(term)) return true;
+  if (!termPatterns.has(term)) {
+    const words = term.split(' ').map((w) => `${escapeRe(w)}(?:\u200c?ها)?(?:\u200c?ی)?`);
+    termPatterns.set(term, new RegExp(words.join(' ')));
+  }
+  return termPatterns.get(term).test(fa);
+}
 const sameList = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 function checkPair(enMap, faMap, glossary, { sourceKnown = true } = {}) {
@@ -72,12 +82,12 @@ function checkPair(enMap, faMap, glossary, { sourceKnown = true } = {}) {
     if (/[يك]/.test(fa)) errors.push({ key, message: 'uses Arabic ي or ك instead of Persian ی or ک' });
 
     // Longest terms first; matched spans are masked so "Data source" does not also count as "Data".
-    let text = en.replace(/\{\{[^}]*\}\}/g, ' ');
+    let text = en.replace(/\{\{[^}]*\}\}/g, ' ').replace(/<[^>]+>/g, ' ');
     for (const term of glossary) {
       const re = new RegExp(`\\b${escapeRe(term.en)}(e?s)?\\b`, 'i');
       if (!re.test(text)) continue;
       text = text.replace(new RegExp(re.source, 'gi'), ' ');
-      if (!term.soft && !fa.includes(term.fa)) {
+      if (!term.soft && !hasTerm(fa, term.fa)) {
         warnings.push({ key, message: `"${term.en}" should be translated as "${term.fa}"` });
       }
     }

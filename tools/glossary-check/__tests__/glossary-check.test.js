@@ -72,3 +72,9 @@ test('finds locale pack files and maps them to their @nocobase/plugin-* source',
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('accepts plural and ezafe forms of a multi-word term', () => {
+  const en = { 'Data blocks': 'Data blocks', 'Association fields filter': 'Association fields filter' };
+  const fa = { 'Data blocks': 'بلوک‌های داده', 'Association fields filter': 'فیلتر فیلدهای ارتباطی' };
+  assert.deepStrictEqual(checkPair(en, fa, glossary).warnings, []);
+});
