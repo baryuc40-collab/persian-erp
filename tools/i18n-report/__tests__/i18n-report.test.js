@@ -92,6 +92,7 @@ test('--min fails when coverage is below the threshold', (t) => {
   assert.strictEqual(capture([...f.args, '--min', '50']).code, 1);
   assert.strictEqual(capture([...f.args, '--min', '30']).code, 0);
   assert.strictEqual(capture([...f.args, '--package', 'client', '--min', '50']).code, 0);
+  assert.doesNotMatch(capture([...f.args, '--package', 'workflow']).out, /client\.json has no installed/);
 });
 
 test('--missing lists untranslated keys', (t) => {
