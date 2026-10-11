@@ -2,7 +2,7 @@
 id: STORY-027
 epic: EPIC-007
 title: ترجمه‌ی بقیه‌ی پلاگین‌ها
-status: todo
+status: in-progress
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 
@@ -31,3 +31,11 @@ model: sonnet   # بازبینی نمونه‌ای با opus
 - [ ] تغییرات در یک PR
 - [ ] PR به این استوری لینک دارد
 - [ ] بازبینی شد و ادغام شد
+
+## پرسش‌های باز
+- واژه‌هایی که در واژه‌نامه نیستند و پیشنهاد افزودن دارند: Verifier → «تأییدکننده»، Secrets → «رازها»، Tolerant mode → «حالت سهل‌گیرانه»، Members → «اعضا»، Badge → «نشان»، Issuer → «صادرکننده»، Authorization → «مجوزدهی»، App supervisor → «ناظر برنامه‌ها».
+- این واژه‌های فنی انگلیسی ماندند: Bucket، Endpoint، MIME type، CDN، CORS، Access Key ID/Secret. آیا «باکت» و «نقطه‌ی پایانی» بهتر است؟
+- «Storage type» در file-manager با واژه‌نامه «نوع فضای ذخیره‌سازی» شد، ولی client.json «نوع ذخیره‌سازی» دارد. کدام یکی شود؟
+- پیام سه‌تکه‌ی license («Please go to the» + «License Settings» + «page to enter the license key.») فقط با همین ترتیب در صفحه درست خوانده می‌شود. روی صفحه بررسی شود.
+- «Init» و «Batch» در user-data-sync بدون دیدن صفحه ترجمه شدند («آغازین»، «دسته»).
+- صفحه‌ی تنظیمات localization در این نصب فعال نیست (404)، پس روی صفحه دیده نشد.

@@ -1,0 +1,22 @@
+{
+  "Add variable": "افزودن متغیر",
+  "Bulk import": "ورود گروهی",
+  "Bulk import failed": "ورود گروهی ناموفق بود",
+  "Delete variable": "حذف متغیر",
+  "Encrypted": "رمزنگاری‌شده",
+  "Environment": "محیط",
+  "Filter failed": "فیلتر ناموفق بود",
+  "Name": "نام",
+  "Line {{line}}: an equals sign is required.": "خط {{line}}: علامت مساوی (=) الزامی است.",
+  "Line {{line}}: only letters, numbers and underscores are allowed, and it must start with a letter.": "خط {{line}}: فقط حروف، اعداد و زیرخط مجاز است و باید با یک حرف آغاز شود.",
+  "Line {{line}}: variable name cannot be empty.": "خط {{line}}: نام متغیر نمی‌تواند خالی باشد.",
+  "Line {{line}}: variable value cannot be empty.": "خط {{line}}: مقدار متغیر نمی‌تواند خالی باشد.",
+  "Plain text": "متن ساده",
+  "Restart now": "راه‌اندازی دوباره",
+  "Secrets": "رازها",
+  "Type": "نوع",
+  "Value": "مقدار",
+  "Variables": "متغیرها",
+  "Variables and secrets": "متغیرها و رازها",
+  "Variables and secrets have been updated. A restart is required for the changes to take effect.": "متغیرها و رازها به‌روزرسانی شدند. برای اعمال تغییرات، راه‌اندازی دوباره لازم است."
+}

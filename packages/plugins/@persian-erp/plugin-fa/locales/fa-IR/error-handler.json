@@ -1,0 +1,6 @@
+{
+  "Validation error": "خطای اعتبارسنجی {{field}}",
+  "notNull Violation": "{{field}} نمی‌تواند خالی باشد",
+  "notNull violation": "{{field}} نمی‌تواند خالی باشد",
+  "unique violation": "{{field}} از قبل وجود دارد"
+}

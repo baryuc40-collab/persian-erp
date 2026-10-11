@@ -2,7 +2,7 @@
 id: STORY-026
 epic: EPIC-007
 title: ترجمه‌ی هوش مصنوعی
-status: in-progress
+status: done
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 

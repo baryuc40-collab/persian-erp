@@ -1,0 +1,21 @@
+{
+  "1 Day": "1 روز",
+  "30 Days": "30 روز",
+  "7 Days": "7 روز",
+  "90 Days": "90 روز",
+  "API key created successfully": "کلید API با موفقیت ایجاد شد",
+  "API keys": "کلیدهای API",
+  "Add API key": "افزودن کلید API",
+  "Allow only your own roles to be selected": "فقط نقش‌های خودتان قابل انتخاب است",
+  "Created at": "زمان ایجاد",
+  "Custom": "سفارشی",
+  "Delete API key": "حذف کلید API",
+  "Expiration": "انقضا",
+  "Key name": "نام کلید",
+  "Keys manager": "مدیریت کلیدها",
+  "Make sure to copy your personal access key now as you will not be able to see this again.": "حتماً کلید دسترسی شخصی خود را همین حالا کپی کنید، زیرا دیگر نمی‌توانید آن را ببینید.",
+  "Never": "هرگز",
+  "Never expires": "بدون انقضا",
+  "Role": "نقش",
+  "Role not found": "نقش یافت نشد"
+}

@@ -2,7 +2,7 @@
 id: EPIC-006
 title: ترجمه‌ی پلاگین‌های داده، فیلد، بلوک و اکشن
 phase: 1
-status: in-progress
+status: done
 owner: mmsh
 ---
 
@@ -40,6 +40,6 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-022](STORY-022-data-fields.md) | ترجمه‌ی مدیریت داده و فیلدها | in-progress |
-| [STORY-023](STORY-023-blocks-views.md) | ترجمه‌ی بلوک‌ها و نمایه‌ها | in-progress |
-| [STORY-024](STORY-024-actions-forms.md) | ترجمه‌ی اکشن‌ها، فرم‌ها و موبایل | in-progress |
+| [STORY-022](STORY-022-data-fields.md) | ترجمه‌ی مدیریت داده و فیلدها | done |
+| [STORY-023](STORY-023-blocks-views.md) | ترجمه‌ی بلوک‌ها و نمایه‌ها | done |
+| [STORY-024](STORY-024-actions-forms.md) | ترجمه‌ی اکشن‌ها، فرم‌ها و موبایل | done |
