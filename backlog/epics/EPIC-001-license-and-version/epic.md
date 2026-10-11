@@ -43,4 +43,4 @@ owner: mmsh
 | --- | --- | --- |
 | [STORY-001](STORY-001-license-decision.md) | ثبت تصمیم مجوز (ADR) | done |
 | [STORY-002](STORY-002-version-pin.md) | قفل نسخه و سیاست ارتقا | done |
-| [STORY-003](STORY-003-release-watch.md) | گزارش خودکار نسخه‌ی پایدار جدید | todo |
+| [STORY-003](STORY-003-release-watch.md) | گزارش خودکار نسخه‌ی پایدار جدید | done |
