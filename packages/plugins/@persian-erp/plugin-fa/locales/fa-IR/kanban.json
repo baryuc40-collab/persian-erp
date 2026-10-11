@@ -50,7 +50,7 @@
   "Select group values": "انتخاب مقادیر گروه",
   "The order of the selected values determines the kanban column order": "ترتیب مقادیر انتخاب‌شده، ترتیب ستون‌های کانبان را تعیین می‌کند",
   "Set column width": "تنظیم عرض ستون",
-  "Single select and many-to-one fields can be used as the grouping field": "فیلدهای انتخاب تکی، گروه گزینه‌ای و چند به یک را می‌توان به‌عنوان فیلد گروه‌بندی استفاده کرد",
+  "Single select and many-to-one fields can be used as the grouping field": "فیلدهای انتخاب تکی، گروه دکمه‌ی رادیویی و چند به یک را می‌توان به‌عنوان فیلد گروه‌بندی استفاده کرد",
   "Small": "کوچک",
   "Sort": "مرتب‌سازی",
   "Sorting field": "فیلد ترتیب",

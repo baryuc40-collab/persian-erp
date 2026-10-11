@@ -57,7 +57,7 @@ ID,شناسه,data,
 Created at,زمان ایجاد,data,
 Updated at,زمان به‌روزرسانی,data,
 Created by,ایجادکننده,data,
-Updated by,آخرین ویرایشگر,data,
+Updated by,آخرین ویرایش‌کننده,data,
 Owner,مالک,data,
 Single line text,متن تک‌خطی,field-type,
 Long text,متن چندخطی,field-type,
@@ -69,7 +69,7 @@ Percent,درصد,field-type,
 Currency,مبلغ,field-type,
 Checkbox,چک‌باکس,field-type,
 Checkbox group,گروه چک‌باکس,field-type,
-Radio group,گروه گزینه‌ای,field-type,
+Radio group,گروه دکمه‌ی رادیویی,field-type,
 Single select,انتخاب تکی,field-type,
 Multiple select,انتخاب چندتایی,field-type,
 Select,انتخاب,field-type,فعل «انتخاب کنید» در دکمه‌ها
@@ -155,7 +155,7 @@ Close,بستن,action,
 Back,بازگشت,action,
 Next,بعدی,action,
 Previous,قبلی,action,
-Duplicate,رونوشت,action,
+Duplicate,تکثیر,action,
 Copy,کپی,action,
 Bulk edit,ویرایش گروهی,action,
 Bulk update,به‌روزرسانی گروهی,action,
@@ -179,7 +179,7 @@ Custom action,اکشن سفارشی,action,
 View (action),مشاهده,action,در منوی اکشن‌های رکورد
 Open,باز کردن,action,
 Run,اجرا,action,
-Execute,اجرا کردن,action,
+Execute,اجرا,action,
 Load more,بارگذاری بیشتر,action,
 Workflow,گردش‌کار,workflow,
 Workflows,گردش‌کارها,workflow,
@@ -242,8 +242,8 @@ Tomorrow,فردا,variable,
 This week,این هفته,variable,
 This month,این ماه,variable,در فاز ۳ ماه جلالی
 This year,امسال,variable,در فاز ۳ سال جلالی
-Count,شمارش,chart,
-Sum,مجموع,chart,
+Count,تعداد,chart,
+Sum,جمع,chart,
 Average,میانگین,chart,
 Min,کمینه,chart,
 Max,بیشینه,chart,
@@ -256,7 +256,7 @@ Role,نقش,acl,
 Roles,نقش‌ها,acl,
 Permission,دسترسی,acl,با License (مجوز) اشتباه نشود
 Permissions,دسترسی‌ها,acl,
-Action permissions,دسترسی اکشن,acl,
+Action permissions,دسترسی‌های اکشن,acl,
 Department,واحد سازمانی,acl,
 Departments,واحدهای سازمانی,acl,
 Authentication,احراز هویت,acl,
@@ -277,13 +277,13 @@ Plugins,پلاگین‌ها,system,
 Plugin manager,مدیریت پلاگین‌ها,system,
 System settings,تنظیمات سیستم,system,
 Application,برنامه,system,
-Sub-application,زیربرنامه,system,
+Sub-application,برنامه‌ی فرعی,system,
 License,مجوز,system,
 License key,کلید مجوز,system,
 Backup,پشتیبان,system,
 Restore,بازیابی,system,
 Logs,لاگ‌ها,system,
-Audit logs,گزارش ممیزی,system,
+Audit logs,لاگ‌های ممیزی,system,
 Notification,اعلان,system,
 Notifications,اعلان‌ها,system,
 In-app message,پیام درون‌برنامه‌ای,system,
@@ -305,8 +305,8 @@ Model,مدل,ai,
 Knowledge base,پایگاه دانش,ai,
 Skills,مهارت‌ها,ai,
 Tools,ابزارها,ai,
-Chat,گفتگو,ai,
-Chat box,جعبه‌ی گفتگو,ai,
+Chat,گفت‌وگو,ai,
+Chat box,کادر گفت‌وگو,ai,
 Prompt,پرامپت,ai,
 Web search,جست‌وجوی وب,ai,
 Required,الزامی,message,
@@ -320,9 +320,30 @@ Error,خطا,message,
 Warning,هشدار,message,
 Loading,در حال بارگذاری,message,
 No data,داده‌ای وجود ندارد,message,
-Are you sure you want to delete it?,آیا از حذف مطمئن هستید؟,message,
+Are you sure you want to delete it?,آیا از حذف آن مطمئن هستید؟,message,
 Please enter,لطفاً وارد کنید,message,
 Please select,لطفاً انتخاب کنید,message,
 Try again,دوباره تلاش کنید,message,
 Pending,در انتظار,message,
 Completed,تکمیل‌شده,message,
+Verifier,روش تأیید هویت,acl,هم‌ساخت با Authenticator = روش احراز هویت؛ «تأییدکننده» القای شخص تأییدکننده در فرایند تأیید را دارد. جمع: روش‌های تأیید هویت
+Secrets,مقادیر محرمانه,system,«رازها» در نرم‌افزار فارسی ناآشناست. مفرد Secret = مقدار محرمانه؛ برای JWT secret و مشابه: «کلید محرمانه‌ی JWT»
+Tolerant mode,حالت سهل‌گیرانه,workflow,یعنی ادامه با وجود خطا/داده‌ی ناقص؛ پیش از نهایی‌شدن روی رابط کاربری بررسی شود
+Members,اعضا,acl,مفرد: عضو. پس از عدد مفرد: «{{count}} عضو»
+Badge,نشان,ui,عدد یا نقطه‌ی کوچک روی نماد یا منو
+Issuer,صادرکننده,acl,صادرکننده‌ی توکن/گواهی (OIDC، SAML، TOTP)
+Authorization,اعطای دسترسی,acl,«مجوز» برای License رزرو است. «not authorized» ← «اجازه‌ی دسترسی ندارید». نام سرآیند HTTP «Authorization» ترجمه نشود
+Authorize,اعطای دسترسی,acl,مثلاً Authorize application ← «اعطای دسترسی به برنامه»
+Header (sheet column),سرستون,data,عنوان ستون در فایل اکسل/CSV ورود داده؛ با Header (HTTP) = سرآیند فرق دارد
+Page header,سرآیند صفحه,ui,نوار بالای صفحه با عنوان و زبانه‌ها؛ «سربرگ صفحه» به کار نرود
+Timeout,مهلت زمانی,workflow,در ترکیب کوتاه: «مهلت» (مثلاً «0 یعنی بدون مهلت»)
+Transaction,تراکنش,data,تراکنش پایگاه داده
+Canvas,بوم,ui,بوم ویرایش گردش‌کار یا بوم طراحی
+Assignee,مسئول,workflow,جمع: مسئولان. شخصی که کار/وظیفه به او سپرده شده
+Temperature,دما,ai,پارامتر نمونه‌برداری مدل زبانی
+Provider,ارائه‌دهنده,system,جمع: ارائه‌دهندگان
+Host,میزبان,system,SMTP host ← «میزبان SMTP»؛ hostname ← «نام میزبان»
+Link,پیوند,ui,Link to (نوع فیلد) ← «پیوند به»
+Bucket,باکت,system,مخزن ذخیره‌سازی شیء (S3)؛ هم‌سو با کنسول ارائه‌دهندگان ابری ایرانی
+Endpoint,Endpoint,system,ترجمه نشود؛ همان برچسبی که در کنسول ارائه‌دهنده دیده می‌شود
+Storage type,نوع فضای ذخیره‌سازی,system,هم‌سو با Storage = فضای ذخیره‌سازی؛ «نوع ذخیره‌سازی» به کار نرود

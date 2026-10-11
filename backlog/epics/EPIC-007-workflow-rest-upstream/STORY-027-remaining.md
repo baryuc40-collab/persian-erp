@@ -2,7 +2,7 @@
 id: STORY-027
 epic: EPIC-007
 title: ترجمه‌ی بقیه‌ی پلاگین‌ها
-status: in-progress
+status: done
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 
