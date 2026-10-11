@@ -1,0 +1,8 @@
+{
+  "Export settings": "تنظیمات خروجی",
+  "Export warning": "در هر بار حداکثر {{limit}} سطر داده را می‌توانید خروجی بگیرید؛ سطرهای اضافه نادیده گرفته می‌شوند.",
+  "False": "نادرست",
+  "Start export": "شروع خروجی گرفتن",
+  "True": "درست",
+  "another export action is running, please try again later.": "اکشن خروجی دیگری در حال اجراست؛ لطفاً بعداً دوباره تلاش کنید."
+}

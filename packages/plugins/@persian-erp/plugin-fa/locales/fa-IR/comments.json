@@ -1,0 +1,19 @@
+{
+  "Cancel": "انصراف",
+  "Comment": "نظر",
+  "Comment Collection": "مجموعه‌ی نظرها",
+  "Comment Content": "محتوا",
+  "Comment action": "اکشن نظر",
+  "Comments": "نظرها",
+  "Delete": "حذف",
+  "Edit": "ویرایش",
+  "Enable Create": "اجازه‌ی افزودن نظر",
+  "Failed to create comment": "ایجاد نظر ناموفق بود",
+  "Failed to delete comment": "حذف نظر ناموفق بود",
+  "Failed to update comment": "به‌روزرسانی نظر ناموفق بود",
+  "Quote Reply": "پاسخ با نقل‌قول",
+  "Quote reply": "پاسخ با نقل‌قول",
+  "Render error": "خطای نمایش",
+  "Update Comment": "به‌روزرسانی نظر",
+  "commented": "نظر داد"
+}
