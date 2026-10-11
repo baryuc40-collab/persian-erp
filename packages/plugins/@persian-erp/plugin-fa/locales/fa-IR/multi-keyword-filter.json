@@ -1,0 +1,18 @@
+{
+  "cancel": "انصراف",
+  "confirm": "تأیید",
+  "equalsAny": "یکی از",
+  "errorParsingExcel": "خطا در تجزیه‌ی فایل Excel:",
+  "excelFileEmpty": "فایل Excel خالی است",
+  "failedToParseExcel": "تجزیه‌ی فایل Excel ناموفق بود",
+  "importExcel": "ورود گروهی کلیدواژه‌ها از Excel",
+  "importSuccess": "{{count}} کلیدواژه با موفقیت وارد شد",
+  "keywordsInputPlaceholder": "چند کلیدواژه، هر کدام در یک خط",
+  "noValidKeywords": "هیچ کلیدواژه‌ی معتبری یافت نشد",
+  "notEqualsAny": "هیچ‌یک از",
+  "providedByPlugin": "ارائه‌شده توسط پلاگین @nocobase/plugin-multi-keyword-filter",
+  "selectAtLeastOneColumn": "لطفاً دست‌کم یک ستون انتخاب کنید",
+  "selectColumnsPlaceholder": "لطفاً ستون‌های موردنظر برای ورود را انتخاب کنید",
+  "selectExcelColumns": "انتخاب ستون‌های Excel برای ورود",
+  "tips": "انتخاب یک ستون: همه‌ی مقادیر غیرخالی آن ستون به‌عنوان کلیدواژه وارد می‌شوند.\nانتخاب چند ستون: مقادیر غیرخالی چند ستون به‌عنوان کلیدواژه ادغام و مقادیر تکراری حذف می‌شوند."
+}

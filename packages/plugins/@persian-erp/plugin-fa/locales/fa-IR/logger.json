@@ -1,0 +1,9 @@
+{
+  "API request and response logs": "لاگ‌های درخواست و پاسخ API",
+  "Application, database, plugins and other system logs, the error level logs will be sent to": "لاگ‌های برنامه، پایگاه داده، پلاگین‌ها و سایر لاگ‌های سیستم؛ لاگ‌های سطح خطا ارسال می‌شوند به",
+  "Download": "دریافت",
+  "Download logs": "دریافت لاگ‌ها",
+  "Logger": "لاگ‌ها",
+  "SQL execution logs, printed by Sequelize when the db logging is enabled": "لاگ‌های اجرای SQL که در صورت فعال بودن ثبت لاگ پایگاه داده، توسط Sequelize چاپ می‌شوند",
+  "Search": "جست‌وجو"
+}

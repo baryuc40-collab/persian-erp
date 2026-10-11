@@ -1,0 +1,8 @@
+{
+  "Locale": "زبان",
+  "Locale tester": "آزمایشگر زبان",
+  "Please go to <a target=\"_blank\" href=\"https://github.com/nocobase/locales\">nocobase/locales</a> to get the language file that needs translation, then paste it below and provide the translation.": "لطفاً برای دریافت فایل زبانی که نیاز به ترجمه دارد به <a target=\"_blank\" href=\"https://github.com/nocobase/locales\">nocobase/locales</a> بروید، سپس آن را در زیر جای‌گذاری کنید و ترجمه را وارد کنید.",
+  "Saved successfully!": "با موفقیت ذخیره شد!",
+  "Submit": "ثبت",
+  "Translations": "ترجمه‌ها"
+}

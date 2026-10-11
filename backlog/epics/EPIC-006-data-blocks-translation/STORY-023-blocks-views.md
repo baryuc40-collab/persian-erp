@@ -2,7 +2,7 @@
 id: STORY-023
 epic: EPIC-006
 title: ترجمه‌ی بلوک‌ها و نمایه‌ها
-status: in-progress
+status: done
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 

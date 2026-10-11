@@ -2,7 +2,7 @@
 id: STORY-025
 epic: EPIC-007
 title: ترجمه‌ی گردش‌کار
-status: in-progress
+status: done
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 

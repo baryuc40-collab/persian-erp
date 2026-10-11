@@ -2,7 +2,7 @@
 id: STORY-024
 epic: EPIC-006
 title: ترجمه‌ی اکشن‌ها، فرم‌ها و موبایل
-status: in-progress
+status: done
 model: sonnet   # بازبینی نمونه‌ای با opus
 ---
 
