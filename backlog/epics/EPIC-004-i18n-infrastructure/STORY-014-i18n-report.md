@@ -2,7 +2,7 @@
 id: STORY-014
 epic: EPIC-004
 title: ابزار گزارش پوشش ترجمه
-status: todo
+status: in-progress
 model: sonnet
 ---
 

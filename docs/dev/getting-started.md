@@ -41,6 +41,7 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 | بررسی نسخه‌ی NocoBase | `yarn check:version` |
 | بررسی قالب واژه‌نامه | `yarn check:glossary` |
 | بررسی ترجمه‌ها با واژه‌نامه | `yarn check:i18n` |
+| گزارش پوشش ترجمه | `yarn i18n:report` (گزینه‌ها: `--missing`، `--package <namespace>`، `--json`، `--min <درصد>`) |
 | آزمون ابزارها | `yarn test:tools` |
 
 برای آزمون، فایل `.env.test` لازم است: `sed 's#^APP_ENV=.*#APP_ENV=test#' .env > .env.test`
