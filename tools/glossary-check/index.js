@@ -2,10 +2,14 @@
 // Checks fa-IR.json translations against their en-US source and glossary/fa-IR.csv.
 // Errors (exit 1): missing/changed {{placeholders}} or HTML tags, Arabic ي/ك.
 // Warnings: glossary term in the English text without its Persian equivalent, keys not in en-US.
+// Files: <dir>/fa-IR.json next to <dir>/en-US.json, and plugin-fa's locale pack
+// locales/fa-IR/<namespace>.json, whose source is @nocobase/plugin-<namespace> in node_modules (ADR 0003).
 const fs = require('fs');
 const path = require('path');
 
-const GLOSSARY = path.resolve(__dirname, '..', '..', 'glossary', 'fa-IR.csv');
+const ROOT = path.resolve(__dirname, '..', '..');
+const GLOSSARY = path.join(ROOT, 'glossary', 'fa-IR.csv');
+const NODE_MODULES = path.join(ROOT, 'node_modules');
 
 function parseCsvLine(line) {
   const fields = [];
@@ -49,13 +53,13 @@ const placeholders = (s) => (s.match(/\{\{\s*[^}]+?\s*\}\}/g) || []).map((p) => 
 const tags = (s) => (s.match(/<\/?[a-zA-Z][^>]*>/g) || []).map((t) => t.replace(/\s.*?>/, '>')).sort();
 const sameList = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
 
-function checkPair(enMap, faMap, glossary) {
+function checkPair(enMap, faMap, glossary, { sourceKnown = true } = {}) {
   const errors = [];
   const warnings = [];
   for (const [key, fa] of Object.entries(faMap)) {
     if (typeof fa !== 'string') continue;
     const inSource = Object.prototype.hasOwnProperty.call(enMap, key);
-    if (!inSource) warnings.push({ key, message: 'key is not in en-US.json' });
+    if (!inSource && sourceKnown) warnings.push({ key, message: 'key is not in en-US.json' });
     // NocoBase keys are usually the English text itself.
     const en = inSource && typeof enMap[key] === 'string' && enMap[key] ? enMap[key] : key;
 
@@ -90,24 +94,36 @@ function findFaFiles(target) {
     const full = path.join(target, entry.name);
     if (entry.isDirectory()) out.push(...findFaFiles(full));
     else if (entry.name === 'fa-IR.json') out.push(full);
+    else if (path.basename(target) === 'fa-IR' && entry.name.endsWith('.json')) out.push(full);
   }
   return out;
 }
 
+// Without node_modules (e.g. CI's lightweight job) a locale pack's source is unknown:
+// keys are still checked, using the key itself as the English text.
+function sourceFile(file, nodeModules) {
+  if (path.basename(file) === 'fa-IR.json') return path.join(path.dirname(file), 'en-US.json');
+  const namespace = path.basename(file, '.json');
+  return path.join(nodeModules, '@nocobase', `plugin-${namespace}`, 'dist', 'locale', 'en-US.json');
+}
+
 function run(argv) {
   const json = argv.includes('--json');
-  const targets = argv.filter((a) => !a.startsWith('--'));
+  const nmIndex = argv.indexOf('--node-modules');
+  const nodeModules = nmIndex >= 0 ? path.resolve(argv[nmIndex + 1]) : NODE_MODULES;
+  const targets = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--node-modules');
   if (!targets.length) {
-    console.error('usage: glossary-check <fa-IR.json | directory>... [--json]');
+    console.error('usage: glossary-check <fa-IR.json | directory>... [--json] [--node-modules <dir>]');
     return 2;
   }
   const glossary = loadGlossary();
   const results = [];
   for (const file of targets.flatMap(findFaFiles)) {
-    const enFile = path.join(path.dirname(file), 'en-US.json');
-    const enMap = fs.existsSync(enFile) ? JSON.parse(fs.readFileSync(enFile, 'utf8')) : {};
+    const enFile = sourceFile(file, nodeModules);
+    const sourceKnown = fs.existsSync(enFile);
+    const enMap = sourceKnown ? JSON.parse(fs.readFileSync(enFile, 'utf8')) : {};
     const faMap = JSON.parse(fs.readFileSync(file, 'utf8'));
-    results.push({ file, ...checkPair(enMap, faMap, glossary) });
+    results.push({ file, ...checkPair(enMap, faMap, glossary, { sourceKnown }) });
   }
   const errorCount = results.reduce((n, r) => n + r.errors.length, 0);
   if (json) {
@@ -123,6 +139,6 @@ function run(argv) {
   return errorCount ? 1 : 0;
 }
 
-module.exports = { checkPair, loadGlossary, placeholders, tags };
+module.exports = { checkPair, findFaFiles, loadGlossary, placeholders, sourceFile, tags };
 
 if (require.main === module) process.exitCode = run(process.argv.slice(2));

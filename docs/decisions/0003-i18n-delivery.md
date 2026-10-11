@@ -31,12 +31,13 @@
 2. نام namespace همان نامی است که NocoBase در `app:getLang` می‌فرستد: نام کوتاه پلاگین‌های رسمی بدون پیشوند `@nocobase/plugin-`. نمونه‌ها: `client` برای `@nocobase/client`، `data-source-manager`، `workflow` و `flow-engine`. NocoBase همین ترجمه را خودش به نام کامل پکیج (`@nocobase/plugin-client`) هم کپی می‌کند.
 3. plugin-fa در `load()` یک storer ثبت می‌کند (`src/server/locale-pack.ts`). این storer فقط برای `fa-IR` فایل‌ها را می‌خواند و برای زبان‌های دیگر چیزی برنمی‌گرداند.
 4. کلیدی که ترجمه نشده، همان متن انگلیسی پکیج اصلی را نشان می‌دهد.
-5. ترجمه‌هایی که کاربر در «مدیریت ترجمه» (`plugin-localization`) وارد می‌کند باید بر بسته‌ی ما برنده باشند. storerها به ترتیب ثبت ادغام می‌شوند و این ترتیب هنوز آزموده نشده؛ در STORY-015 بررسی و در صورت نیاز اصلاح می‌شود.
+5. ترجمه‌هایی که کاربر در «مدیریت ترجمه» (`plugin-localization`) وارد می‌کند بر بسته‌ی ما برنده‌اند. storerها به ترتیب ثبت ادغام می‌شوند و `plugin-localization` storer خود را در `load()` ثبت می‌کند؛ پس plugin-fa storer را در `beforeLoad()` ثبت می‌کند تا زودتر ثبت شود (STORY-015، آزموده در `get-lang.test.ts`).
+6. plugin-fa با `APPEND_PRESET_BUILT_IN_PLUGINS` جزو پلاگین‌های داخلی است: هنگام نصب فعال می‌شود و غیرفعال نمی‌شود. با `INIT_APP_LANG=fa-IR`، فارسی از همان نصب اول زبان پیش‌فرض است.
 
 ## پیامدها
 
 - `tools/i18n-report` (STORY-014) کلیدهای `en-US` را از `node_modules/<package>/dist/locale/en-US.json` می‌خواند و با `locales/fa-IR/<namespace>.json` مقایسه می‌کند.
-- `tools/glossary-check` فعلاً فقط فایل‌های `fa-IR.json` کنار `en-US.json` را می‌سنجد. در STORY-015 باید فایل‌های `locales/fa-IR/*.json` را هم با منبع انگلیسی‌شان در `node_modules` بسنجد.
+- `tools/glossary-check` فایل‌های `locales/fa-IR/*.json` را هم با منبع انگلیسی‌شان در `node_modules/@nocobase/plugin-<namespace>` می‌سنجد. اگر `node_modules` نصب نباشد (مثل کار سبک CI)، خود کلید متن انگلیسی فرض می‌شود.
 - برای PR بالادستی (STORY-028)، هر فایل `locales/fa-IR/<namespace>.json` به `src/locale/fa-IR.json` پکیج متناظر در مخزن NocoBase کپی می‌شود.
 - اگر NocoBase روزی خودش `fa-IR.json` منتشر کند، بسته‌ی ما روی آن ادغام می‌شود و اصلاحات ما برنده‌اند. نگه‌داشتن یا حذف بسته‌ی ما در آن زمان یک تصمیم جداست.
 
