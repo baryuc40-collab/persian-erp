@@ -2,7 +2,7 @@
 id: STORY-006
 epic: EPIC-002
 title: اسکلت پلاگین plugin-fa
-status: todo
+status: in-review
 model: sonnet
 ---
 

@@ -1,0 +1,20 @@
+{
+  "name": "@persian-erp/plugin-fa",
+  "displayName": "Persian localization",
+  "displayName.fa-IR": "فارسی‌سازی",
+  "description": "Persian (fa-IR) localization for NocoBase: right-to-left layout, Persian font, Jalali calendar and number formatting.",
+  "description.fa-IR": "فارسی‌سازی NocoBase: چیدمان راست‌به‌چپ، فونت فارسی، تقویم جلالی و قالب اعداد.",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "keywords": [
+    "Localization"
+  ],
+  "main": "dist/server/index.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "@nocobase/client": "2.x",
+    "@nocobase/client-v2": "2.x",
+    "@nocobase/server": "2.x",
+    "@nocobase/test": "2.x"
+  }
+}
