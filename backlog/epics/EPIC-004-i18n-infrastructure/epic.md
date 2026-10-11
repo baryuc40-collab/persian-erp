@@ -45,6 +45,6 @@ NocoBase از npm نصب می‌شود و ما نمی‌توانیم فایل‌
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
 | [STORY-013](STORY-013-i18n-delivery-adr.md) | تصمیم روش بارگذاری ترجمه‌ی فارسی (ADR) | todo |
-| [STORY-014](STORY-014-i18n-report.md) | ابزار گزارش پوشش ترجمه | todo |
+| [STORY-014](STORY-014-i18n-report.md) | ابزار گزارش پوشش ترجمه | in-progress |
 | [STORY-015](STORY-015-locale-loader.md) | بارگذاری بسته‌ی زبان فارسی در plugin-fa | todo |
 | [STORY-016](STORY-016-translate-pipeline.md) | خط لوله‌ی ترجمه‌ی دسته‌ای با Claude | todo |

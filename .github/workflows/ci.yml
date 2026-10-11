@@ -89,6 +89,10 @@ jobs:
         with:
           name: yarn-lock
           path: yarn.lock
+      - name: Translation coverage
+        run: |
+          node tools/i18n-report
+          { echo '### Translation coverage'; echo '```'; node tools/i18n-report; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Lint
         run: yarn eslint packages/plugins/@persian-erp tools
       - name: Build plugins
