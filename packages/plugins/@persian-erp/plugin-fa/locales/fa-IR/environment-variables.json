@@ -13,10 +13,10 @@
   "Line {{line}}: variable value cannot be empty.": "خط {{line}}: مقدار متغیر نمی‌تواند خالی باشد.",
   "Plain text": "متن ساده",
   "Restart now": "راه‌اندازی دوباره",
-  "Secrets": "رازها",
+  "Secrets": "مقادیر محرمانه",
   "Type": "نوع",
   "Value": "مقدار",
   "Variables": "متغیرها",
-  "Variables and secrets": "متغیرها و رازها",
-  "Variables and secrets have been updated. A restart is required for the changes to take effect.": "متغیرها و رازها به‌روزرسانی شدند. برای اعمال تغییرات، راه‌اندازی دوباره لازم است."
+  "Variables and secrets": "متغیرها و مقادیر محرمانه",
+  "Variables and secrets have been updated. A restart is required for the changes to take effect.": "متغیرها و مقادیر محرمانه به‌روزرسانی شدند. برای اعمال تغییرات، راه‌اندازی دوباره لازم است."
 }

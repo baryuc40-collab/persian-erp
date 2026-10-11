@@ -18,7 +18,7 @@
   "Please enter at least one email address": "لطفاً دست‌کم یک نشانی ایمیل وارد کنید",
   "Secure": "اتصال امن",
   "Send email. You can use the variables in the upstream nodes as receivers, subject and content of the email.": "ارسال ایمیل با فراخوانی سرویس SMTP. می‌توانید از متغیرهای نودهای بالادستی به‌عنوان گیرندگان، موضوع و محتوای ایمیل استفاده کنید.",
-  "SMTP host": "میزبان سرویس",
+  "SMTP host": "میزبان SMTP",
   "Subject": "موضوع",
   "To": "گیرنده",
   "User": "کاربر"

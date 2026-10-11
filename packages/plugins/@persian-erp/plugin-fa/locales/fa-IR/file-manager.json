@@ -8,7 +8,7 @@
   "Attachment": "پیوست",
   "Base URL": "نشانی وب پایه",
   "Base URL for file access, could be your CDN base URL. For example: \"https://cdn.nocobase.com\".": "نشانی وب پایه برای دسترسی به فایل؛ می‌تواند نشانی پایه‌ی CDN شما باشد. برای نمونه: «https://cdn.nocobase.com».",
-  "Bucket": "Bucket",
+  "Bucket": "باکت",
   "Default storage": "فضای ذخیره‌سازی پیش‌فرض",
   "Default storage will be used when not selected": "اگر انتخاب نشود، از فضای ذخیره‌سازی پیش‌فرض استفاده می‌شود",
   "Destination": "مقصد",

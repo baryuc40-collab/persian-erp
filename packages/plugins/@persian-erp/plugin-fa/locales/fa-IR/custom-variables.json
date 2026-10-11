@@ -7,7 +7,7 @@
   "Are you sure you want to delete \"{{label}}\" variable?": "آیا از حذف متغیر «{{label}}» مطمئن هستید؟",
   "Background color": "رنگ پس‌زمینه",
   "Badge": "نشان",
-  "Create an aggregate variable that performs statistical calculations (COUNT, SUM, AVG, MIN, MAX) on data from a specific collection. You can apply filters to narrow down the data scope and optionally use distinct values for counting operations.": "یک متغیر تجمیعی ایجاد کنید که محاسبات آماری (COUNT، SUM، AVG، MIN، MAX) را روی داده‌های یک مجموعه‌ی مشخص انجام می‌دهد. می‌توانید با اعمال فیلتر، محدوده‌ی داده را محدودتر کنید و در صورت نیاز برای عملیات شمارش از مقادیر یکتا استفاده کنید.",
+  "Create an aggregate variable that performs statistical calculations (COUNT, SUM, AVG, MIN, MAX) on data from a specific collection. You can apply filters to narrow down the data scope and optionally use distinct values for counting operations.": "یک متغیر تجمیعی ایجاد کنید که محاسبات آماری (COUNT، SUM، AVG، MIN، MAX) را روی داده‌های یک مجموعه‌ی مشخص انجام می‌دهد. می‌توانید با اعمال فیلتر، محدوده‌ی داده را محدودتر کنید و در صورت نیاز برای عملیات تعداد از مقادیر یکتا استفاده کنید.",
   "Custom Variables": "متغیرهای سفارشی",
   "Data of collection": "داده‌های مجموعه",
   "Default": "پیش‌فرض",
