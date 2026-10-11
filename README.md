@@ -17,6 +17,22 @@
 | [backlog/BACKLOG.md](backlog/BACKLOG.md) | بک‌لاگ اولیه‌ی اپیک‌ها |
 | [CLAUDE.md](CLAUDE.md) | قواعد کار برای عامل‌های هوش مصنوعی در این مخزن |
 
+## اجرا با Docker
+
+پیش‌نیاز: Docker و Docker Compose.
+
+```bash
+cp .env.example .env
+# APP_KEY را در .env با یک رشته‌ی تصادفی عوض کنید: openssl rand -base64 64 | tr -d '\n'
+docker compose up -d
+docker compose logs -f app   # بار اول نصب وابستگی‌ها چند دقیقه طول می‌کشد
+```
+
+سپس http://localhost:13000 را باز کنید. نام کاربری و رمز اولیه در `.env` است (`INIT_ROOT_EMAIL` و `INIT_ROOT_PASSWORD`).
+
+- توقف: `docker compose down` (داده‌ها در volume می‌مانند)
+- پاک کردن کامل داده‌ها: `docker compose down -v`
+
 ## ساختار مخزن (پیشنهادی)
 
 ```
