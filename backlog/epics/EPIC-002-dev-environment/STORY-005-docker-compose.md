@@ -2,7 +2,7 @@
 id: STORY-005
 epic: EPIC-002
 title: Docker Compose با PostgreSQL
-status: todo
+status: in-review
 model: sonnet
 ---
 

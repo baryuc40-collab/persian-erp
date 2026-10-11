@@ -1,0 +1,45 @@
+# محیط توسعه: PostgreSQL + NocoBase از کد همین مخزن
+# اجرا: cp .env.example .env && docker compose up -d
+# نشانی: http://localhost:13000
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-nocobase}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nocobase}
+      POSTGRES_DB: ${DB_DATABASE:-nocobase}
+      TZ: ${TZ:-Asia/Tehran}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    image: node:22-bookworm
+    working_dir: /app
+    env_file: .env
+    environment:
+      # داخل شبکه‌ی Docker نام سرویس جای localhost را می‌گیرد
+      DB_HOST: postgres
+      DB_PORT: 5432
+    # بار اول نصب می‌کند، بارهای بعد فقط ارتقای پایگاه داده در صورت نیاز
+    command: sh -c "yarn install --ignore-engines && yarn check:version && yarn dev --quickstart"
+    ports:
+      - '${APP_PORT:-13000}:${APP_PORT:-13000}'
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+      - yarn-cache:/usr/local/share/.cache/yarn
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  node-modules:
+  yarn-cache:
