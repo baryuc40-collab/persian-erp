@@ -2,7 +2,7 @@
 id: EPIC-002
 title: محیط توسعه (پروژه‌ی NocoBase، Docker Compose، PostgreSQL، CI)
 phase: 0
-status: draft
+status: done
 owner: mmsh
 ---
 
@@ -45,8 +45,8 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-004](STORY-004-app-scaffold.md) | اسکلت پروژه‌ی NocoBase در ریشه‌ی مخزن | in-review |
-| [STORY-005](STORY-005-docker-compose.md) | Docker Compose با PostgreSQL | in-review |
-| [STORY-006](STORY-006-plugin-fa-skeleton.md) | اسکلت پلاگین plugin-fa | in-review |
-| [STORY-007](STORY-007-ci.md) | CI روی Pull Request | in-review |
-| [STORY-008](STORY-008-dev-guide.md) | راهنمای اجرا و آماده‌سازی جلسه‌های ابری | in-review |
+| [STORY-004](STORY-004-app-scaffold.md) | اسکلت پروژه‌ی NocoBase در ریشه‌ی مخزن | done |
+| [STORY-005](STORY-005-docker-compose.md) | Docker Compose با PostgreSQL | done |
+| [STORY-006](STORY-006-plugin-fa-skeleton.md) | اسکلت پلاگین plugin-fa | done |
+| [STORY-007](STORY-007-ci.md) | CI روی Pull Request | done |
+| [STORY-008](STORY-008-dev-guide.md) | راهنمای اجرا و آماده‌سازی جلسه‌های ابری | done |

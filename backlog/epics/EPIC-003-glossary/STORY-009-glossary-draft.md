@@ -2,7 +2,7 @@
 id: STORY-009
 epic: EPIC-003
 title: پیش‌نویس واژه‌نامه
-status: in-review
+status: done
 model: opus
 ---
 
@@ -26,4 +26,4 @@ model: opus
 ## تعریف انجام‌شده
 - [x] تغییرات در یک PR
 - [x] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد
