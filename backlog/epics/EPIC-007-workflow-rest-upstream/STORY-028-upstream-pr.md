@@ -2,7 +2,7 @@
 id: STORY-028
 epic: EPIC-007
 title: ارسال ترجمه‌ی فارسی به مخزن NocoBase
-status: todo
+status: in-progress
 model: sonnet
 ---
 
@@ -23,8 +23,14 @@ model: sonnet
 ## آزمون
 - ساخت مخزن NocoBase با ترجمه‌ها و اجرای lint خودشان
 
+## پیشرفت
+- ۲۰ مهر ۱۴۰۵: صاحب پروژه اجازه‌ی ارسال داد و فورک [baryuc40-collab/nocobase](https://github.com/baryuc40-collab/nocobase) را ساخت.
+- PR اول (هسته‌ی کلاینت، 1642 کلید، شاخه‌ی `i18n/fa-IR-client` روی `main` بالادستی): [nocobase/nocobase#10757](https://github.com/nocobase/nocobase/pull/10757)
+- PRهای بعدی (پلاگین‌ها) پس از بازخورد نگه‌دارنده‌ها، بسته‌بسته.
+
 ## پرسش‌های باز
-- PR بالادستی از حساب GitHub شما ارسال شود؟
+- ~~PR بالادستی از حساب GitHub شما ارسال شود؟~~ بله، از حساب صاحب پروژه.
+- این نشست به API مخزن NocoBase دسترسی ندارد؛ نظرهای نگه‌دارنده‌ها را صاحب پروژه در گفت‌وگو می‌گذارد و هوش مصنوعی اصلاح را روی فورک push می‌کند.
 
 ## تعریف انجام‌شده
 - [ ] تغییرات در یک PR
