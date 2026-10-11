@@ -2,7 +2,7 @@
 id: STORY-030
 epic: EPIC-008
 title: فونت Vazirmatn محلی
-status: in-progress
+status: done
 model: sonnet
 ---
 

@@ -2,7 +2,7 @@
 id: STORY-031
 epic: EPIC-008
 title: آزمون e2e پایه برای فارسی و RTL
-status: in-progress
+status: done
 model: sonnet
 ---
 

@@ -2,7 +2,7 @@
 id: STORY-029
 epic: EPIC-008
 title: جهت راست‌به‌چپ هنگام انتخاب فارسی
-status: in-progress
+status: done
 model: opus   # طراحی؛ پیاده‌سازی با sonnet
 ---
 
