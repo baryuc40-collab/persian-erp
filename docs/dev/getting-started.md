@@ -42,6 +42,7 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 | بررسی قالب واژه‌نامه | `yarn check:glossary` |
 | بررسی ترجمه‌ها با واژه‌نامه | `yarn check:i18n` |
 | گزارش پوشش ترجمه | `yarn i18n:report` (گزینه‌ها: `--missing`، `--package <namespace>`، `--json`، `--min <درصد>`) |
+| ترجمه‌ی کلیدهای جاافتاده‌ی یک پکیج | `yarn i18n:translate <namespace>` (جزئیات پایین) |
 | آزمون ابزارها | `yarn test:tools` |
 
 برای آزمون، فایل `.env.test` لازم است: `sed 's#^APP_ENV=.*#APP_ENV=test#' .env > .env.test`
@@ -58,7 +59,29 @@ plugin-fa با `APPEND_PRESET_BUILT_IN_PLUGINS` در `.env` هنگام نصب ف
 
 ترجمه‌ای که در «مدیریت ترجمه» (Localization) وارد کنید بر ترجمه‌ی plugin-fa برنده است.
 
-وقتی `yarn dev` در حال اجراست، دستورهای CLI مثل `yarn pm enable` را اجرا نکنید. این دستورها `index.html` حالت توسعه را بازنویسی می‌کنند و کلاینت پلاگین‌های محلی دیگر بارگذاری نمی‌شود (صفحه‌ی سفید). اگر اجرا کردید، `yarn dev` را دوباره راه بیندازید. جزئیات در [ADR 0003](../decisions/0003-i18n-delivery.md).
+وقتی `yarn dev` در حال اجراست، دستورهای CLI مثل `yarn pm enable` را اجرا نکنید. این دستورها `index.html` حالت توسعه را بازنویسی می‌کنند و کلاینت پلاگین‌های محلی دیگر بارگذاری نمی‌شود (صفحه‌ی سفید). اگر اجرا کردید، `yarn dev` را دوباره راه بیندازید. اگر صفحه باز هم سفید ماند، الگوی `index.html` هم بازنویسی شده است. آن را از بسته‌ی اصلی برگردانید و `yarn dev` را دوباره اجرا کنید:
+
+```bash
+cp node_modules/@nocobase/app/dist/client/index.html.tpl storage/.app-dev/dist/client/index.html.tpl
+```
+ جزئیات در [ADR 0003](../decisions/0003-i18n-delivery.md).
+
+### ترجمه‌ی یک پکیج
+
+`yarn i18n:translate <namespace>` کلیدهای ترجمه‌نشده‌ی یک پکیج را با Claude API ترجمه می‌کند و در `plugin-fa/locales/fa-IR/<namespace>.json` می‌نویسد. `<namespace>` همان نامی است که `yarn i18n:report` نشان می‌دهد، مثل `client` یا `workflow`.
+
+- کلید API فقط از متغیر محیطی `ANTHROPIC_API_KEY` خوانده می‌شود. مدل پیش‌فرض را با `--model` یا `I18N_TRANSLATE_MODEL` عوض کنید.
+- واژه‌نامه و راهنمای سبک در بخش ثابت پرامپت هستند و cache می‌شوند.
+- هر ترجمه با همان قواعد `check:i18n` سنجیده می‌شود. ترجمه‌ی خطادار یک بار دوباره خواسته می‌شود و اگر باز خطا داشت، نوشته نمی‌شود و در خروجی با `REJECTED` می‌آید.
+- ترجمه‌های موجود عوض نمی‌شوند، مگر با `--force`. گزینه‌های دیگر: `--limit <n>`، `--batch-size <n>`، `--dry-run`.
+
+بدون کلید API (مثلاً وقتی خود عامل در جلسه ترجمه می‌کند):
+
+```bash
+yarn i18n:translate client --export todo.json   # کلیدهای ترجمه‌نشده با متن انگلیسی
+# مقدارهای todo.json را فارسی کنید
+yarn i18n:translate client --import todo.json   # ادغام، با همان بررسی‌ها
+```
 
 ## پلاگین جدید
 
