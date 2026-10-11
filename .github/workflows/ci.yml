@@ -93,6 +93,9 @@ jobs:
         run: |
           node tools/i18n-report
           { echo '### Translation coverage'; echo '```'; node tools/i18n-report; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      # Runs again here with the en-US sources installed, so placeholders are checked against the real text.
+      - name: Translations vs glossary (with en-US sources)
+        run: node tools/glossary-check packages/plugins/@persian-erp
       - name: Lint
         run: yarn eslint packages/plugins/@persian-erp tools
       - name: Build plugins

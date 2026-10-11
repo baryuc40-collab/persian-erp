@@ -49,6 +49,19 @@ test('does not warn about unknown keys when the source is not installed', () => 
   assert.deepStrictEqual(warnings, []);
 });
 
+test('without the source, identifier keys only warn about placeholders; text keys still fail', () => {
+  const fa = { 'RunJS deprecated since': 'از {{since}}', 'Load {{count}} items': 'بارگذاری موارد' };
+  const { errors, warnings } = checkPair({}, fa, glossary, { sourceKnown: false });
+  assert.ok(warnings.some((w) => w.key === 'RunJS deprecated since' && w.message.includes('placeholders differ')));
+  assert.deepStrictEqual(
+    errors.map((e) => e.key),
+    ['Load {{count}} items'],
+  );
+  // With the source installed the same mismatch is an error.
+  const known = checkPair({ 'RunJS deprecated since': 'Since {{version}}' }, fa, glossary);
+  assert.ok(known.errors.some((e) => e.key === 'RunJS deprecated since'));
+});
+
 test('finds locale pack files and maps them to their @nocobase/plugin-* source', () => {
   const fs = require('fs');
   const os = require('os');

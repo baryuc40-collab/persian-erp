@@ -103,7 +103,8 @@ function run(argv, log = console.log) {
     console.error(`${err.message}\n${USAGE}`);
     return 2;
   }
-  let sources = loadSources(opts.nodeModules);
+  const allSources = loadSources(opts.nodeModules);
+  let sources = allSources;
   if (!Object.keys(sources).length) {
     console.error(`no @nocobase/plugin-*/dist/locale/en-US.json under ${opts.nodeModules}; run yarn install first`);
     return 2;
@@ -117,6 +118,8 @@ function run(argv, log = console.log) {
     sources = Object.fromEntries(opts.only.map((ns) => [ns, sources[ns]]));
   }
   const report = buildReport(sources, loadTranslations(opts.locales));
+  // With --package, the other namespaces are not orphans; they are just not in this report.
+  report.orphans = report.orphans.filter((ns) => !allSources[ns]);
 
   if (opts.json) {
     log(JSON.stringify(report, null, 2));
