@@ -35,10 +35,14 @@ describe('app:getLang with plugin-fa', () => {
 
     it('leaves untranslated keys to the English fallback', async () => {
       const data = await getLang(app, 'fa-IR');
-      // A key the pack does not cover is simply absent; i18next then shows the key (the English text).
-      const en = await getLang(app, 'en-US');
-      const untranslated = Object.keys(en.resources.client).find((k) => !(k in data.resources.client));
-      expect(untranslated).toBeTruthy();
+      // A key the pack does not cover must be absent, not an empty string: i18next then shows the key
+      // (the English text). An empty value would render as blank.
+      const empty = Object.entries(data.resources).flatMap(([ns, keys]) =>
+        Object.entries(keys as Record<string, unknown>)
+          .filter(([, v]) => typeof v === 'string' && v.trim() === '')
+          .map(([k]) => `${ns}:${k}`),
+      );
+      expect(empty).toEqual([]);
     });
 
     it('does not touch other languages', async () => {
