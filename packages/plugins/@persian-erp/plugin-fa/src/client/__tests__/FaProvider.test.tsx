@@ -1,0 +1,50 @@
+import { render, screen } from '@testing-library/react';
+import { ConfigProvider } from 'antd';
+import i18next from 'i18next';
+import React, { useContext } from 'react';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+import { FaProvider, isRtlLanguage } from '../FaProvider';
+
+const Direction = () => <span data-testid="dir">{useContext(ConfigProvider.ConfigContext).direction || 'ltr'}</span>;
+
+async function renderIn(lang: string) {
+  const i18n = i18next.createInstance();
+  await i18n.use(initReactI18next).init({ lng: lang, resources: {} });
+  return render(
+    <I18nextProvider i18n={i18n}>
+      <FaProvider>
+        <Direction />
+      </FaProvider>
+    </I18nextProvider>,
+  );
+}
+
+describe('FaProvider', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('dir');
+    document.documentElement.removeAttribute('lang');
+    delete document.documentElement.dataset.faDir;
+  });
+
+  it('detects right-to-left languages', () => {
+    expect(isRtlLanguage('fa-IR')).toBe(true);
+    expect(isRtlLanguage('ar_EG')).toBe(true);
+    expect(isRtlLanguage('en-US')).toBe(false);
+    expect(isRtlLanguage(undefined)).toBe(false);
+  });
+
+  it('switches the page and antd to right-to-left for Persian', async () => {
+    await renderIn('fa-IR');
+    expect(document.documentElement.getAttribute('dir')).toBe('rtl');
+    expect(document.documentElement.getAttribute('lang')).toBe('fa');
+    expect(screen.getByTestId('dir').textContent).toBe('rtl');
+  });
+
+  it('leaves English untouched', async () => {
+    document.documentElement.setAttribute('lang', 'en');
+    await renderIn('en-US');
+    expect(document.documentElement.hasAttribute('dir')).toBe(false);
+    expect(document.documentElement.getAttribute('lang')).toBe('en');
+    expect(screen.getByTestId('dir').textContent).toBe('ltr');
+  });
+});

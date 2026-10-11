@@ -102,3 +102,5 @@ jobs:
         run: yarn build @persian-erp/plugin-fa --no-dts
       - name: Test
         run: yarn test --server packages/plugins/@persian-erp --run
+      - name: Client tests
+        run: yarn test --client packages/plugins/@persian-erp --run

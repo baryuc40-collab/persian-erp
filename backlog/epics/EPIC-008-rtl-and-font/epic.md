@@ -2,7 +2,7 @@
 id: EPIC-008
 title: پلاگین plugin-fa: جهت RTL و فونت Vazirmatn
 phase: 2
-status: approved
+status: in-progress
 owner: mmsh
 ---
 
@@ -41,6 +41,6 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-029](STORY-029-rtl-direction.md) | جهت راست‌به‌چپ هنگام انتخاب فارسی | todo |
+| [STORY-029](STORY-029-rtl-direction.md) | جهت راست‌به‌چپ هنگام انتخاب فارسی | in-progress |
 | [STORY-030](STORY-030-vazirmatn-font.md) | فونت Vazirmatn محلی | todo |
 | [STORY-031](STORY-031-rtl-e2e.md) | آزمون e2e پایه برای فارسی و RTL | todo |
