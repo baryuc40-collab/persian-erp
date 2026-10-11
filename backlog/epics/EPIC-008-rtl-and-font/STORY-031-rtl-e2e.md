@@ -2,7 +2,7 @@
 id: STORY-031
 epic: EPIC-008
 title: آزمون e2e پایه برای فارسی و RTL
-status: todo
+status: in-progress
 model: sonnet
 ---
 
@@ -20,6 +20,10 @@ model: sonnet
 
 ## آزمون
 - اجرای محلی و در CI
+
+## پرسش‌های باز
+- یادداشت فنی می‌گفت از `playwright.config.ts` موجود استفاده شود. `defineConfig` نسخه‌ی NocoBase پارامترهایش را نادیده می‌گیرد و به ابزار e2e مونوریپوی خودش (فایل auth.setup و endpoint وضعیت bundle) وابسته است که در نصب از npm وجود ندارد. برای همین آزمون‌ها با Playwright ساده در `e2e/playwright.config.ts` نوشته شدند.
+- در CI، برنامه با `yarn start --quickstart -d` (حالت production با build پلاگین) بالا می‌آید، نه `yarn dev`.
 
 ## تعریف انجام‌شده
 - [ ] تغییرات در یک PR

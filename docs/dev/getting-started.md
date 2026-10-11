@@ -38,6 +38,8 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 | اجرای توسعه | `yarn dev --quickstart` |
 | build پلاگین | `yarn build @persian-erp/plugin-fa --no-dts` |
 | آزمون پلاگین‌ها | `yarn test --server packages/plugins/@persian-erp --run` |
+| آزمون کلاینت پلاگین‌ها | `yarn test --client packages/plugins/@persian-erp --run` |
+| آزمون e2e فارسی و RTL (برنامه باید روی پورت 13000 بالا باشد) | `yarn test:e2e` |
 | بررسی نسخه‌ی NocoBase | `yarn check:version` |
 | بررسی قالب واژه‌نامه | `yarn check:glossary` |
 | بررسی ترجمه‌ها با واژه‌نامه | `yarn check:i18n` |
