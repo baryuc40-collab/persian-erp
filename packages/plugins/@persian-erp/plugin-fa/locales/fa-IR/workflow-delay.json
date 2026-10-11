@@ -1,0 +1,12 @@
+{
+  "Delay": "تأخیر",
+  "Delay a period of time and then continue or exit the process. Can be used to set wait or timeout times in parallel branches.": "مدتی تأخیر و سپس ادامه یا خروج از فرایند. می‌توان از آن برای تعیین زمان انتظار یا مهلت در شاخه‌های موازی استفاده کرد.",
+  "Duration": "مدت",
+  "Delay duration must be a finite number greater than or equal to 1": "مدت تأخیر باید عددی متناهی و بزرگ‌تر یا مساوی 1 باشد",
+  "Duration must be at least 1": "مدت باید دست‌کم 1 باشد",
+  "End status": "وضعیت پایان",
+  "Fail and exit": "شکست و خروج",
+  "Select status": "انتخاب وضعیت",
+  "Succeed and continue": "موفقیت و ادامه",
+  "Unit": "واحد"
+}

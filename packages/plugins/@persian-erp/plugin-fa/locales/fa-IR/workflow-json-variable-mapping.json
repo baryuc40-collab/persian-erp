@@ -1,0 +1,18 @@
+{
+  "Alias": "نام جایگزین",
+  "Are you sure to clear below items?": "آیا از پاک کردن موارد زیر مطمئن هستید؟",
+  "Clear below items": "پاک کردن موارد زیر",
+  "Delete items": "حذف موارد",
+  "If the JSON object contains array items, parse them. eg: { \"arrayKey\": [ \"item1\", \"item2\" ] will be parsed as \"arrayKey\", \"arrayKey.0\", \"arrayKey.1\", if set to false, only \"arrayKey\" will be parsed.": "اگر شیء JSON شامل عناصر آرایه باشد، آن‌ها نیز تجزیه می‌شوند. برای نمونه: { \"arrayKey\": [ \"item1\", \"item2\" ] به‌صورت \"arrayKey\"، \"arrayKey.0\" و \"arrayKey.1\" تجزیه می‌شود؛ اگر غیرفعال باشد، فقط \"arrayKey\" تجزیه می‌شود.",
+  "Include array index in path": "درج اندیس آرایه در مسیر",
+  "Input example": "نمونه‌ی ورودی",
+  "JSON Data source": "منبع داده‌ی JSON",
+  "JSON data source": "منبع داده‌ی JSON",
+  "JSON variable mapping": "نگاشت متغیر JSON",
+  "Key path": "مسیر کلید",
+  "Parse": "تجزیه",
+  "Please input JSON example like { \"key1\": \"item1\", \"key2\": \"item2\" }": "لطفاً نمونه‌ی JSON را مانند { \"key1\": \"item1\", \"key2\": \"item2\" } وارد کنید",
+  "Please update other node references to the key after clicking the parse button.": "لطفاً پس از کلیک روی دکمه‌ی تجزیه، ارجاع‌های نودهای دیگر به این کلید را به‌روزرسانی کنید.",
+  "Transform a JSON object structure": "تبدیل ساختار یک شیء JSON",
+  "Used for mapping any JSON data to structured variables for usage in subsequent nodes.": "برای نگاشت هر داده‌ی JSON به متغیرهای ساختاریافته جهت استفاده در نودهای بعدی به کار می‌رود."
+}

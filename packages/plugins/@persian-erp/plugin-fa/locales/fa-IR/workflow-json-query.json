@@ -1,0 +1,13 @@
+{
+  "Add property": "افزودن ویژگی",
+  "Alias": "نام جایگزین",
+  "Data source": "منبع داده",
+  "Display label": "برچسب نمایشی",
+  "If the type of query result is object or array of object, could map the properties which to be accessed in subsequent nodes.": "اگر نوع نتیجه‌ی پرس‌وجو شیء یا آرایه‌ای از شیء باشد، می‌توانید ویژگی‌هایی را که در نودهای بعدی به آن‌ها دسترسی لازم است نگاشت کنید.",
+  "JSON calculation": "محاسبه‌ی JSON",
+  "Properties mapping": "نگاشت ویژگی‌ها",
+  "Property key": "کلید ویژگی",
+  "Query engine": "موتور پرس‌وجو",
+  "Query expression": "عبارت پرس‌وجو",
+  "Transforming or calculating values from complex JSON data.": "تبدیل یا محاسبه‌ی مقادیر از داده‌های پیچیده‌ی JSON."
+}

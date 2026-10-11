@@ -1,0 +1,18 @@
+{
+  "Execute a SQL statement in database": "اجرای دستور SQL در پایگاه داده",
+  "Execute a SQL statement in database.": "اجرای دستور SQL در پایگاه داده.",
+  "Include meta information of this query in result": "درج اطلاعات فراداده‌ی این پرس‌وجو در نتیجه",
+  "SQL action": "اکشن SQL",
+  "Parameters": "پارامترها",
+  "SQL parameters. Use $1, $2, etc. as placeholders in SQL and provide values here in order.": "پارامترهای SQL. در SQL از $1، $2 و مانند آن به‌عنوان جانگهدار استفاده کنید و مقادیر را به ترتیب در اینجا وارد کنید.",
+  "Current node is using unsafe injection mode (legacy), which has SQL injection risks.": "نود جاری از حالت تزریق ناامن (قدیمی) استفاده می‌کند که در معرض خطر تزریق SQL است.",
+  "Migrate to safe mode": "انتقال به حالت امن",
+  "SQL parameters. Use :name as placeholders in SQL and provide values here.": "پارامترهای SQL. در SQL از :name به‌عنوان جانگهدار استفاده کنید و مقادیر را در اینجا وارد کنید.",
+  "Name": "نام",
+  "Value": "مقدار",
+  "Add parameter": "افزودن پارامتر",
+  "SQL query result could be used through <1>JSON query node</1>.": "نتیجه‌ی پرس‌وجوی SQL را می‌توان از طریق <1>نود پرس‌وجوی JSON</1> استفاده کرد.",
+  "Select a data source to execute SQL.": "یک منبع داده برای اجرای SQL انتخاب کنید.",
+  "Usage of SQL query result is not supported yet.": "استفاده از نتیجه‌ی پرس‌وجوی SQL هنوز پشتیبانی نمی‌شود.",
+  "Remove parameter": "برداشتن پارامتر"
+}

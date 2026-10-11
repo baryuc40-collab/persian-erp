@@ -1,0 +1,22 @@
+{
+  "Associations to use": "ارتباط‌های مورد استفاده",
+  "Collection": "مجموعه",
+  "Create record action": "اکشن ایجاد رکورد",
+  "Event triggers when submitted a workflow bound form action.": "رویداد هنگام ثبت اکشن فرمِ متصل به گردش‌کار رخ می‌دهد.",
+  "Form data model": "مدل داده‌ی فرم",
+  "Form event": "رویداد فرم",
+  "Global mode, triggered after the completion of the following actions": "حالت سراسری؛ پس از تکمیل اکشن‌های زیر رخ می‌دهد",
+  "Local mode, triggered after the completion of actions bound to this workflow": "حالت محلی؛ پس از تکمیل اکشن‌های متصل به این گردش‌کار رخ می‌دهد",
+  "Post-action event": "رویداد پس از اکشن",
+  "Role of user acted": "نقش کاربر انجام‌دهنده",
+  "Role of user submitted form": "نقش کاربر ثبت‌کننده‌ی فرم",
+  "Select actions": "انتخاب اکشن‌ها",
+  "The collection to which the triggered data belongs.": "مجموعه‌ای که داده‌ی رویداد شروع به آن تعلق دارد.",
+  "Trigger data": "داده‌ی رویداد شروع",
+  "Trigger mode": "حالت اجرا",
+  "Triggered after the completion of a request initiated through an action button or API, such as after adding or updating data. Suitable for data processing, sending notifications, etc., after actions are completed.": "پس از تکمیل درخواستی که از طریق دکمه‌ی اکشن یا API آغاز شده است، مانند پس از افزودن یا به‌روزرسانی داده، اجرا می‌شود. مناسب برای پردازش داده، ارسال اعلان و موارد مشابه پس از تکمیل اکشن‌ها.",
+  "Update record action": "اکشن به‌روزرسانی رکورد",
+  "Use a collection to match form data.": "برای تطبیق داده‌های فرم از یک مجموعه استفاده کنید.",
+  "User acted": "کاربر انجام‌دهنده",
+  "User submitted form": "فرم ثبت‌شده توسط کاربر"
+}
