@@ -2,7 +2,7 @@
 id: EPIC-004
 title: زیرساخت ترجمه: بارگذاری، گزارش و خط لوله
 phase: 1
-status: in-progress
+status: done
 owner: mmsh
 ---
 
@@ -47,4 +47,4 @@ NocoBase از npm نصب می‌شود و ما نمی‌توانیم فایل‌
 | [STORY-013](STORY-013-i18n-delivery-adr.md) | تصمیم روش بارگذاری ترجمه‌ی فارسی (ADR) | done |
 | [STORY-014](STORY-014-i18n-report.md) | ابزار گزارش پوشش ترجمه | done |
 | [STORY-015](STORY-015-locale-loader.md) | بارگذاری بسته‌ی زبان فارسی در plugin-fa | done |
-| [STORY-016](STORY-016-translate-pipeline.md) | خط لوله‌ی ترجمه‌ی دسته‌ای با Claude | in-progress |
+| [STORY-016](STORY-016-translate-pipeline.md) | خط لوله‌ی ترجمه‌ی دسته‌ای با Claude | done |
