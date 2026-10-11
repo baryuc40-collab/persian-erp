@@ -33,6 +33,8 @@ docker compose logs -f app   # بار اول نصب وابستگی‌ها چند
 - توقف: `docker compose down` (داده‌ها در volume می‌مانند)
 - پاک کردن کامل داده‌ها: `docker compose down -v`
 
+راهنمای کامل، اجرای بدون Docker و دستورهای توسعه: [docs/dev/getting-started.md](docs/dev/getting-started.md)
+
 ## ساختار مخزن (پیشنهادی)
 
 ```

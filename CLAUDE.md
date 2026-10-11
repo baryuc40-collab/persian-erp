@@ -14,5 +14,11 @@ ERP بدون‌کد فارسی بر پایه‌ی NocoBase. گام فعلی: ف�
 - به شاخه‌ی پیش‌فرض مستقیم push نکن؛ PR پیش‌نویس باز کن.
 - اگر ابهام داری، در بخش «پرسش‌های باز» استوری بنویس؛ حدس نزن.
 
+## دستورها
+- اجرا: `docker compose up -d` یا `yarn dev --quickstart` (جزئیات در `docs/dev/getting-started.md`)
+- build پلاگین: `yarn build @persian-erp/plugin-fa --no-dts`
+- آزمون: `yarn test --server packages/plugins/@persian-erp --run` و `yarn test:tools`
+- بررسی‌های سبک پیش از PR: `yarn check:version`، `yarn check:glossary`، `yarn check:i18n`
+
 ## مدل‌ها
 راهنمای انتخاب مدل در `docs/plan/02-ai-models.md`.

@@ -2,7 +2,7 @@
 id: STORY-008
 epic: EPIC-002
 title: راهنمای اجرا و آماده‌سازی جلسه‌های ابری
-status: todo
+status: in-review
 model: sonnet
 ---
 
