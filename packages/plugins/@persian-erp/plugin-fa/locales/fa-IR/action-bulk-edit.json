@@ -1,0 +1,18 @@
+{
+  "Bulk edit": "ویرایش گروهی",
+  "Data will be updated": "داده‌ها به‌روزرسانی خواهند شد",
+  "Entire collection": "کل مجموعه",
+  "Bulk edit action settings": "تنظیمات اکشن ویرایش گروهی",
+  "Secondary confirmation": "تأیید دوباره",
+  "Are you sure you want to perform the bulk edit action?": "آیا مطمئن هستید که می‌خواهید اکشن «ویرایش گروهی» را اجرا کنید؟",
+  "Data scope to edit": "محدوده‌ی داده برای ویرایش",
+  "Selected": "انتخاب‌شده",
+  "Assign field values": "تعیین مقدارهای فیلدها",
+  "No assigned fields configured": "هیچ فیلدی برای مقداردهی پیکربندی نشده است",
+  "Collection is required to perform this action": "برای اجرای این اکشن، مجموعه الزامی است",
+  "Please select the records to be edited": "لطفاً رکوردهایی را که باید ویرایش شوند انتخاب کنید",
+  "Saved successfully": "با موفقیت ذخیره شد",
+  "Remains the same": "بدون تغییر",
+  "Changed to": "تغییر کرد به",
+  "Clear": "پاک کردن"
+}

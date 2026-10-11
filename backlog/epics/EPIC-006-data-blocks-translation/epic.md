@@ -42,4 +42,4 @@ owner: mmsh
 | --- | --- | --- |
 | [STORY-022](STORY-022-data-fields.md) | ترجمه‌ی مدیریت داده و فیلدها | in-progress |
 | [STORY-023](STORY-023-blocks-views.md) | ترجمه‌ی بلوک‌ها و نمایه‌ها | in-progress |
-| [STORY-024](STORY-024-actions-forms.md) | ترجمه‌ی اکشن‌ها، فرم‌ها و موبایل | todo |
+| [STORY-024](STORY-024-actions-forms.md) | ترجمه‌ی اکشن‌ها، فرم‌ها و موبایل | in-progress |
