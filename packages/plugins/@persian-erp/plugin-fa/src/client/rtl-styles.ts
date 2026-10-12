@@ -182,6 +182,23 @@ ${RTL} .workflow-versions label {
   margin-left: 0.5em;
 }
 
+/* Tags in table cells (field interface in "Configure fields") wrap instead of running into the next column, which
+   in right-to-left layouts is the switch column on their left. */
+${RTL} .ant-table-cell > .ant-tag {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* Floating AI employee button: it hangs off the end edge of the page, so its rounded side faces the page and it
+   slides in from the left. */
+${RTL} div[role='button'][style*='border-radius: 31px 0'] {
+  border-radius: 0 31px 31px 0 !important;
+  padding: 9px 10px 9px 22px !important;
+}
+${RTL} div[role='button'][style*='border-radius: 31px 0'][style*='translateX(-8px)'] {
+  transform: translateX(8px) !important;
+}
+
 /* Rich text (Quill) content. */
 ${RTL} .ql-editor {
   text-align: right;
