@@ -41,6 +41,6 @@ NocoBase در بسیاری جاها از استایل‌های فیزیکی (`le
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
 | [STORY-032](STORY-032-rtl-audit.md) | فهرست‌برداری استایل‌های فیزیکی هسته | done |
-| [STORY-033](STORY-033-visual-tests.md) | آزمون تصویری صفحه‌های کلیدی در RTL | in-progress |
-| [STORY-034](STORY-034-rtl-fix-shell.md) | اصلاح RTL در پوسته، منو، جدول و فرم | todo |
+| [STORY-033](STORY-033-visual-tests.md) | آزمون تصویری صفحه‌های کلیدی در RTL | done |
+| [STORY-034](STORY-034-rtl-fix-shell.md) | اصلاح RTL در پوسته، منو، جدول و فرم | in-progress |
 | [STORY-035](STORY-035-rtl-fix-designers.md) | اصلاح RTL در طراح رابط و طراح گردش‌کار | todo |

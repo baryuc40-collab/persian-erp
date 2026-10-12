@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react';
-import { ConfigProvider, theme } from 'antd';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { ConfigProvider, Modal, theme } from 'antd';
 import i18next from 'i18next';
 import React, { useContext } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { FaProvider, isRtlLanguage } from '../FaProvider';
+import { RTL_STYLE_ID, rtlStyles } from '../rtl-styles';
 
 const Direction = () => (
   <>
@@ -12,6 +13,7 @@ const Direction = () => (
   </>
 );
 const fontStyle = () => document.getElementById('persian-erp-fa-font');
+const rtlStyle = () => document.getElementById(RTL_STYLE_ID);
 
 async function renderIn(lang: string) {
   const i18n = i18next.createInstance();
@@ -57,6 +59,35 @@ describe('FaProvider', () => {
     expect(fontStyle()).toBeNull();
   });
 
+  it('adds the RTL style corrections for Persian and removes them on unmount', async () => {
+    const { unmount } = await renderIn('fa-IR');
+    expect(rtlStyle()?.textContent).toContain('margin-right:8px !important');
+    unmount();
+    expect(rtlStyle()).toBeNull();
+  });
+
+  it('scopes every RTL correction to right-to-left pages', () => {
+    const selectors = rtlStyles()
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\{[^}]*\}/g, '\n')
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    expect(selectors.length).toBeGreaterThan(100);
+    for (const selector of selectors) expect(selector.startsWith("html[dir='rtl'] ")).toBe(true);
+  });
+
+  it('opens static Modal.confirm dialogs right-to-left', async () => {
+    const { unmount } = await renderIn('fa-IR');
+    let modal: { destroy: () => void } | undefined;
+    act(() => {
+      modal = Modal.confirm({ title: 'confirm' });
+    });
+    await waitFor(() => expect(document.querySelector('.ant-modal-confirm-rtl')).not.toBeNull());
+    act(() => modal?.destroy());
+    unmount();
+  });
+
   it('leaves English untouched', async () => {
     document.documentElement.setAttribute('lang', 'en');
     await renderIn('en-US');
@@ -65,5 +96,6 @@ describe('FaProvider', () => {
     expect(screen.getByTestId('dir').textContent).toBe('ltr');
     expect(screen.getByTestId('font').textContent).not.toContain('Vazirmatn');
     expect(fontStyle()).toBeNull();
+    expect(rtlStyle()).toBeNull();
   });
 });
