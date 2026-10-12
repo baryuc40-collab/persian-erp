@@ -15,6 +15,9 @@ declare module 'dayjs' {
   }
 }
 
+// jalaliday's instance fields: the calendar name and the method that fills the Jalali year, month and day.
+type JalaliInternals = { $C: string; InitJalali(): void };
+
 let installed = false;
 
 export function installJalali() {
@@ -24,10 +27,14 @@ export function installJalali() {
   const gregorianClone = proto.clone;
   dayjs.extend(jalaliday);
   // jalaliday replaces clone() for every instance and drops the utc offset and timezone that the utc and timezone
-  // plugins keep on the instance. Keep dayjs's own clone for Gregorian instances.
-  const jalaliClone = proto.clone;
-  proto.clone = function (this: Dayjs) {
-    return this.isJalali() ? jalaliClone.call(this) : gregorianClone.call(this);
+  // plugins keep on the instance. Clone with dayjs's own clone and carry the calendar over instead.
+  proto.clone = function (this: Dayjs & JalaliInternals) {
+    const copy = gregorianClone.call(this) as Dayjs & JalaliInternals;
+    if (this.isJalali()) {
+      copy.$C = this.$C;
+      copy.InitJalali();
+    }
+    return copy;
   };
 }
 

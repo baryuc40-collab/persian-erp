@@ -44,6 +44,13 @@ describe('Jalali dayjs helpers', () => {
     const zoned = dayjs.tz('2026-10-12 10:00', 'Pacific/Marquesas');
     expect(zoned.clone().format('Z')).toBe('-09:30');
   });
+
+  it('keeps the utc offset in the Jalali calendar', () => {
+    const offset = dayjs.utc('2026-10-12T20:30:00Z').utcOffset(-570);
+    expect(formatJalali(offset, 'YYYY/MM/DD HH:mm')).toBe('1405/07/20 11:00');
+    expect(toJalali(offset)!.clone().format('YYYY/MM/DD HH:mm Z')).toBe('1405/07/20 11:00 -09:30');
+    expect(toGregorian(toJalali(offset)!).format('YYYY-MM-DD HH:mm Z')).toBe('2026-10-12 11:00 -09:30');
+  });
 });
 
 describe('jalaliGenerateConfig', () => {
