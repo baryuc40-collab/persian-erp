@@ -2,7 +2,7 @@
 id: STORY-038
 epic: EPIC-010
 title: هسته‌ی جلالی plugin-fa: jalaliday و generateConfig
-status: todo
+status: in-review
 model: opus
 ---
 
@@ -25,6 +25,6 @@ model: opus
 - آزمون واحد vitest برای تبدیل، قالب‌بندی، `generateConfig` و ثابت ماندن تقویم پیش‌فرض.
 
 ## تعریف انجام‌شده
-- [ ] کد و آزمون در یک PR
+- [x] کد و آزمون در یک PR
 - [ ] PR به این استوری لینک دارد
 - [ ] بازبینی شد و ادغام شد
