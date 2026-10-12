@@ -124,6 +124,64 @@ ${RTL} .nb-markdown td {
   text-align: right;
 }
 
+/* Block toolbar in UI design mode (classic and modern pages): the title tag goes at the start (right) and the
+   drag/add/settings icons at the end (left), mirroring the left-to-right layout. */
+${RTL} .toolbar-title,
+${RTL} .nb-toolbar-container > .nb-toolbar-container-title {
+  left: auto;
+  right: 2px;
+}
+${RTL} .toolbar-icons,
+${RTL} .general-schema-designer-icons,
+${RTL} .nb-toolbar-container > .nb-toolbar-container-icons {
+  right: auto !important;
+  left: 2px !important;
+}
+${RTL} .toolbar-icons .ant-space-item,
+${RTL} .general-schema-designer-icons .ant-space-item {
+  padding-left: 0 !important;
+  padding-right: 1px !important;
+}
+
+/* Workflow canvas. The branches of a condition or loop follow the page direction, so the connector lines and the
+   Yes/No labels have to follow them too. */
+${RTL} .workflow-branch:first-child:not(:last-child)::before,
+${RTL} .workflow-branch:first-child:not(:last-child)::after {
+  left: auto;
+  right: 50%;
+}
+${RTL} .workflow-branch ~ div:last-child::before,
+${RTL} .workflow-branch ~ div:last-child::after {
+  right: auto;
+  left: 50%;
+}
+${RTL} .workflow-canvas span[style*='right: 4em;'] {
+  right: auto !important;
+  left: 4em;
+}
+${RTL} .workflow-canvas span[style*='left: 4em;'] {
+  left: auto !important;
+  right: 4em;
+}
+/* Loop node: the return line sits after the loop body, and the body is padded on the other side to stay centred. */
+${RTL} .workflow-canvas div:has(> .workflow-branch:first-child + div > .workflow-branch-lines) {
+  padding-left: 0;
+  padding-right: 4em;
+}
+/* Zoom slider and the clipboard preview swap corners. */
+${RTL} .workflow-canvas-zoomer {
+  right: auto;
+  left: 2em;
+}
+${RTL} div:has(> .workflow-clipboard-header) {
+  left: auto;
+  right: 2em;
+}
+${RTL} .workflow-versions label {
+  margin-right: 0;
+  margin-left: 0.5em;
+}
+
 /* Rich text (Quill) content. */
 ${RTL} .ql-editor {
   text-align: right;

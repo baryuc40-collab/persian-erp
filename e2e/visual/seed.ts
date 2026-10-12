@@ -5,6 +5,7 @@ import { Api } from '../helpers';
 
 export const WORKFLOW_TITLE = 'گردش‌کار نمونه';
 export const PAGE_TITLE = 'صفحه‌ی نمونه';
+export const LOOP_WORKFLOW_TITLE = 'گردش‌کار حلقه‌ی نمونه';
 
 async function findOne(api: Api, resource: string, title: string) {
   const res = await api.request.get(`/api/${resource}:list`, {
@@ -38,6 +39,22 @@ export async function seedWorkflow(api: Api): Promise<number> {
   });
   await api.call(nodes, { type: 'calculation', title: 'محاسبه', upstreamId: condition.id, branchIndex: 0, config: {} });
   await api.call(nodes, { type: 'calculation', title: 'محاسبه‌ی نهایی', upstreamId: condition.id, config: {} });
+  return workflow.id;
+}
+
+// A loop node with one node inside, so the loop's return line is visible.
+export async function seedLoopWorkflow(api: Api): Promise<number> {
+  const existing = await findOne(api, 'workflows', LOOP_WORKFLOW_TITLE);
+  if (existing) return existing.id;
+  const workflow = await api.call('workflows:create', {
+    title: LOOP_WORKFLOW_TITLE,
+    type: 'collection',
+    sync: false,
+    config: { mode: 1, collection: 'users' },
+  });
+  const nodes = `workflows/${workflow.id}/nodes:create`;
+  const loop = await api.call(nodes, { type: 'loop', title: 'حلقه', config: { target: 3 } });
+  await api.call(nodes, { type: 'calculation', title: 'درون حلقه', upstreamId: loop.id, branchIndex: 0, config: {} });
   return workflow.id;
 }
 
