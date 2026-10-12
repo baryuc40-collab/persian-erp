@@ -1,7 +1,7 @@
 import { expect, Locator, Page, test } from '@playwright/test';
 import path from 'path';
 import { apiAs, enablePersian, openAs } from '../helpers';
-import { PAGE_TITLE, seedPage, seedWorkflow } from './seed';
+import { PAGE_TITLE, seedLoopWorkflow, seedPage, seedWorkflow } from './seed';
 
 // Visual regression tests for the key screens from docs/research/rtl-audit.md, in Persian (RTL) and English (LTR).
 // Reference images live in e2e/__screenshots__ and are generated in CI (see docs/dev/getting-started.md).
@@ -11,6 +11,7 @@ type Locale = (typeof LOCALES)[number];
 const text = (locale: Locale, fa: string, en: string) => (locale === 'fa-IR' ? fa : en);
 
 let workflowId: number;
+let loopWorkflowId: number;
 let pageUid: string;
 
 test.describe.configure({ mode: 'serial' });
@@ -19,6 +20,7 @@ test.beforeAll(async ({ playwright, baseURL }) => {
   const api = await apiAs(playwright, baseURL!);
   await enablePersian(api);
   workflowId = await seedWorkflow(api);
+  loopWorkflowId = await seedLoopWorkflow(api);
   pageUid = await seedPage(api);
   await api.request.dispose();
 });
@@ -125,6 +127,11 @@ const cases: Case[] = [
     },
     // The node key and the version number are generated.
     mask: (page) => [page.getByText(/#\d{6,}/), page.locator('.ant-drawer-open .ant-drawer-header code, .ant-drawer-open .ant-drawer-extra')],
+  },
+  {
+    name: 'workflow-loop',
+    path: () => `/admin/settings/workflow/workflows/${loopWorkflowId}`,
+    mask: (page) => [page.getByText(/#\d{6,}/)],
   },
   { name: 'mobile', path: () => '/m' },
 ];
