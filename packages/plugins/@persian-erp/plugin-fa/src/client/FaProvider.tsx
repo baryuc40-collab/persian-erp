@@ -1,7 +1,8 @@
 import { ConfigProvider, theme } from 'antd';
-import React, { useLayoutEffect, useMemo } from 'react';
+import React, { useContext, useLayoutEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FA_FONT_FAMILY, installFont } from './font';
+import { installRtlStyles } from './rtl-styles';
 
 // Languages written right to left. Persian is the one this plugin ships; the others only switch direction.
 export const RTL_LANGUAGES = ['fa', 'ar', 'he', 'ur', 'ckb'];
@@ -16,6 +17,7 @@ export const isRtlLanguage = (lang?: string) => RTL_LANGUAGES.includes(baseLangu
 export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
   const { i18n } = useTranslation();
   const { token } = theme.useToken();
+  const { locale } = useContext(ConfigProvider.ConfigContext);
   const lang = i18n?.language;
   const rtl = isRtlLanguage(lang);
   const persian = baseLanguage(lang) === 'fa';
@@ -36,7 +38,23 @@ export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
 
   useLayoutEffect(() => (persian ? installFont(token.fontFamily) : undefined), [persian, token.fontFamily]);
 
+  useLayoutEffect(() => (rtl ? installRtlStyles() : undefined), [rtl]);
+
   const themeConfig = useMemo(() => (persian ? { token: { fontFamily } } : undefined), [persian, fontFamily]);
+
+  // Modal.confirm(), message and notification called as static methods render outside this tree, so they get the
+  // direction, language and font through antd's holderRender instead.
+  useLayoutEffect(() => {
+    if (!rtl) return undefined;
+    ConfigProvider.config({
+      holderRender: (node) => (
+        <ConfigProvider direction="rtl" locale={locale} theme={themeConfig}>
+          {node}
+        </ConfigProvider>
+      ),
+    });
+    return () => ConfigProvider.config({ holderRender: undefined });
+  }, [rtl, locale, themeConfig]);
 
   if (!rtl) return <>{children}</>;
   return (

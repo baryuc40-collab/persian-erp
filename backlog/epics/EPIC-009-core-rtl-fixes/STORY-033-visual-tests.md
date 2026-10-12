@@ -2,7 +2,7 @@
 id: STORY-033
 epic: EPIC-009
 title: آزمون تصویری صفحه‌های کلیدی در RTL
-status: in-progress
+status: done
 model: sonnet
 ---
 
