@@ -40,5 +40,9 @@
   "Resalat Bank": "Resalat Bank",
   "Middle East Bank": "Middle East Bank",
   "Sheba number": "Sheba number",
-  "{{field}} is not a valid Sheba number": "{{field}} is not a valid Sheba number"
+  "{{field}} is not a valid Sheba number": "{{field}} is not a valid Sheba number",
+  "Postal code": "Postal code",
+  "Mobile number": "Mobile number",
+  "{{field}} is not a valid postal code": "{{field}} is not a valid postal code",
+  "{{field}} is not a valid mobile number": "{{field}} is not a valid mobile number"
 }

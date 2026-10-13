@@ -32,11 +32,12 @@ const submit = (page: Page) =>
     .click();
 
 for (const kind of ['classic', 'modern']) {
-  test(`${kind} table shows a Sheba number in groups with its bank`, async ({ page }) => {
+  test(`${kind} table shows a Sheba number with its bank and a postal code with a dash`, async ({ page }) => {
     await openAs(page, 'fa-IR', `/admin/${pages[kind]}`);
     const row = page.locator('.ant-table-tbody tr.ant-table-row').first();
     await expect(row).toContainText('IR11 0170 0000 0012 3456 7890 01');
     await expect(row).toContainText('بانک ملی ایران');
+    await expect(row).toContainText('13185-34567');
   });
 
   test(`${kind} form refuses an invalid national ID and stores a valid one`, async ({ page, playwright, baseURL }) => {

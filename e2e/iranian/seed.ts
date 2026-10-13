@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { Api } from '../helpers';
 
-// A collection with a national ID and a Sheba field, one record, and a classic (v1) and a modern (v2) page, each with a table and
+// A collection with national ID, Sheba and postal code fields, one record, and a classic (v1) and a modern (v2) page, each with a table and
 // a create form. Pages are hidden from the menu, as in jalali/seed.ts.
 
 export const COLLECTION = 'iranian_samples';
@@ -51,11 +51,27 @@ export async function seedCollection(api: Api) {
             'x-validator': { iranSheba: true },
           },
         },
+        {
+          name: 'postal',
+          type: 'string',
+          interface: 'iranPostalCode',
+          uiSchema: {
+            type: 'string',
+            title: 'کد پستی',
+            'x-component': 'IranianFieldInput',
+            'x-component-props': { maxLength: 12, kind: 'iranPostalCode' },
+            'x-validator': { iranPostalCode: true },
+          },
+        },
       ],
     });
   }
   if (!(await list(api, COLLECTION, {})).length)
-    await api.call(`${COLLECTION}:create`, { nid: '0499370899', sheba: 'IR110170000000123456789001' });
+    await api.call(`${COLLECTION}:create`, {
+      nid: '0499370899',
+      sheba: 'IR110170000000123456789001',
+      postal: '1318534567',
+    });
 }
 
 const row = (properties: object) => ({
@@ -116,6 +132,19 @@ export async function seedV1Page(api: Api): Promise<string> {
             properties: {
               sheba: {
                 'x-collection-field': `${COLLECTION}.sheba`,
+                'x-component': 'CollectionField',
+                'x-read-pretty': true,
+                'x-decorator': null,
+              },
+            },
+          },
+          postal: {
+            type: 'void',
+            'x-decorator': 'TableV2.Column.Decorator',
+            'x-component': 'TableV2.Column',
+            properties: {
+              postal: {
+                'x-collection-field': `${COLLECTION}.postal`,
                 'x-component': 'CollectionField',
                 'x-read-pretty': true,
                 'x-decorator': null,
@@ -229,6 +258,16 @@ export async function seedV2Page(api: Api): Promise<string> {
                   tableColumnSettings: { model: { use: 'DisplayIranianFieldModel' } },
                 },
                 props: { title: 'شبا', dataIndex: 'sheba', width: 400 },
+                subModels: { field: { uid: uid('cf'), use: 'DisplayIranianFieldModel', props: {} } },
+              },
+              {
+                uid: uid('cc'),
+                use: 'TableColumnModel',
+                stepParams: {
+                  fieldSettings: { init: { ...init, fieldPath: 'postal' } },
+                  tableColumnSettings: { model: { use: 'DisplayIranianFieldModel' } },
+                },
+                props: { title: 'کد پستی', dataIndex: 'postal', width: 200 },
                 subModels: { field: { uid: uid('cf'), use: 'DisplayIranianFieldModel', props: {} } },
               },
             ],
