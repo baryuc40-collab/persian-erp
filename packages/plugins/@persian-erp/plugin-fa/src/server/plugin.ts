@@ -3,6 +3,7 @@ import { installJalaliChartFormatter, jalaliChartsMiddleware } from './jalali-ch
 import { jalaliFilterMiddleware } from './jalali-filter';
 import { registerJalaliHelper } from './jalali-handlebars';
 import { registerJalaliInterfaces } from './jalali-interfaces';
+import { registerLatinDigits } from './latin-digits';
 import { readLocalePack } from './locale-pack';
 
 export class PluginFaServer extends Plugin {
@@ -26,6 +27,8 @@ export class PluginFaServer extends Plugin {
       tag: 'persian-erp-jalali-filter',
       before: 'parseVariables',
     });
+    // Persian and Arabic digits are stored as Latin ones; see latin-digits.ts.
+    registerLatinDigits(this.db);
     // Jalali dates in Excel export and import; see jalali-interfaces.ts.
     registerJalaliInterfaces(this.db);
     // Jalali relative filters and date groups in charts; see jalali-charts.ts.
