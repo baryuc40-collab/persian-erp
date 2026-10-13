@@ -1,4 +1,5 @@
 import { Plugin } from '@nocobase/server';
+import { installJalaliChartFormatter, jalaliChartsMiddleware } from './jalali-charts';
 import { jalaliFilterMiddleware } from './jalali-filter';
 import { registerJalaliInterfaces } from './jalali-interfaces';
 import { readLocalePack } from './locale-pack';
@@ -26,6 +27,9 @@ export class PluginFaServer extends Plugin {
     });
     // Jalali dates in Excel export and import; see jalali-interfaces.ts.
     registerJalaliInterfaces(this.db);
+    // Jalali relative filters and date groups in charts; see jalali-charts.ts.
+    installJalaliChartFormatter();
+    this.app.resourceManager.use(jalaliChartsMiddleware, { tag: 'persian-erp-jalali-charts' });
   }
 
   async install() {}
