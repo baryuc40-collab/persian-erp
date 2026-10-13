@@ -1,6 +1,7 @@
 import { Plugin } from '@nocobase/client';
 // @ts-ignore
 import pkg from '../../package.json';
+import { IranianCurrency, IranianCurrencyFieldInterface, registerCurrencyModels } from './currency';
 import models from './models';
 import { FaProvider } from './FaProvider';
 import { PersianSettings } from './PersianSettings';
@@ -34,6 +35,10 @@ export class PluginFaClient extends Plugin {
       Component: PersianSettings,
       aclSnippet: 'pm.persian-erp',
     });
+    // Amounts in rials or tomans (STORY-054).
+    this.app.addComponents({ IranianCurrency });
+    this.app.dataSourceManager.addFieldInterfaces([IranianCurrencyFieldInterface]);
+    registerCurrencyModels(this.flowEngine);
     this.app.use(FaProvider);
   }
 
