@@ -2,7 +2,7 @@
 id: STORY-047
 epic: EPIC-011
 title: بررسی تاریخ در گردش‌کار
-status: in-review
+status: done
 model: sonnet
 ---
 
@@ -28,4 +28,4 @@ model: sonnet
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد ([#52](https://github.com/baryuc40-collab/persian-erp/pull/52))
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد

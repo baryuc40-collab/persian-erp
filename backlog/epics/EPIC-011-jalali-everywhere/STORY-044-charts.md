@@ -2,7 +2,7 @@
 id: STORY-044
 epic: EPIC-011
 title: نمودار: برچسب و گروه‌بندی شمسی
-status: in-review
+status: done
 model: opus   # SQL تبدیل تقویم
 ---
 
@@ -44,4 +44,4 @@ model: opus   # SQL تبدیل تقویم
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد ([#51](https://github.com/baryuc40-collab/persian-erp/pull/51))
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد
