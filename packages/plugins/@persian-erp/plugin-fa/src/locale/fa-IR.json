@@ -7,5 +7,8 @@
   "Stored in rials; shown and typed in rials or tomans.": "به ریال ذخیره می‌شود و به ریال یا تومان نمایش و وارد می‌شود.",
   "Display unit": "واحد نمایش",
   "Rial": "ریال",
-  "Toman": "تومان"
+  "Toman": "تومان",
+  "Digits": "ارقام",
+  "Persian digits": "فارسی",
+  "Latin digits": "لاتین"
 }
