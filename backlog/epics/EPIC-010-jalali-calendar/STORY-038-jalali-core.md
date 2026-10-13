@@ -2,7 +2,7 @@
 id: STORY-038
 epic: EPIC-010
 title: هسته‌ی جلالی plugin-fa: jalaliday و generateConfig
-status: in-review
+status: done
 model: opus
 ---
 
@@ -26,5 +26,5 @@ model: opus
 
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
-- [ ] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] PR به این استوری لینک دارد
+- [x] بازبینی شد و ادغام شد
