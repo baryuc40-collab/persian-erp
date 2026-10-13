@@ -63,3 +63,25 @@
 | --- | --- | --- | --- |
 | `jalaliday` | 3.1.1 | MIT | افزونه‌ی dayjs؛ تقویم را برای هر نمونه با `.calendar('jalali')` عوض می‌کند و پیش‌فرض را میلادی نگه می‌دارد |
 | `antd-jalali` | 2.0.1 | MIT | `generateConfig` جلالی برای antd v5 بر پایه‌ی jalaliday؛ وابسته به jalaliday 2.x |
+
+## ۷. گردش‌کار (STORY-047)
+
+گردش‌کار بدون درخواست کاربر اجرا می‌شود، پس سرآیند `X-Calendar` (STORY-042) آنجا نیست و سرور نمی‌داند تقویم چه کسی را به کار ببرد.
+
+| نقطه | کجا | وضعیت | پیشنهاد |
+| --- | --- | --- | --- |
+| متغیرهای بازه‌ی تاریخ (`dateRange.thisMonth` و ...) | `plugin-workflow/src/server/functions/index.ts` با `functions.register` | میلادی، با منطقه‌ی زمانی سرور | ثبت دوباره‌ی همین نام‌ها با بازه‌ی شمسی (`shared/jalali-ranges.ts`)، به شرط یک تنظیم سیستمی «تقویم پیش‌فرض: شمسی». `functions` یک Registry است و ثبت دوباره جایگزین می‌کند. |
+| تریگر زمان‌بندی ثابت (تکرار ماهانه و cron) | `plugin-workflow/src/server/triggers/ScheduleTrigger/StaticScheduleTrigger.ts` با `cron-parser` | میلادی | cron نمی‌تواند «اول هر ماه شمسی» را بیان کند. راه ممکن: یک تریگر تازه یا تکرار روزانه به همراه شرط «امروز اول ماه شمسی است» با یک تابع `jalali.isMonthStart`. |
+| تریگر زمان‌بندی بر پایه‌ی فیلد تاریخ | `DateFieldScheduleTrigger.ts` | فاصله‌ها روزانه‌اند | به تقویم بستگی ندارد. |
+| متن پیام اعلان | `plugin-notification-manager/src/server/utils/compile.ts` با `Handlebars` از `@nocobase/utils` | تاریخ به شکل ISO | `Handlebars` بین پلاگین‌ها مشترک است. پس plugin-fa می‌تواند helper به نام `jalali` ثبت کند (`{{jalali date "YYYY/MM/DD"}}`). باید بررسی شود که متغیرهای گردش‌کار پیش از Handlebars جایگزین می‌شوند یا نه. |
+| فیلتر نود «پرس‌وجو» | `{{$nDate.thisMonth}}` در فیلتر نود | میلادی، بدون سرآیند | با همان تنظیم سیستمی، میان‌افزار STORY-042 می‌تواند برای کارهای بدون درخواست هم شمسی حساب کند. |
+
+نتیجه: پیش‌نیاز مشترک همه‌ی این موارد یک **تنظیم سیستمی تقویم پیش‌فرض** است (STORY-048). بعد از آن، متغیرهای بازه‌ی شمسی (STORY-049) و helper قالب پیام (STORY-050) کار کوچکی‌اند.
+
+## ۸. بلوک تقویم و گانت (STORY-045 و STORY-046)
+
+- react-big-calendar و date-fns در بسته‌ی ساخته‌شده‌ی `plugin-calendar` قرار دارند و بین پلاگین‌ها مشترک نیستند. localizer هم درون کامپوننت ساخته می‌شود (`Calendar.tsx:349`، `CalendarBlock.tsx:351`). پس از بیرون نمی‌شود جایش را گرفت.
+- قالب‌های عنوان (`monthHeaderFormat` و ...) با نشانه‌های date-fns نوشته شده‌اند و نوار ابزار، سرستون‌ها و بازه‌ی دیده‌شده هم جداگانه با dayjs و date-fns حساب می‌شوند. در مجموع ده فایل و حدود ۲۰۰۰ خط درگیرند.
+- گانت با `Date` خام و `getMonth()` کار می‌کند (`plugin-gantt/src/client{,-v2}/.../date-helper.ts` و `components/calendar/calendar.tsx`).
+- وصله زدن روی کد ساخته‌شده و فشرده‌ی این دو پلاگین شکننده است و با هر نسخه می‌شکند. نوشتن دوباره‌ی آن‌ها در plugin-fa هم مجاز نیست، چون کدشان AGPL است و plugin-fa مجوز Apache دارد.
+- تصمیم: این دو استوری منتظر یک نقطه‌ی گسترش در خود NocoBase می‌مانند: «تقویم پیش‌فرض قابل‌تعویض برای بلوک تقویم و گانت» (adapter تاریخ). متن پیشنهادی issue در `/mnt/project-files/upstream/calendar-adapter-issue.md` آماده است.
