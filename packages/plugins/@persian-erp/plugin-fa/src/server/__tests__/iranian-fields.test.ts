@@ -11,6 +11,7 @@ describe('Iranian fields on save', () => {
       fields: [
         { type: 'string', name: 'nid', interface: 'iranNationalId', uiSchema: { title: 'کد ملی' } },
         { type: 'string', name: 'company', interface: 'iranLegalId' },
+        { type: 'string', name: 'sheba', interface: 'iranSheba' },
       ],
     });
     await app.db.sync();
@@ -40,6 +41,14 @@ describe('Iranian fields on save', () => {
     res = await create({ company: '10380284791' });
     expect(res.status).toBe(400);
     expect(await app.db.getRepository('people').count()).toBe(0);
+  });
+
+  it('stores Sheba numbers with IR and no spaces, and refuses wrong check digits', async () => {
+    expect((await create({ sheba: '11 0170 0000 0012 3456 7890 01' })).status).toBe(200);
+    expect((await app.db.getRepository('people').findOne()).get('sheba')).toBe('IR110170000000123456789001');
+    const res = await create({ sheba: 'IR120170000000123456789001' }, 'fa-IR');
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0].message).toContain('شماره‌ی شبا');
   });
 
   it('accepts an empty value', async () => {

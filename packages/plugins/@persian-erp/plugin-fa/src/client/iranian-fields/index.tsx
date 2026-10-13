@@ -7,9 +7,14 @@ import { registerValidateRules } from '@formily/core';
 import { CollectionFieldInterface, defaultProps, operators, unique } from '@nocobase/client';
 import type { Application } from '@nocobase/client';
 import { DisplayItemModel, EditableItemModel, FilterableItemModel } from '@nocobase/flow-engine';
+import type { FlowEngine } from '@nocobase/flow-engine';
+import React from 'react';
 // @ts-ignore
 import pkg from '../../../package.json';
 import { IRANIAN_FIELD_KINDS, IranianFieldKind } from '../../shared/iranian-fields';
+import { IranianFieldInput, IranianFieldText } from './IranianFieldText';
+
+export { IranianFieldInput, IranianFieldText };
 
 const t = (key: string) => `{{t(${JSON.stringify(key)}, { ns: ${JSON.stringify(pkg.name)} })}}`;
 
@@ -27,8 +32,9 @@ export function interfaceFor(kind: IranianFieldKind) {
       type: 'string',
       uiSchema: {
         type: 'string',
-        'x-component': 'Input',
-        'x-component-props': { maxLength: kind.maxLength },
+        // Kinds with their own display (Sheba in groups of four with the bank) use IranianFieldInput.
+        'x-component': kind.format || kind.describe ? 'IranianFieldInput' : 'Input',
+        'x-component-props': { maxLength: kind.maxLength, kind: kind.name },
         'x-validator': { [kind.name]: true },
       },
     };
@@ -40,7 +46,8 @@ export function interfaceFor(kind: IranianFieldKind) {
   };
 }
 
-export function registerIranianFields(app: Application) {
+export function registerIranianFields(app: Application, flowEngine: FlowEngine) {
+  app.addComponents({ IranianFieldInput });
   app.addFieldInterfaceGroups({ [IRANIAN_GROUP]: { label: t('Iranian'), order: 2.5 } });
   app.dataSourceManager.addFieldInterfaces(IRANIAN_FIELD_KINDS.map(interfaceFor));
   registerValidateRules(
@@ -57,5 +64,24 @@ export function registerIranianFields(app: Application) {
   const names = IRANIAN_FIELD_KINDS.map((kind) => kind.name);
   EditableItemModel.bindModelToInterface('InputFieldModel', names, { isDefault: true });
   FilterableItemModel.bindModelToInterface('InputFieldModel', names, { isDefault: true });
-  DisplayItemModel.bindModelToInterface('DisplayTextFieldModel', names, { isDefault: true });
+  const formatted = IRANIAN_FIELD_KINDS.filter((kind) => kind.format || kind.describe).map((kind) => kind.name);
+  DisplayItemModel.bindModelToInterface(
+    'DisplayTextFieldModel',
+    names.filter((name) => !formatted.includes(name)),
+    { isDefault: true },
+  );
+
+  // Modern (v2) pages: formatted kinds get a display model that renders IranianFieldText, subclassed from the flow
+  // engine's own class like jalali/models.ts does.
+  const DisplayBase = flowEngine.getModelClass('ClickableFieldModel') as any;
+  if (!DisplayBase) return;
+  class DisplayIranianFieldModel extends DisplayBase {
+    renderComponent(value: unknown) {
+      const { className, style } = this.props;
+      const kind = this.props.kind ?? this.context?.collectionField?.interface;
+      return <IranianFieldText value={value} kind={kind} className={className} style={style} />;
+    }
+  }
+  flowEngine.registerModels({ DisplayIranianFieldModel } as Record<string, any>);
+  DisplayItemModel.bindModelToInterface('DisplayIranianFieldModel', formatted, { isDefault: true });
 }

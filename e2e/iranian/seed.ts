@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { Api } from '../helpers';
 
-// A collection with a national ID field, one record, and a classic (v1) and a modern (v2) page, each with a table and
+// A collection with a national ID and a Sheba field, one record, and a classic (v1) and a modern (v2) page, each with a table and
 // a create form. Pages are hidden from the menu, as in jalali/seed.ts.
 
 export const COLLECTION = 'iranian_samples';
@@ -39,10 +39,23 @@ export async function seedCollection(api: Api) {
             'x-validator': { iranNationalId: true },
           },
         },
+        {
+          name: 'sheba',
+          type: 'string',
+          interface: 'iranSheba',
+          uiSchema: {
+            type: 'string',
+            title: 'شبا',
+            'x-component': 'IranianFieldInput',
+            'x-component-props': { maxLength: 34, kind: 'iranSheba' },
+            'x-validator': { iranSheba: true },
+          },
+        },
       ],
     });
   }
-  if (!(await list(api, COLLECTION, {})).length) await api.call(`${COLLECTION}:create`, { nid: '0499370899' });
+  if (!(await list(api, COLLECTION, {})).length)
+    await api.call(`${COLLECTION}:create`, { nid: '0499370899', sheba: 'IR110170000000123456789001' });
 }
 
 const row = (properties: object) => ({
@@ -90,6 +103,19 @@ export async function seedV1Page(api: Api): Promise<string> {
             properties: {
               nid: {
                 'x-collection-field': `${COLLECTION}.nid`,
+                'x-component': 'CollectionField',
+                'x-read-pretty': true,
+                'x-decorator': null,
+              },
+            },
+          },
+          sheba: {
+            type: 'void',
+            'x-decorator': 'TableV2.Column.Decorator',
+            'x-component': 'TableV2.Column',
+            properties: {
+              sheba: {
+                'x-collection-field': `${COLLECTION}.sheba`,
                 'x-component': 'CollectionField',
                 'x-read-pretty': true,
                 'x-decorator': null,
@@ -194,6 +220,16 @@ export async function seedV2Page(api: Api): Promise<string> {
                 },
                 props: { title: 'کد ملی', dataIndex: 'nid', width: 200 },
                 subModels: { field: { uid: uid('cf'), use: 'DisplayTextFieldModel', props: {} } },
+              },
+              {
+                uid: uid('cc'),
+                use: 'TableColumnModel',
+                stepParams: {
+                  fieldSettings: { init: { ...init, fieldPath: 'sheba' } },
+                  tableColumnSettings: { model: { use: 'DisplayIranianFieldModel' } },
+                },
+                props: { title: 'شبا', dataIndex: 'sheba', width: 400 },
+                subModels: { field: { uid: uid('cf'), use: 'DisplayIranianFieldModel', props: {} } },
               },
             ],
           },
