@@ -1,4 +1,5 @@
 import { Plugin } from '@nocobase/client';
+import { IranianCurrency, IranianCurrencyFieldInterface, registerCurrencyModels } from './currency';
 import models from './models';
 import { DigitsSettings } from './DigitsSettings';
 import { FaProvider } from './FaProvider';
@@ -25,6 +26,10 @@ export class PluginFaClient extends Plugin {
     this.app.addUserCenterSettingsItem({ name: 'digits', Component: DigitsSettings, sort: 361 });
     this.flowEngine.registerModels(models);
     registerJalaliModels(this.flowEngine);
+    // Amounts in rials or tomans (STORY-054).
+    this.app.addComponents({ IranianCurrency });
+    this.app.dataSourceManager.addFieldInterfaces([IranianCurrencyFieldInterface]);
+    registerCurrencyModels(this.flowEngine);
     this.app.use(FaProvider);
   }
 }
