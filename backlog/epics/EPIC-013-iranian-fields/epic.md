@@ -46,7 +46,7 @@ owner: mmsh
 - داده‌ی تقسیمات کشوری با گذشت زمان عوض می‌شود (شهرستان تازه) و منبع آن باید مجوز روشن داشته باشد.
 
 ## پرسش‌های باز
-- منبع داده‌ی استان و شهر: تصمیم در STORY-058 گرفته می‌شود.
+- منبع داده‌ی استان و شهر: بسته‌ی `iran-cities-json` با مجوز MIT؛ جزئیات در STORY-058.
 
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
@@ -54,4 +54,4 @@ owner: mmsh
 | [STORY-055](STORY-055-national-id.md) | فیلد کد ملی و شناسه‌ی ملی | in-review |
 | [STORY-056](STORY-056-sheba.md) | فیلد شماره‌ی شبا | in-review |
 | [STORY-057](STORY-057-postal-code-mobile.md) | فیلد کد پستی و تلفن همراه | in-review |
-| [STORY-058](STORY-058-province-city.md) | فیلد استان و شهر | todo |
+| [STORY-058](STORY-058-province-city.md) | فیلد استان و شهر | in-review |

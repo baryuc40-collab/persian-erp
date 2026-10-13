@@ -3,7 +3,8 @@ import { apiAs, enablePersian, openAs } from './helpers';
 import { cleanup, COLLECTION, seedCollection, seedV1Page, seedV2Page } from './iranian/seed';
 
 // A national ID field (STORY-055): an invalid ID is refused with a Persian message, and a valid one typed with
-// Persian digits and a dash is stored as ten Latin digits.
+// Persian digits and a dash is stored as ten Latin digits. A province and city field (STORY-058) offers only the
+// cities of the chosen province.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -32,12 +33,34 @@ const submit = (page: Page) =>
     .click();
 
 for (const kind of ['classic', 'modern']) {
-  test(`${kind} table shows a Sheba number with its bank and a postal code with a dash`, async ({ page }) => {
+  test(`${kind} table shows a Sheba number with its bank, a postal code with a dash and a province and city`, async ({
+    page,
+  }) => {
     await openAs(page, 'fa-IR', `/admin/${pages[kind]}`);
     const row = page.locator('.ant-table-tbody tr.ant-table-row').first();
     await expect(row).toContainText('IR11 0170 0000 0012 3456 7890 01');
     await expect(row).toContainText('بانک ملی ایران');
     await expect(row).toContainText('13185-34567');
+    await expect(row).toContainText('اصفهان / کاشان');
+  });
+
+  test(`${kind} form offers only the cities of the chosen province`, async ({ page, playwright, baseURL }) => {
+    await openAs(page, 'fa-IR', `/admin/${pages[kind]}`);
+    await page.locator('form .ant-cascader').click();
+    const menus = page.locator('.ant-cascader-menus:visible');
+    await menus.locator('.ant-cascader-menu-item', { hasText: /^اصفهان$/ }).click();
+    const cities = menus.locator('.ant-cascader-menu').nth(1);
+    await expect(cities.locator('.ant-cascader-menu-item', { hasText: /^کاشان$/ })).toBeVisible();
+    await expect(cities.locator('.ant-cascader-menu-item', { hasText: /^بم$/ })).toHaveCount(0);
+    await cities.locator('.ant-cascader-menu-item', { hasText: /^کاشان$/ }).click();
+    await expect(page.locator('form .ant-cascader')).toContainText('اصفهان / کاشان');
+    const response = page.waitForResponse((res) => res.url().includes(`${COLLECTION}:create`));
+    await submit(page);
+    const data = (await (await response).json()).data;
+    expect(data.region).toBe('اصفهان / کاشان');
+    const api = await apiAs(playwright, baseURL!);
+    await api.call(`${COLLECTION}:destroy?filterByTk=${data.id}`);
+    await api.request.dispose();
   });
 
   test(`${kind} form refuses an invalid national ID and stores a valid one`, async ({ page, playwright, baseURL }) => {

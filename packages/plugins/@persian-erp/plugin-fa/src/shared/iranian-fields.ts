@@ -1,3 +1,4 @@
+import { IRAN_REGION_KIND } from './iran-regions';
 import { toLatinDigits } from './latin-digits';
 
 // Iranian identifiers as field types (EPIC-013). Each kind has one rule, used by the server before saving and by the
@@ -146,6 +147,8 @@ export const IRANIAN_FIELD_KINDS: IranianFieldKind[] = [
     normalize: normalizeMobile,
     validate: isMobile,
   },
+  // Picked from a list rather than typed; see iran-regions.ts.
+  IRAN_REGION_KIND,
 ];
 
 export function getIranianFieldKind(name: string | undefined) {
