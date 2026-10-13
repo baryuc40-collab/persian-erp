@@ -4,6 +4,7 @@ import { jalaliFilterMiddleware } from './jalali-filter';
 import { registerJalaliHelper } from './jalali-handlebars';
 import { registerJalaliInterfaces } from './jalali-interfaces';
 import { normalizeFilterMiddleware, registerPersianText } from './persian-text';
+import { iranianFieldMessages, registerIranianFields } from './iranian-fields';
 import { readLocalePack } from './locale-pack';
 
 export class PluginFaServer extends Plugin {
@@ -29,6 +30,9 @@ export class PluginFaServer extends Plugin {
     });
     // Amounts in rials (STORY-054): imported and exported as whole numbers, like integer fields.
     this.db.interfaceManager.registerInterfaceType('currencyIRR', this.db.interfaceManager.getInterfaceType('integer'));
+    // National ID, Sheba and other Iranian field types (EPIC-013); see iranian-fields.ts.
+    registerIranianFields(this.db);
+    iranianFieldMessages(this.app.i18n);
     // Text is stored and searched with Latin digits and Persian Yeh and Kaf; see persian-text.ts.
     registerPersianText(this.db);
     this.app.dataSourceManager.use(normalizeFilterMiddleware, {

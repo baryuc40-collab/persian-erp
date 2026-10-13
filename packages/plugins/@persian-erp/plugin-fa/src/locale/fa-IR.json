@@ -7,5 +7,10 @@
   "Stored in rials; shown and typed in rials or tomans.": "به ریال ذخیره می‌شود و به ریال یا تومان نمایش و وارد می‌شود.",
   "Display unit": "واحد نمایش",
   "Rial": "ریال",
-  "Toman": "تومان"
+  "Toman": "تومان",
+  "Iranian": "ایرانی",
+  "National ID": "کد ملی",
+  "Legal entity ID": "شناسه‌ی ملی",
+  "{{field}} is not a valid national ID": "«{{field}}» معتبر نیست؛ کد ملی ۱۰ رقم با رقم کنترل درست است.",
+  "{{field}} is not a valid legal entity ID": "«{{field}}» معتبر نیست؛ شناسه‌ی ملی ۱۱ رقم با رقم کنترل درست است."
 }

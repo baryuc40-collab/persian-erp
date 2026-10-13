@@ -2,6 +2,7 @@ import { Plugin } from '@nocobase/client';
 import { IranianCurrency, IranianCurrencyFieldInterface, registerCurrencyModels } from './currency';
 import models from './models';
 import { FaProvider } from './FaProvider';
+import { registerIranianFields } from './iranian-fields';
 import {
   CalendarSettings,
   installJalali,
@@ -28,6 +29,8 @@ export class PluginFaClient extends Plugin {
     this.app.addComponents({ IranianCurrency });
     this.app.dataSourceManager.addFieldInterfaces([IranianCurrencyFieldInterface]);
     registerCurrencyModels(this.flowEngine);
+    // National ID, Sheba and other Iranian field types (EPIC-013).
+    registerIranianFields(this.app);
     this.app.use(FaProvider);
   }
 }

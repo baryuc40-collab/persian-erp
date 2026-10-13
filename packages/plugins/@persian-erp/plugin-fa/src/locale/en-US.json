@@ -7,5 +7,10 @@
   "Stored in rials; shown and typed in rials or tomans.": "Stored in rials; shown and typed in rials or tomans.",
   "Display unit": "Display unit",
   "Rial": "Rial",
-  "Toman": "Toman"
+  "Toman": "Toman",
+  "Iranian": "Iranian",
+  "National ID": "National ID",
+  "Legal entity ID": "Legal entity ID",
+  "{{field}} is not a valid national ID": "{{field}} is not a valid national ID",
+  "{{field}} is not a valid legal entity ID": "{{field}} is not a valid legal entity ID"
 }
