@@ -51,5 +51,11 @@
   "Province and city": "Province and city",
   "{{field}} is not a province and city of Iran": "{{field}} is not a province and city of Iran",
   "Allow choosing a province alone": "Allow choosing a province alone",
-  "is within": "is within"
+  "is within": "is within",
+  "Persian": "Persian",
+  "Default calendar": "Default calendar",
+  "Used for users who have not chosen a calendar, and for workflows.": "Used for users who have not chosen a calendar, and for workflows.",
+  "By language (Jalali in Persian)": "By language (Jalali in Persian)",
+  "Save": "Save",
+  "Saved successfully": "Saved successfully"
 }

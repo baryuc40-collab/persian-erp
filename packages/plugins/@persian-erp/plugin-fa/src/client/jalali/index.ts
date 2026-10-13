@@ -9,6 +9,7 @@ export {
   toJalaliDisplay,
   getCalendarPreference,
   setCalendarPreference,
+  setSystemCalendar,
   CALENDAR_STORAGE_KEY,
   CALENDAR_HEADER,
   withCalendarHeader,

@@ -51,5 +51,11 @@
   "Province and city": "استان و شهر",
   "{{field}} is not a province and city of Iran": "«{{field}}» معتبر نیست؛ استان و شهر را از فهرست انتخاب کنید.",
   "Allow choosing a province alone": "انتخاب استان بدون شهر مجاز است",
-  "is within": "در محدوده‌ی"
+  "is within": "در محدوده‌ی",
+  "Persian": "فارسی",
+  "Default calendar": "تقویم پیش‌فرض",
+  "Used for users who have not chosen a calendar, and for workflows.": "برای کاربرانی که خودشان تقویمی انتخاب نکرده‌اند و برای گردش‌کارها به کار می‌رود.",
+  "By language (Jalali in Persian)": "بر اساس زبان (شمسی در فارسی)",
+  "Save": "ذخیره",
+  "Saved successfully": "با موفقیت ذخیره شد"
 }
