@@ -4,7 +4,7 @@
 
 ## گام اول: فارسی‌سازی NocoBase
 
-نسخه‌ی پایه: **NocoBase v2.2.22** (آخرین نسخه‌ی پایدار شاخه‌ی `main`، منتشرشده در ۸ اکتبر ۲۰۲۶).
+نسخه‌ی پایه: آخرین وصله‌ی پایدار NocoBase 2.2 که در فایل [`NOCOBASE_VERSION`](NOCOBASE_VERSION) آمده است. روش ارتقا: [docs/dev/upgrade.md](docs/dev/upgrade.md).
 
 | سند | محتوا |
 | --- | --- |
