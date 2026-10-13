@@ -47,11 +47,14 @@ for (const kind of KINDS) {
 async function pickAndSubmit(page: Page, day: string) {
   const pickers = page.locator('form .ant-picker input');
   await expect(pickers).toHaveCount(2);
+  const openDropdown = page.locator('.ant-picker-dropdown:visible');
   await pickers.nth(0).click();
-  await page.locator(`.ant-picker-dropdown:visible td[title="${day}"]`).click();
+  await openDropdown.locator(`td[title="${day}"]`).click();
+  // Wait for the first calendar to close, or both match while it fades out.
+  await expect(openDropdown).toHaveCount(0);
   await pickers.nth(1).click();
-  await page.locator(`.ant-picker-dropdown:visible td[title="${day}"]`).click();
-  await page.locator('.ant-picker-dropdown:visible .ant-picker-ok button').click();
+  await openDropdown.locator(`td[title="${day}"]`).click();
+  await openDropdown.locator('.ant-picker-ok button').click();
   await expect(pickers.nth(0)).toHaveValue(day);
   const request = page.waitForRequest((req) => req.method() === 'POST' && req.url().includes(`${COLLECTION}:create`));
   await page
