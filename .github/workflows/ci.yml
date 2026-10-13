@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       app: ${{ steps.filter.outputs.app }}
+      docker: ${{ steps.filter.outputs.docker }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -31,6 +32,12 @@ jobs:
               - '!backlog/**'
               - '!glossary/**'
               - '!**/*.md'
+            docker:
+              - 'docker/**'
+              - 'packages/**'
+              - 'NOCOBASE_VERSION'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
 
   checks:
     name: Lightweight checks
@@ -203,3 +210,57 @@ jobs:
           path: |
             storage/playwright/e2e-results
             storage/playwright/e2e-report
+
+  # Builds the Persian image (docker/build.sh) and smoke-tests a fresh install of it with docker/docker-compose.yml.
+  # Nothing is pushed; publishing is the release workflow's job (STORY-062).
+  docker-image:
+    name: Docker image (build and smoke test)
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yarn
+          key: yarn-${{ runner.os }}-${{ hashFiles('package.json', 'yarn.lock', 'packages/plugins/**/package.json') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - name: Install
+        run: |
+          cp .env.example .env
+          yarn install --ignore-engines --network-timeout 600000
+      - name: Build image
+        run: docker/build.sh persian-erp:ci
+      - name: Image carries the pinned NocoBase version
+        run: |
+          label="$(docker image inspect persian-erp:ci --format '{{ index .Config.Labels "com.nocobase.version" }}')"
+          test "$label" = "$(cat NOCOBASE_VERSION)" || { echo "image label $label != NOCOBASE_VERSION"; exit 1; }
+      - name: Start a fresh install
+        working-directory: docker
+        run: |
+          sed -e 's#^IMAGE=.*#IMAGE=persian-erp#' -e 's#^IMAGE_TAG=.*#IMAGE_TAG=ci#' \
+              -e "s#change-me#ci-$(openssl rand -hex 16)#" .env.example > .env
+          docker compose up -d
+          for i in $(seq 1 120); do
+            curl -sf http://localhost:13000/api/__health_check && exit 0
+            sleep 5
+          done
+          echo "The image did not start"; docker compose logs app | tail -200; exit 1
+      - name: Server time zone is Tehran
+        working-directory: docker
+        run: test "$(docker compose exec -T app date +%z)" = "+0330"
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Smoke test
+        run: |
+          set -a; . docker/.env; set +a
+          npx playwright test -c docker/smoke/playwright.config.ts
+      - name: Logs
+        if: failure()
+        working-directory: docker
+        run: docker compose logs app | tail -300

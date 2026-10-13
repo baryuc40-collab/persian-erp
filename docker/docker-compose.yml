@@ -1,0 +1,38 @@
+# Persian NocoBase for a server: the published image and PostgreSQL 16.
+# Run: cp .env.example .env, set the passwords and APP_KEY, then docker compose up -d
+# Address: http://<server>:${HTTP_PORT}
+# For development from source use docker-compose.yml in the repository root instead.
+
+services:
+  app:
+    image: ${IMAGE:-ghcr.io/baryuc40-collab/persian-erp}:${IMAGE_TAG:-latest}
+    restart: always
+    env_file: .env
+    environment:
+      DB_DIALECT: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+    volumes:
+      - ./storage:/app/nocobase/storage
+    ports:
+      - '${HTTP_PORT:-13000}:80'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    restart: always
+    command: postgres -c wal_level=logical
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+      TZ: ${TZ:-Asia/Tehran}
+    volumes:
+      - ./storage/db/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
