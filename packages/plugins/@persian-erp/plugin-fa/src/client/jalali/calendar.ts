@@ -1,5 +1,6 @@
 // Which calendar dates are shown and picked in. Persian users get Jalali unless they chose Gregorian in the user
-// menu; everyone else keeps Gregorian. The choice is kept in the browser, like NocoBase keeps the UI language.
+// menu, or the administrator made Gregorian the system's default (STORY-048); everyone else keeps Gregorian. The
+// user's choice is kept in the browser, like NocoBase keeps the UI language.
 
 import dayjs, { Dayjs } from 'dayjs';
 import { installJalali } from './dayjs';
@@ -32,12 +33,19 @@ export function setCalendarPreference(value: CalendarName) {
   }
 }
 
+let systemCalendar: CalendarName | null = null;
+
+/** The system's default calendar from the server (null when the administrator never set one). */
+export function setSystemCalendar(value: CalendarName | null) {
+  systemCalendar = value === 'jalali' || value === 'gregory' ? value : null;
+}
+
 export function isPersian(language = languageSource()): boolean {
   return (language || '').split(/[-_]/)[0].toLowerCase() === 'fa';
 }
 
 export function usesJalali(language = languageSource()): boolean {
-  return isPersian(language) && getCalendarPreference() !== 'gregory';
+  return isPersian(language) && (getCalendarPreference() || systemCalendar || 'jalali') === 'jalali';
 }
 
 /** The request header that tells the server side of this plugin to resolve relative dates in Jalali (STORY-042). */

@@ -163,6 +163,9 @@ const PRESETS: Record<string, [JalaliUnit, number]> = {
   nextYear: ['year', 1],
 };
 
+/** The preset names that depend on the calendar: thisWeek, lastMonth, nextYear, ... */
+export const CALENDAR_PRESETS = Object.keys(PRESETS);
+
 /** Whether a preset name (thisMonth, lastYear, ...) depends on the calendar. */
 export function isCalendarPreset(name: string): boolean {
   return Object.prototype.hasOwnProperty.call(PRESETS, name);
