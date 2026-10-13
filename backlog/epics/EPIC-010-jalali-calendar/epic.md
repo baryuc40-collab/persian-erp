@@ -44,8 +44,8 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-037](STORY-037-jalali-research.md) | بررسی نقطه‌های تاریخ در NocoBase و تصمیم فنی | in-review |
-| [STORY-038](STORY-038-jalali-core.md) | هسته‌ی جلالی plugin-fa: jalaliday و generateConfig | todo |
+| [STORY-037](STORY-037-jalali-research.md) | بررسی نقطه‌های تاریخ در NocoBase و تصمیم فنی | done |
+| [STORY-038](STORY-038-jalali-core.md) | هسته‌ی جلالی plugin-fa: jalaliday و generateConfig | in-review |
 | [STORY-039](STORY-039-jalali-display.md) | نمایش جلالی تاریخ در جدول و جزئیات (v1 و v2) | todo |
 | [STORY-040](STORY-040-jalali-picker.md) | انتخاب‌گر تاریخ و بازه‌ی جلالی (v1 و v2) | todo |
 | [STORY-041](STORY-041-calendar-setting.md) | انتخاب تقویم جلالی یا میلادی برای کاربر | todo |
