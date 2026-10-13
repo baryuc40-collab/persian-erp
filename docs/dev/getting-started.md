@@ -46,6 +46,7 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 | گزارش پوشش ترجمه | `yarn i18n:report` (گزینه‌ها: `--missing`، `--package <namespace>`، `--json`، `--min <درصد>`) |
 | ترجمه‌ی کلیدهای جاافتاده‌ی یک پکیج | `yarn i18n:translate <namespace>` (جزئیات پایین) |
 | آزمون ابزارها | `yarn test:tools` |
+| ارتقا به وصله‌ی تازه‌ی NocoBase | `yarn upgrade:nocobase <نسخه>` ([فهرست کار](upgrade.md)) |
 
 ### آزمون تصویری
 
