@@ -1,5 +1,6 @@
 import { Plugin } from '@nocobase/server';
 import { jalaliFilterMiddleware } from './jalali-filter';
+import { registerJalaliInterfaces } from './jalali-interfaces';
 import { readLocalePack } from './locale-pack';
 
 export class PluginFaServer extends Plugin {
@@ -23,6 +24,8 @@ export class PluginFaServer extends Plugin {
       tag: 'persian-erp-jalali-filter',
       before: 'parseVariables',
     });
+    // Jalali dates in Excel export and import; see jalali-interfaces.ts.
+    registerJalaliInterfaces(this.db);
   }
 
   async install() {}
