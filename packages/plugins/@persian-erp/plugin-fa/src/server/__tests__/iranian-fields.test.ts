@@ -1,0 +1,68 @@
+import { createMockServer, MockServer } from '@nocobase/test';
+import PluginFaServer from '../plugin';
+
+describe('Iranian fields on save', () => {
+  let app: MockServer;
+
+  beforeEach(async () => {
+    app = await createMockServer({ plugins: ['error-handler', PluginFaServer], acl: false });
+    app.db.collection({
+      name: 'people',
+      fields: [
+        { type: 'string', name: 'nid', interface: 'iranNationalId', uiSchema: { title: 'کد ملی' } },
+        { type: 'string', name: 'company', interface: 'iranLegalId' },
+        { type: 'string', name: 'sheba', interface: 'iranSheba' },
+        { type: 'string', name: 'mobile', interface: 'iranMobile' },
+        { type: 'string', name: 'postal', interface: 'iranPostalCode' },
+      ],
+    });
+    await app.db.sync();
+  });
+
+  afterEach(async () => {
+    await app.destroy();
+  });
+
+  const create = (values: object, lang = 'en-US') =>
+    app.agent().resource('people').create({ values }).set('X-Locale', lang);
+
+  it('stores the normalized national ID', async () => {
+    const res = await create({ nid: '۰۴۹۹-۳۷۰۸۹۹', company: '10380284790' });
+    expect(res.status).toBe(200);
+    const record = await app.db.getRepository('people').findOne();
+    expect(record.get('nid')).toBe('0499370899');
+  });
+
+  it('refuses invalid IDs with a message in the user language', async () => {
+    let res = await create({ nid: '0499370898' });
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0].message).toBe('کد ملی is not a valid national ID');
+    res = await create({ nid: '1111111111' }, 'fa-IR');
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0].message).toBe('«کد ملی» معتبر نیست؛ کد ملی ۱۰ رقم با رقم کنترل درست است.');
+    res = await create({ company: '10380284791' });
+    expect(res.status).toBe(400);
+    expect(await app.db.getRepository('people').count()).toBe(0);
+  });
+
+  it('stores Sheba numbers with IR and no spaces, and refuses wrong check digits', async () => {
+    expect((await create({ sheba: '11 0170 0000 0012 3456 7890 01' })).status).toBe(200);
+    expect((await app.db.getRepository('people').findOne()).get('sheba')).toBe('IR110170000000123456789001');
+    const res = await create({ sheba: 'IR120170000000123456789001' }, 'fa-IR');
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0].message).toContain('شماره‌ی شبا');
+  });
+
+  it('stores mobile numbers as 09… and postal codes as ten digits', async () => {
+    expect((await create({ mobile: '+98 912 345 6789', postal: '13185-34567' })).status).toBe(200);
+    const record = await app.db.getRepository('people').findOne();
+    expect(record.get('mobile')).toBe('09123456789');
+    expect(record.get('postal')).toBe('1318534567');
+    expect((await create({ mobile: '021 1234 5678' })).status).toBe(400);
+    expect((await create({ postal: '0318534567' })).status).toBe(400);
+  });
+
+  it('accepts an empty value', async () => {
+    expect((await create({ nid: '' })).status).toBe(200);
+  });
+});
