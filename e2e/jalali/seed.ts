@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test';
 import { Api } from '../helpers';
 
-// A collection with one record and two pages that show it in a table: a classic (v1) page and a modern (v2) page.
+// A collection with one record and two pages, a classic (v1) and a modern (v2) one, each with a table that shows the
+// record and a form that creates new ones.
 // The pages are hidden from the menu so they do not show up in the visual tests' screenshots.
 // Every lookup is by name or title, so a second run reuses what the first one made.
 
@@ -50,6 +51,12 @@ async function existingPage(api: Api, title: string): Promise<string | undefined
   return (await list(api, 'desktopRoutes', { title }))[0]?.schemaUid;
 }
 
+const row = (properties: object) => ({
+  type: 'void',
+  'x-component': 'Grid.Row',
+  properties: { col: { type: 'void', 'x-component': 'Grid.Col', properties } },
+});
+
 const v1Column = (name: string) => ({
   type: 'void',
   'x-decorator': 'TableV2.Column.Decorator',
@@ -96,6 +103,55 @@ export async function seedV1Page(api: Api): Promise<string> {
       },
     },
   };
+  const formField = (name: string) => ({
+    type: 'string',
+    'x-component': 'CollectionField',
+    'x-decorator': 'FormItem',
+    'x-collection-field': `${COLLECTION}.${name}`,
+  });
+  // The schema the UI writes for Add block > Form > the collection, with two fields and Submit.
+  const form = {
+    type: 'void',
+    'x-acl-action-props': { skipScopeCheck: true },
+    'x-acl-action': `${COLLECTION}:create`,
+    'x-decorator': 'FormBlockProvider',
+    'x-use-decorator-props': 'useCreateFormBlockDecoratorProps',
+    'x-decorator-props': { dataSource: 'main', collection: COLLECTION },
+    'x-component': 'CardItem',
+    properties: {
+      form: {
+        type: 'void',
+        'x-component': 'FormV2',
+        'x-use-component-props': 'useCreateFormBlockProps',
+        properties: {
+          grid: {
+            type: 'void',
+            'x-component': 'Grid',
+            properties: {
+              dayRow: row({ day: formField('day') }),
+              momentRow: row({ moment: formField('moment') }),
+            },
+          },
+          actions: {
+            type: 'void',
+            'x-component': 'ActionBar',
+            'x-component-props': { layout: 'one-column' },
+            properties: {
+              submit: {
+                title: '{{ t("Submit") }}',
+                'x-action': 'submit',
+                'x-component': 'Action',
+                'x-use-component-props': 'useCreateActionProps',
+                'x-component-props': { type: 'primary', htmlType: 'submit' },
+                'x-action-settings': { triggerWorkflows: [] },
+                type: 'void',
+              },
+            },
+          },
+        },
+      },
+    },
+  };
   await api.call('uiSchemas:insert', {
     type: 'void',
     'x-component': 'Page',
@@ -105,20 +161,14 @@ export async function seedV1Page(api: Api): Promise<string> {
         type: 'void',
         'x-component': 'Grid',
         'x-uid': gridUid,
-        properties: {
-          row: {
-            type: 'void',
-            'x-component': 'Grid.Row',
-            properties: { col: { type: 'void', 'x-component': 'Grid.Col', properties: { table } } },
-          },
-        },
+        properties: { tableRow: row({ table }), formRow: row({ form }) },
       },
     },
   });
   return pageUid;
 }
 
-// The model tree the UI saves for a table block with two date columns (Add block > Table, Fields > ...).
+// The model tree the UI saves for Add block > Table with two date columns.
 const v2Column = (name: string, title: string, props: object) => ({
   uid: uid('jc'),
   use: 'TableColumnModel',
@@ -134,6 +184,14 @@ const v2Column = (name: string, title: string, props: object) => ({
       props: { displayStyle: 'text', dateFormat: 'YYYY-MM-DD', picker: 'date', ...props },
     },
   },
+});
+
+// The model tree the UI saves for Add block > Form (Add new) with two fields and Submit.
+const v2FormItem = (name: string, model: string, props: object) => ({
+  uid: uid('ji'),
+  use: 'FormItemModel',
+  stepParams: { fieldSettings: { init: { dataSourceKey: 'main', collectionName: COLLECTION, fieldPath: name } } },
+  subModels: { field: { uid: uid('jf'), use: model, props } },
 });
 
 export async function seedV2Page(api: Api): Promise<string> {
@@ -167,6 +225,24 @@ export async function seedV2Page(api: Api): Promise<string> {
               v2Column('day', 'روز', { dateOnly: true, showTime: false, format: 'YYYY-MM-DD' }),
               v2Column('moment', 'زمان', { showTime: true, timeFormat: 'HH:mm', format: 'YYYY-MM-DD HH:mm' }),
             ],
+          },
+        },
+        {
+          uid: uid('jb'),
+          use: 'CreateFormModel',
+          stepParams: { resourceSettings: { init: { dataSourceKey: 'main', collectionName: COLLECTION } } },
+          subModels: {
+            grid: {
+              uid: uid('jg'),
+              use: 'FormGridModel',
+              subModels: {
+                items: [
+                  v2FormItem('day', 'DateOnlyFieldModel', { dateOnly: true, showTime: false, utc: false }),
+                  v2FormItem('moment', 'DateTimeTzFieldModel', { showTime: true, timeFormat: 'HH:mm', utc: true }),
+                ],
+              },
+            },
+            actions: [{ uid: uid('ja'), use: 'FormSubmitActionModel' }],
           },
         },
       ],

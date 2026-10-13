@@ -2,7 +2,7 @@
 id: STORY-040
 epic: EPIC-010
 title: انتخاب‌گر تاریخ و بازه‌ی جلالی (v1 و v2)
-status: todo
+status: in-review
 model: opus
 ---
 
@@ -17,14 +17,20 @@ model: opus
 - **Given** انتخاب‌گر بازه **When** بازه‌ای جلالی انتخاب شود **Then** دو سر بازه میلادی ذخیره می‌شوند
 
 ## یادداشت فنی
-- v1: `app.addComponents({ DatePicker })` با `RangePicker` و `FilterWithPicker`.
-- v2: زیرکلاس `DateTimeTzFieldModel`، `DateOnlyFieldModel`، `DateTimeNoTzFieldModel` و مدل‌های فیلتر `date-time`.
-- مقدار پیش از `onChange` به نمونه‌ی میلادی dayjs برگردانده می‌شود.
+- ~~v1: `app.addComponents({ DatePicker })` با `RangePicker` و `FilterWithPicker`.~~
+- ~~v2: زیرکلاس `DateTimeTzFieldModel`، `DateOnlyFieldModel`، `DateTimeNoTzFieldModel` و مدل‌های فیلتر `date-time`.~~
+- به‌جای دو بند بالا، تابع `render` خودِ `DatePicker` و `RangePicker` در antd پوشانده می‌شود تا همه‌ی جاهایی که NocoBase انتخاب‌گر antd را به کار می‌برد یک‌جا جلالی شوند (بازنگری [ADR 0004](../../../docs/decisions/0004-jalali-calendar.md)).
+- مقدار پیش از `onChange` به نمونه‌ی میلادی dayjs برگردانده می‌شود؛ رشته‌ی تاریخ دوم `onChange` هم میلادی است، چون فیلترها و `DefaultValue` همان را ذخیره می‌کنند.
 
 ## آزمون
-- e2e: انتخاب تاریخ جلالی، ذخیره، و خواندن مقدار از API.
+- e2e (`e2e/jalali.e2e.ts`): در فرم ایجاد کلاسیک و مدرن، «۱۴۰۵-۰۷-۲۰» برای فیلد «فقط تاریخ» و «تاریخ با منطقه‌ی زمانی» انتخاب و ذخیره می‌شود و درخواست ارسالی بررسی می‌شود: `2026-10-12` و برای نیمه‌شب تهران `2026-10-11T20:30:00.000Z`. همین با انگلیسی هم.
+- آزمون واحد (`jalali-picker.test.tsx`): انتخاب‌گر تکی و بازه، `disabledDate`، رشته‌ی تاریخ با قالب‌های مختلف، انگلیسی و انتخاب‌گر فصل.
+
+## پرسش‌های باز
+- فیلد «بدون منطقه‌ی زمانی» (`datetimeNoTz`) در e2e نیامده؛ همان انتخاب‌گر antd است و مسیر ذخیره‌اش از رشته‌ی میلادی می‌گذرد. تصمیم: آزمون واحد کافی است.
+- انتخاب‌گر «فصل» و «هفته» میلادی می‌ماند (مثل STORY-039).
 
 ## تعریف انجام‌شده
-- [ ] کد و آزمون در یک PR
+- [x] کد و آزمون در یک PR
 - [ ] PR به این استوری لینک دارد
 - [ ] بازبینی شد و ادغام شد
