@@ -7,8 +7,21 @@ import { normalizeFilterMiddleware, registerPersianText } from './persian-text';
 import { iranianFieldMessages, registerIranianFields } from './iranian-fields';
 import { registerIranRegionOperator } from './iran-regions';
 import { readLocalePack } from './locale-pack';
+import { installJalaliWorkflowRanges } from './jalali-workflow';
+import {
+  CALENDAR_FIELD,
+  CalendarSetting,
+  getCalendarSetting,
+  settingsActions,
+  SETTINGS_RESOURCE,
+  SETTINGS_SNIPPET,
+  toCalendarSetting,
+} from './settings';
 
 export class PluginFaServer extends Plugin {
+  // The system's default calendar, kept in memory for code that cannot wait for the database (workflow functions).
+  calendarSetting: CalendarSetting = null;
+
   async afterAdd() {}
 
   async beforeLoad() {
@@ -21,9 +34,26 @@ export class PluginFaServer extends Plugin {
       // Typed as optional, but Locale.reset() calls it on every storer.
       reset: async () => {},
     });
+    // The system's default calendar; see settings.ts. New columns are added when the plugin is enabled or upgraded.
+    this.db.extendCollection({ name: 'systemSettings', fields: [{ type: 'string', name: CALENDAR_FIELD }] });
+    this.app.acl.registerSnippet({ name: SETTINGS_SNIPPET, actions: [`${SETTINGS_RESOURCE}:setSettings`] });
   }
 
   async load() {
+    this.app.resourceManager.define({ name: SETTINGS_RESOURCE, actions: settingsActions(this.db) });
+    this.app.acl.allow(SETTINGS_RESOURCE, 'getSettings', 'public');
+    this.db.on('systemSettings.afterSave', (settings) => {
+      this.calendarSetting = toCalendarSetting(settings.get(CALENDAR_FIELD));
+    });
+    this.app.on('beforeStart', async () => {
+      this.calendarSetting = await getCalendarSetting(this.db);
+    });
+    // After every plugin's load(), so plugin-workflow has registered its own functions; see jalali-workflow.ts.
+    this.app.on('afterLoad', () => {
+      installJalaliWorkflowRanges(this.app.pm.get('workflow') as any, () =>
+        this.calendarSetting === 'jalali' ? 'jalali' : 'gregory',
+      );
+    });
     // Must run before NocoBase resolves the relative date variables; see jalali-filter.ts.
     this.app.dataSourceManager.use(jalaliFilterMiddleware, {
       tag: 'persian-erp-jalali-filter',

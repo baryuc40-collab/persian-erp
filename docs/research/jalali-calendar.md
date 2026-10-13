@@ -70,7 +70,7 @@
 
 | نقطه | کجا | وضعیت | پیشنهاد |
 | --- | --- | --- | --- |
-| متغیرهای بازه‌ی تاریخ (`dateRange.thisMonth` و ...) | `plugin-workflow/src/server/functions/index.ts` با `functions.register` | میلادی، با منطقه‌ی زمانی سرور | ثبت دوباره‌ی همین نام‌ها با بازه‌ی شمسی (`shared/jalali-ranges.ts`)، به شرط یک تنظیم سیستمی «تقویم پیش‌فرض: شمسی». `functions` یک Registry است و ثبت دوباره جایگزین می‌کند. |
+| متغیرهای بازه‌ی تاریخ (`dateRange.thisMonth` و ...) | `plugin-workflow/src/server/functions/index.ts` با `functions.register` | میلادی، با منطقه‌ی زمانی سرور | ثبت دوباره‌ی همین نام‌ها با بازه‌ی شمسی (`shared/jalali-ranges.ts`)، به شرط یک تنظیم سیستمی «تقویم پیش‌فرض: شمسی». `functions` یک Registry است که ثبت دوباره را فقط با پرچم `options.override` می‌پذیرد (انجام‌شده در STORY-049). |
 | تریگر زمان‌بندی ثابت (تکرار ماهانه و cron) | `plugin-workflow/src/server/triggers/ScheduleTrigger/StaticScheduleTrigger.ts` با `cron-parser` | میلادی | cron نمی‌تواند «اول هر ماه شمسی» را بیان کند. راه ممکن: یک تریگر تازه یا تکرار روزانه به همراه شرط «امروز اول ماه شمسی است» با یک تابع `jalali.isMonthStart`. |
 | تریگر زمان‌بندی بر پایه‌ی فیلد تاریخ | `DateFieldScheduleTrigger.ts` | فاصله‌ها روزانه‌اند | به تقویم بستگی ندارد. |
 | متن پیام اعلان | `plugin-notification-manager/src/server/utils/compile.ts` با `Handlebars` از `@nocobase/utils` | تاریخ به شکل ISO | `Handlebars` بین پلاگین‌ها مشترک است. پس plugin-fa می‌تواند helper به نام `jalali` ثبت کند (`{{jalali date "YYYY/MM/DD"}}`). باید بررسی شود که متغیرهای گردش‌کار پیش از Handlebars جایگزین می‌شوند یا نه. |
