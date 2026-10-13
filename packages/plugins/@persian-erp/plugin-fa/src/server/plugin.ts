@@ -2,6 +2,7 @@ import { Plugin } from '@nocobase/server';
 import { installJalaliChartFormatter, jalaliChartsMiddleware } from './jalali-charts';
 import { jalaliFilterMiddleware } from './jalali-filter';
 import { registerJalaliInterfaces } from './jalali-interfaces';
+import { registerLatinDigits } from './latin-digits';
 import { readLocalePack } from './locale-pack';
 
 export class PluginFaServer extends Plugin {
@@ -25,6 +26,8 @@ export class PluginFaServer extends Plugin {
       tag: 'persian-erp-jalali-filter',
       before: 'parseVariables',
     });
+    // Persian and Arabic digits are stored as Latin ones; see latin-digits.ts.
+    registerLatinDigits(this.db);
     // Jalali dates in Excel export and import; see jalali-interfaces.ts.
     registerJalaliInterfaces(this.db);
     // Jalali relative filters and date groups in charts; see jalali-charts.ts.

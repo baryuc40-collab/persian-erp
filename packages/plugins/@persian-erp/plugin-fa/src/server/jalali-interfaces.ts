@@ -8,6 +8,7 @@
 import { DatetimeNoTzInterface, resolveTimeZoneFromCtx } from '@nocobase/database';
 import { getDefaultFormat, str2moment } from '@nocobase/utils';
 import { jalaliFormat, jalaliTextToGregorian } from '../shared/jalali-format';
+import { toLatinDigits } from '../shared/latin-digits';
 import { CALENDAR_HEADER } from './jalali-filter';
 
 export const JALALI_INTERFACES = ['datetime', 'datetimeNoTz', 'date', 'createdAt', 'updatedAt', 'unixTimestamp'];
@@ -51,7 +52,8 @@ export function withJalali<T extends InterfaceClass>(Base: T, name: string): T {
 
     async toValue(value: any, ctx?: any) {
       if (typeof value === 'string' && isJalaliRequest(ctx)) {
-        return super.toValue(jalaliTextToGregorian(value), ctx);
+        // Excel cells typed on a Persian keyboard hold Persian digits (STORY-052).
+        return super.toValue(jalaliTextToGregorian(toLatinDigits(value)), ctx);
       }
       return super.toValue(value, ctx);
     }
