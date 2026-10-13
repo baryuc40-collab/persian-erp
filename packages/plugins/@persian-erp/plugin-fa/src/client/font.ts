@@ -1,4 +1,6 @@
 export const FA_FONT_FAMILY = 'Vazirmatn';
+// The same font with Persian shapes for the Latin digits 0-9 (STORY-051).
+export const FA_DIGITS_FONT_FAMILY = 'Vazirmatn FD';
 
 const STYLE_ID = 'persian-erp-fa-font';
 const WEIGHTS: [number, string][] = [
@@ -13,22 +15,34 @@ export function fontBaseUrl() {
   return `${publicPath.replace(/\/?$/, '/')}static/plugins/@persian-erp/plugin-fa/fonts/`;
 }
 
-export function fontFaceCss(baseUrl: string, fallback: string) {
-  const faces = WEIGHTS.map(
-    ([weight, name]) =>
-      `@font-face{font-family:'${FA_FONT_FAMILY}';src:url('${baseUrl}Vazirmatn-${name}.woff2') format('woff2');` +
-      `font-weight:${weight};font-style:normal;font-display:swap;}`,
-  ).join('\n');
-  return `${faces}\nbody{font-family:${FA_FONT_FAMILY},${fallback};}`;
+/** The family the page uses: Vazirmatn FD for Persian digits, Vazirmatn for Latin ones. */
+export function pageFontFamily(persianDigits: boolean) {
+  return persianDigits ? FA_DIGITS_FONT_FAMILY : FA_FONT_FAMILY;
+}
+
+export function fontFaceCss(baseUrl: string, fallback: string, persianDigits = false) {
+  const faces = [
+    [FA_FONT_FAMILY, 'Vazirmatn'],
+    [FA_DIGITS_FONT_FAMILY, 'Vazirmatn-FD'],
+  ]
+    .flatMap(([family, file]) =>
+      WEIGHTS.map(
+        ([weight, name]) =>
+          `@font-face{font-family:'${family}';src:url('${baseUrl}${file}-${name}.woff2') format('woff2');` +
+          `font-weight:${weight};font-style:normal;font-display:swap;}`,
+      ),
+    )
+    .join('\n');
+  return `${faces}\nbody{font-family:'${pageFontFamily(persianDigits)}',${fallback};}`;
 }
 
 // Adds the @font-face rules once; returns a function that removes them.
-export function installFont(fallback: string) {
+export function installFont(fallback: string, persianDigits = false) {
   let style = document.getElementById(STYLE_ID);
   if (!style) {
     style = document.createElement('style');
     style.id = STYLE_ID;
-    style.textContent = fontFaceCss(fontBaseUrl(), fallback);
+    style.textContent = fontFaceCss(fontBaseUrl(), fallback, persianDigits);
     document.head.appendChild(style);
   }
   return () => style.remove();
