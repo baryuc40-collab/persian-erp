@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { getIranianFieldKind, isLegalId, isNationalId, isSheba } from '../../shared/iranian-fields';
 import { IranianFieldText } from '../iranian-fields/IranianFieldText';
+import { IranRegionCascader } from '../iranian-fields/IranRegion';
 
 describe('Iranian national IDs', () => {
   it('checks the personal national ID check digit', () => {
@@ -69,5 +70,25 @@ describe('mobile numbers and postal codes', () => {
     expect(postal.validate('0318534567')).toBe(false);
     expect(postal.validate('131853456')).toBe(false);
     expect(postal.format('1318534567')).toBe('13185-34567');
+  });
+});
+
+describe('Province and city', () => {
+  it('shows the stored value in the picker and passes the chosen path back as text', async () => {
+    const onChange = vi.fn();
+    const { container } = render(<IranRegionCascader value="اصفهان / کاشان" onChange={onChange} />);
+    expect(container.textContent).toContain('اصفهان / کاشان');
+    fireEvent.mouseDown(container.querySelector('.ant-select-selector'));
+    fireEvent.click(await screen.findByText('کرمان'));
+    fireEvent.click(await screen.findByText('بم'));
+    expect(onChange).toHaveBeenLastCalledWith('کرمان / بم');
+  });
+
+  it('lets a filter choose a province alone', async () => {
+    const onChange = vi.fn();
+    const { container } = render(<IranRegionCascader changeOnSelect onChange={onChange} />);
+    fireEvent.mouseDown(container.querySelector('.ant-select-selector'));
+    fireEvent.click(await screen.findByText('کرمانشاه'));
+    expect(onChange).toHaveBeenLastCalledWith('کرمانشاه');
   });
 });

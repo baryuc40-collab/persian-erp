@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { Api } from '../helpers';
 
-// A collection with national ID, Sheba and postal code fields, one record, and a classic (v1) and a modern (v2) page, each with a table and
+// A collection with national ID, Sheba, postal code and province and city fields, one record, and a classic (v1) and a modern (v2) page, each with a table and
 // a create form. Pages are hidden from the menu, as in jalali/seed.ts.
 
 export const COLLECTION = 'iranian_samples';
@@ -63,6 +63,18 @@ export async function seedCollection(api: Api) {
             'x-validator': { iranPostalCode: true },
           },
         },
+        {
+          name: 'region',
+          type: 'string',
+          interface: 'iranRegion',
+          uiSchema: {
+            type: 'string',
+            title: 'استان و شهر',
+            'x-component': 'IranRegionSelect',
+            'x-component-props': { changeOnSelect: false },
+            'x-validator': { iranRegion: true },
+          },
+        },
       ],
     });
   }
@@ -71,6 +83,7 @@ export async function seedCollection(api: Api) {
       nid: '0499370899',
       sheba: 'IR110170000000123456789001',
       postal: '1318534567',
+      region: 'اصفهان / کاشان',
     });
 }
 
@@ -151,6 +164,19 @@ export async function seedV1Page(api: Api): Promise<string> {
               },
             },
           },
+          region: {
+            type: 'void',
+            'x-decorator': 'TableV2.Column.Decorator',
+            'x-component': 'TableV2.Column',
+            properties: {
+              region: {
+                'x-collection-field': `${COLLECTION}.region`,
+                'x-component': 'CollectionField',
+                'x-read-pretty': true,
+                'x-decorator': null,
+              },
+            },
+          },
         },
       },
     },
@@ -179,6 +205,14 @@ export async function seedV1Page(api: Api): Promise<string> {
                   'x-component': 'CollectionField',
                   'x-decorator': 'FormItem',
                   'x-collection-field': `${COLLECTION}.nid`,
+                },
+              }),
+              regionRow: row({
+                region: {
+                  type: 'string',
+                  'x-component': 'CollectionField',
+                  'x-decorator': 'FormItem',
+                  'x-collection-field': `${COLLECTION}.region`,
                 },
               }),
             },
@@ -270,6 +304,16 @@ export async function seedV2Page(api: Api): Promise<string> {
                 props: { title: 'کد پستی', dataIndex: 'postal', width: 200 },
                 subModels: { field: { uid: uid('cf'), use: 'DisplayIranianFieldModel', props: {} } },
               },
+              {
+                uid: uid('cc'),
+                use: 'TableColumnModel',
+                stepParams: {
+                  fieldSettings: { init: { ...init, fieldPath: 'region' } },
+                  tableColumnSettings: { model: { use: 'DisplayTextFieldModel' } },
+                },
+                props: { title: 'استان و شهر', dataIndex: 'region', width: 200 },
+                subModels: { field: { uid: uid('cf'), use: 'DisplayTextFieldModel', props: {} } },
+              },
             ],
           },
         },
@@ -288,6 +332,12 @@ export async function seedV2Page(api: Api): Promise<string> {
                     use: 'FormItemModel',
                     stepParams: { fieldSettings: { init: { ...init, fieldPath: 'nid' } } },
                     subModels: { field: { uid: uid('cf'), use: 'InputFieldModel', props: {} } },
+                  },
+                  {
+                    uid: uid('ci'),
+                    use: 'FormItemModel',
+                    stepParams: { fieldSettings: { init: { ...init, fieldPath: 'region' } } },
+                    subModels: { field: { uid: uid('cf'), use: 'IranRegionFieldModel', props: {} } },
                   },
                 ],
               },

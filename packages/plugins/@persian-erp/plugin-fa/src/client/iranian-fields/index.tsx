@@ -11,10 +11,12 @@ import type { FlowEngine } from '@nocobase/flow-engine';
 import React from 'react';
 // @ts-ignore
 import pkg from '../../../package.json';
+import { IRAN_REGION_KIND, IRAN_REGION_OPERATOR } from '../../shared/iran-regions';
 import { IRANIAN_FIELD_KINDS, IranianFieldKind } from '../../shared/iranian-fields';
 import { IranianFieldInput, IranianFieldText } from './IranianFieldText';
+import { IranRegionCascader, IranRegionSelect, IranRegionText } from './IranRegion';
 
-export { IranianFieldInput, IranianFieldText };
+export { IranianFieldInput, IranianFieldText, IranRegionCascader, IranRegionSelect, IranRegionText };
 
 const t = (key: string) => `{{t(${JSON.stringify(key)}, { ns: ${JSON.stringify(pkg.name)} })}}`;
 
@@ -46,10 +48,56 @@ export function interfaceFor(kind: IranianFieldKind) {
   };
 }
 
+// Province and city (STORY-058): picked from a list, and filtered with "is within" so that a province also finds its
+// cities.
+const regionKeys = new Set(['$eq', '$ne', '$empty', '$notEmpty']);
+export class IranRegionFieldInterface extends CollectionFieldInterface {
+  name = IRAN_REGION_KIND.name;
+  type = 'object';
+  group = IRANIAN_GROUP;
+  order = IRANIAN_FIELD_KINDS.indexOf(IRAN_REGION_KIND) + 1;
+  title = t(IRAN_REGION_KIND.title);
+  sortable = true;
+  availableTypes = ['string'];
+  hasDefaultValue = true;
+  titleUsable = true;
+  default = {
+    type: 'string',
+    uiSchema: {
+      type: 'string',
+      'x-component': 'IranRegionSelect',
+      'x-component-props': { changeOnSelect: false },
+      'x-validator': { [IRAN_REGION_KIND.name]: true },
+    },
+  };
+  properties = {
+    ...defaultProps,
+    'uiSchema.x-component-props.changeOnSelect': {
+      type: 'boolean',
+      'x-component': 'Checkbox',
+      'x-content': t('Allow choosing a province alone'),
+      'x-decorator': 'FormItem',
+    },
+  };
+  filterable = {
+    operators: [
+      {
+        label: t('is within'),
+        value: IRAN_REGION_OPERATOR,
+        selected: true,
+        schema: { 'x-component': 'IranRegionSelect', 'x-component-props': { changeOnSelect: true } },
+      },
+      ...operators.string.filter((operator) => regionKeys.has(operator.value)),
+    ],
+  };
+}
+
 export function registerIranianFields(app: Application, flowEngine: FlowEngine) {
-  app.addComponents({ IranianFieldInput });
+  app.addComponents({ IranianFieldInput, IranRegionSelect });
   app.addFieldInterfaceGroups({ [IRANIAN_GROUP]: { label: t('Iranian'), order: 2.5 } });
-  app.dataSourceManager.addFieldInterfaces(IRANIAN_FIELD_KINDS.map(interfaceFor));
+  app.dataSourceManager.addFieldInterfaces(
+    IRANIAN_FIELD_KINDS.map((kind) => (kind === IRAN_REGION_KIND ? IranRegionFieldInterface : interfaceFor(kind))),
+  );
   registerValidateRules(
     Object.fromEntries(
       IRANIAN_FIELD_KINDS.map((kind) => [
@@ -61,18 +109,33 @@ export function registerIranianFields(app: Application, flowEngine: FlowEngine) 
       ]),
     ),
   );
-  const names = IRANIAN_FIELD_KINDS.map((kind) => kind.name);
+  const names = IRANIAN_FIELD_KINDS.filter((kind) => kind !== IRAN_REGION_KIND).map((kind) => kind.name);
   EditableItemModel.bindModelToInterface('InputFieldModel', names, { isDefault: true });
   FilterableItemModel.bindModelToInterface('InputFieldModel', names, { isDefault: true });
   const formatted = IRANIAN_FIELD_KINDS.filter((kind) => kind.format || kind.describe).map((kind) => kind.name);
   DisplayItemModel.bindModelToInterface(
     'DisplayTextFieldModel',
-    names.filter((name) => !formatted.includes(name)),
+    [...names.filter((name) => !formatted.includes(name)), IRAN_REGION_KIND.name],
     { isDefault: true },
   );
 
   // Modern (v2) pages: formatted kinds get a display model that renders IranianFieldText, subclassed from the flow
   // engine's own class like jalali/models.ts does.
+  const FieldBase = flowEngine.getModelClass('FieldModel') as any;
+  if (FieldBase) {
+    class IranRegionFieldModel extends FieldBase {
+      render() {
+        return <IranRegionCascader {...this.props} />;
+      }
+    }
+    flowEngine.registerModels({ IranRegionFieldModel } as Record<string, any>);
+    EditableItemModel.bindModelToInterface('IranRegionFieldModel', [IRAN_REGION_KIND.name], { isDefault: true });
+    FilterableItemModel.bindModelToInterface('IranRegionFieldModel', [IRAN_REGION_KIND.name], {
+      isDefault: true,
+      defaultProps: { changeOnSelect: true },
+    });
+  }
+
   const DisplayBase = flowEngine.getModelClass('ClickableFieldModel') as any;
   if (!DisplayBase) return;
   class DisplayIranianFieldModel extends DisplayBase {

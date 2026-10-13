@@ -47,5 +47,9 @@
   "Postal code": "کد پستی",
   "Mobile number": "تلفن همراه",
   "{{field}} is not a valid postal code": "«{{field}}» معتبر نیست؛ کد پستی ۱۰ رقم است و با صفر شروع نمی‌شود.",
-  "{{field}} is not a valid mobile number": "«{{field}}» معتبر نیست؛ تلفن همراه ۱۱ رقم است و با ۰۹ شروع می‌شود."
+  "{{field}} is not a valid mobile number": "«{{field}}» معتبر نیست؛ تلفن همراه ۱۱ رقم است و با ۰۹ شروع می‌شود.",
+  "Province and city": "استان و شهر",
+  "{{field}} is not a province and city of Iran": "«{{field}}» معتبر نیست؛ استان و شهر را از فهرست انتخاب کنید.",
+  "Allow choosing a province alone": "انتخاب استان بدون شهر مجاز است",
+  "is within": "در محدوده‌ی"
 }

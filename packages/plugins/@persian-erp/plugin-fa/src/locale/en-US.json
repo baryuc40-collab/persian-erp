@@ -47,5 +47,9 @@
   "Postal code": "Postal code",
   "Mobile number": "Mobile number",
   "{{field}} is not a valid postal code": "{{field}} is not a valid postal code",
-  "{{field}} is not a valid mobile number": "{{field}} is not a valid mobile number"
+  "{{field}} is not a valid mobile number": "{{field}} is not a valid mobile number",
+  "Province and city": "Province and city",
+  "{{field}} is not a province and city of Iran": "{{field}} is not a province and city of Iran",
+  "Allow choosing a province alone": "Allow choosing a province alone",
+  "is within": "is within"
 }
