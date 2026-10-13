@@ -17,7 +17,11 @@
 | [backlog/BACKLOG.md](backlog/BACKLOG.md) | بک‌لاگ اولیه‌ی اپیک‌ها |
 | [CLAUDE.md](CLAUDE.md) | قواعد کار برای عامل‌های هوش مصنوعی در این مخزن |
 
-## اجرا با Docker
+## نصب روی سرور
+
+برای نصب NocoBase فارسی روی سرور (با ایمیج آماده)، پشتیبان‌گیری و ارتقا: [docs/install/README.md](docs/install/README.md)
+
+## اجرا با Docker (توسعه)
 
 پیش‌نیاز: Docker و Docker Compose.
 
