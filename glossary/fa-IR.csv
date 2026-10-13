@@ -99,6 +99,8 @@ Grid card,کارت شبکه‌ای,ui,
 Kanban,کانبان,ui,
 Gantt,گانت,ui,
 Calendar,تقویم,ui,
+Jalali,شمسی,ui,نام تقویم در رابط کاربر؛ در اسناد فنی «جلالی» هم آمده
+Gregorian,میلادی,ui,
 Map,نقشه,ui,
 Chart,نمودار,ui,
 Iframe,iframe,ui,ترجمه نشود

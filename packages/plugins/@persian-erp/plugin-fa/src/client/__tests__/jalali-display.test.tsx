@@ -4,7 +4,9 @@ import { getDefaultFormat, str2moment } from '@nocobase/utils/client';
 import { render, screen } from '@testing-library/react';
 import dayjs from 'dayjs';
 import React from 'react';
-import { JalaliDatePicker, jalaliReadPrettyProps, registerJalaliModels, setCalendarLanguageSource } from '../jalali';
+import { CALENDAR_STORAGE_KEY, setCalendarLanguageSource, setCalendarPreference } from '../jalali/calendar';
+import { JalaliDatePicker, jalaliReadPrettyProps } from '../jalali/DatePicker';
+import { registerJalaliModels } from '../jalali/models';
 
 // NocoBase's read-only DatePicker text, as in core/client/src/schema-component/antd/date-picker/ReadPretty.tsx.
 // The real component needs a whole application around it; the wrapper only relies on this contract.
@@ -56,6 +58,15 @@ describe('Jalali display in the classic client', () => {
     language = 'en-US';
     const props = { value: '2026-10-12', dateOnly: true };
     expect(jalaliReadPrettyProps(props)).toBe(props);
+  });
+
+  it('leaves Persian users who chose Gregorian alone', () => {
+    setCalendarPreference('gregory');
+    const props = { value: '2026-10-12', dateOnly: true };
+    expect(jalaliReadPrettyProps(props)).toBe(props);
+    setCalendarPreference('jalali');
+    expect(jalaliReadPrettyProps(props).value.format('YYYY-MM-DD')).toBe('1405-07-20');
+    localStorage.removeItem(CALENDAR_STORAGE_KEY);
   });
 
   it('renders read-only dates, times and ranges in Jalali', () => {
