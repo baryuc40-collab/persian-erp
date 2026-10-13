@@ -43,6 +43,22 @@ for (const kind of KINDS) {
   });
 }
 
+test('the user menu switches Persian users to the Gregorian calendar', async ({ page }) => {
+  await openAs(page, 'fa-IR', `/admin/${pages.classic}`);
+  await expect(firstRow(page)).toContainText('1405-07-20');
+  await page.locator('[data-testid="user-center-button"]').hover();
+  const item = page.getByRole('menuitem').filter({ hasText: 'تقویم' });
+  await expect(item).toContainText('شمسی');
+  await item.click();
+  await page.getByRole('option', { name: 'میلادی' }).click();
+  await page.waitForLoadState('networkidle');
+  await expect(firstRow(page)).toContainText('2026-10-12');
+  await expect(firstRow(page)).toContainText('2026-10-13 01:30');
+  // The choice is kept for the next visit.
+  await page.goto(`/admin/${pages.modern}`);
+  await expect(firstRow(page)).toContainText('2026-10-12');
+});
+
 // Picks the same day in both form fields and submits; returns what was sent to the server.
 async function pickAndSubmit(page: Page, day: string) {
   const pickers = page.locator('form .ant-picker input');

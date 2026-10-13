@@ -1,5 +1,5 @@
-// Which calendar dates are shown and picked in. For now Jalali follows the language: Persian users get Jalali,
-// everyone else keeps Gregorian. STORY-041 adds a per-user choice on top of this.
+// Which calendar dates are shown and picked in. Persian users get Jalali unless they chose Gregorian in the user
+// menu; everyone else keeps Gregorian. The choice is kept in the browser, like NocoBase keeps the UI language.
 
 import dayjs, { Dayjs } from 'dayjs';
 import { installJalali } from './dayjs';
@@ -11,8 +11,33 @@ export function setCalendarLanguageSource(source: () => string | undefined) {
   languageSource = source;
 }
 
-export function usesJalali(language = languageSource()): boolean {
+export const CALENDAR_STORAGE_KEY = 'PERSIAN_ERP_CALENDAR';
+
+export type CalendarName = 'jalali' | 'gregory';
+
+export function getCalendarPreference(): CalendarName | undefined {
+  try {
+    const value = window.localStorage.getItem(CALENDAR_STORAGE_KEY);
+    return value === 'jalali' || value === 'gregory' ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function setCalendarPreference(value: CalendarName) {
+  try {
+    window.localStorage.setItem(CALENDAR_STORAGE_KEY, value);
+  } catch {
+    // Storage can be blocked (private windows); the default calendar stays in use.
+  }
+}
+
+export function isPersian(language = languageSource()): boolean {
   return (language || '').split(/[-_]/)[0].toLowerCase() === 'fa';
+}
+
+export function usesJalali(language = languageSource()): boolean {
+  return isPersian(language) && getCalendarPreference() !== 'gregory';
 }
 
 // jalaliday has no Jalali quarters or weeks, so those pickers stay Gregorian.
