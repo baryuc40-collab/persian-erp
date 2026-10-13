@@ -64,4 +64,4 @@ owner: mmsh
 | [STORY-047](STORY-047-workflow-dates.md) | بررسی تاریخ در گردش‌کار | in-review |
 | [STORY-048](STORY-048-default-calendar-setting.md) | تنظیم سیستمی تقویم پیش‌فرض | todo |
 | [STORY-049](STORY-049-workflow-date-ranges.md) | بازه‌های تاریخ شمسی در گردش‌کار | todo |
-| [STORY-050](STORY-050-notification-helper.md) | تاریخ شمسی در متن پیام اعلان | todo |
+| [STORY-050](STORY-050-notification-helper.md) | تاریخ شمسی در متن پیام اعلان | in-review |
