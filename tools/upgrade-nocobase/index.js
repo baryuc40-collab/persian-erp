@@ -86,7 +86,8 @@ function formatReport({ from, to, changed, diff, license }) {
     .flat()
     .filter((k) => !k.translated).length;
   const addedCount = Object.values(diff.added).flat().length;
-  lines.push(`## New translation keys: ${addedCount} (${untranslated} untranslated)`, '');
+  lines.push(`## New translation keys: ${addedCount} (${untranslated} untranslated)`);
+  if (addedCount) lines.push('');
   for (const [ns, keys] of Object.entries(diff.added)) {
     lines.push(`- ${ns}`);
     for (const { key, translated } of keys) lines.push(`  - [${translated ? 'x' : ' '}] ${key}`);
