@@ -4,3 +4,4 @@ export { jalaliGenerateConfig } from './generateConfig';
 export { setCalendarLanguageSource, usesJalali, isJalaliPicker, toJalaliDisplay } from './calendar';
 export { JalaliDatePicker, jalaliReadPrettyProps } from './DatePicker';
 export { registerJalaliModels } from './models';
+export { installJalaliPickers, toJalaliPickerProps, gregorianDateString } from './pickers';

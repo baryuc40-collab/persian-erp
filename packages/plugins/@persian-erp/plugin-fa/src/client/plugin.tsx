@@ -1,7 +1,13 @@
 import { Plugin } from '@nocobase/client';
 import models from './models';
 import { FaProvider } from './FaProvider';
-import { installJalali, JalaliDatePicker, registerJalaliModels, setCalendarLanguageSource } from './jalali';
+import {
+  installJalali,
+  installJalaliPickers,
+  JalaliDatePicker,
+  registerJalaliModels,
+  setCalendarLanguageSource,
+} from './jalali';
 
 export class PluginFaClient extends Plugin {
   async load() {
@@ -9,6 +15,7 @@ export class PluginFaClient extends Plugin {
     installJalali();
     setCalendarLanguageSource(() => this.app.i18n.language);
     this.app.addComponents({ DatePicker: JalaliDatePicker });
+    installJalaliPickers();
     this.flowEngine.registerModels(models);
     registerJalaliModels(this.flowEngine);
     this.app.use(FaProvider);
