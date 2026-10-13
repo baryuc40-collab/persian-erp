@@ -3,6 +3,7 @@ import React, { useContext, useLayoutEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usesPersianDigits } from './digits';
 import { installFont, pageFontFamily } from './font';
+import { installLatinDigitsInput } from './latin-digits-input';
 import { installRtlStyles } from './rtl-styles';
 
 // Languages written right to left. Persian is the one this plugin ships; the others only switch direction.
@@ -46,6 +47,9 @@ export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
   ]);
 
   useLayoutEffect(() => (rtl ? installRtlStyles() : undefined), [rtl]);
+
+  // Digits typed on a Persian keyboard are saved as Latin digits; see latin-digits-input.ts.
+  useLayoutEffect(() => (persian ? installLatinDigitsInput() : undefined), [persian]);
 
   const themeConfig = useMemo(() => (persian ? { token: { fontFamily } } : undefined), [persian, fontFamily]);
 

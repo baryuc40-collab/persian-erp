@@ -51,6 +51,6 @@ owner: mmsh
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
 | [STORY-051](STORY-051-persian-digits-font.md) | نمایش ارقام فارسی با فونت Vazirmatn FD | in-review |
-| [STORY-052](STORY-052-persian-digit-input.md) | پذیرش ارقام فارسی و عربی در ورودی‌ها | todo |
+| [STORY-052](STORY-052-persian-digit-input.md) | پذیرش ارقام فارسی و عربی در ورودی‌ها | in-review |
 | [STORY-053](STORY-053-normalize-ye-ke.md) | یکسان‌سازی «ي/ك» به «ی/ک» در ذخیره و جست‌وجو | todo |
 | [STORY-054](STORY-054-currency-field.md) | فیلد مبلغ با واحد ریال یا تومان | todo |
