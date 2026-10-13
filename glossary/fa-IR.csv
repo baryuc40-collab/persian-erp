@@ -67,6 +67,8 @@ Number,عدد,field-type,
 Integer,عدد صحیح,field-type,
 Percent,درصد,field-type,
 Currency,مبلغ,field-type,
+Rial,ریال,field-type,واحد قانونی پول؛ مبلغ همیشه به ریال ذخیره می‌شود
+Toman,تومان,field-type,ده ریال
 Checkbox,چک‌باکس,field-type,
 Checkbox group,گروه چک‌باکس,field-type,
 Radio group,گروه دکمه‌ی رادیویی,field-type,

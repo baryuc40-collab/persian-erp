@@ -27,6 +27,8 @@ export class PluginFaServer extends Plugin {
       tag: 'persian-erp-jalali-filter',
       before: 'parseVariables',
     });
+    // Amounts in rials (STORY-054): imported and exported as whole numbers, like integer fields.
+    this.db.interfaceManager.registerInterfaceType('currencyIRR', this.db.interfaceManager.getInterfaceType('integer'));
     // Text is stored and searched with Latin digits and Persian Yeh and Kaf; see persian-text.ts.
     registerPersianText(this.db);
     this.app.dataSourceManager.use(normalizeFilterMiddleware, {

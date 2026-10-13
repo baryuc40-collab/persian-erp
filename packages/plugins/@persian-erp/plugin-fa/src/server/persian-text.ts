@@ -4,7 +4,7 @@ import { toPersianLetters } from '../shared/persian-letters';
 // Server side of STORY-052 and STORY-053: whatever the client, API calls and Excel imports store text with Latin digits
 // and Persian Yeh and Kaf, and filters are normalized the same way so searches match.
 
-const NUMBER_INTERFACES = ['number', 'integer', 'percent'];
+const NUMBER_INTERFACES = ['number', 'integer', 'percent', 'currencyIRR'];
 // Field types whose string values are user text. Passwords and tokens are compared byte for byte and stay untouched.
 const TEXT_TYPES = new Set(['string', 'text', 'uid', 'sequence']);
 const NUMBER_TYPES = new Set(['integer', 'bigInt', 'float', 'double', 'decimal', 'real', 'number']);
