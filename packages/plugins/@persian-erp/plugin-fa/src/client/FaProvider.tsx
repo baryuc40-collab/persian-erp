@@ -1,7 +1,8 @@
 import { ConfigProvider, theme } from 'antd';
 import React, { useContext, useLayoutEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FA_FONT_FAMILY, installFont } from './font';
+import { usesPersianDigits } from './digits';
+import { installFont, pageFontFamily } from './font';
 import { installRtlStyles } from './rtl-styles';
 
 // Languages written right to left. Persian is the one this plugin ships; the others only switch direction.
@@ -11,7 +12,8 @@ const baseLanguage = (lang?: string) => (lang || '').split(/[-_]/)[0].toLowerCas
 
 export const isRtlLanguage = (lang?: string) => RTL_LANGUAGES.includes(baseLanguage(lang));
 
-// Sets <html dir lang> and antd's direction for right-to-left languages, and the Vazirmatn font for Persian.
+// Sets <html dir lang> and antd's direction for right-to-left languages, and the Vazirmatn font for Persian (with
+// Persian digits unless the user chose Latin ones, see digits.ts).
 // Other languages render untouched: the page is reloaded after a language switch, so the attributes are only
 // removed if this provider set them.
 export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
@@ -21,8 +23,9 @@ export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
   const lang = i18n?.language;
   const rtl = isRtlLanguage(lang);
   const persian = baseLanguage(lang) === 'fa';
+  const persianDigits = persian && usesPersianDigits();
   // Vazirmatn has Latin letters and digits too; the default stack stays as the fallback for anything it lacks.
-  const fontFamily = `${FA_FONT_FAMILY}, ${token.fontFamily}`;
+  const fontFamily = `'${pageFontFamily(persianDigits)}', ${token.fontFamily}`;
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -36,7 +39,11 @@ export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
     }
   }, [rtl, lang]);
 
-  useLayoutEffect(() => (persian ? installFont(token.fontFamily) : undefined), [persian, token.fontFamily]);
+  useLayoutEffect(() => (persian ? installFont(token.fontFamily, persianDigits) : undefined), [
+    persian,
+    persianDigits,
+    token.fontFamily,
+  ]);
 
   useLayoutEffect(() => (rtl ? installRtlStyles() : undefined), [rtl]);
 

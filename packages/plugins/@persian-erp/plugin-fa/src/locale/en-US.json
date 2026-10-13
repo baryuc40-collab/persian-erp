@@ -2,5 +2,8 @@
   "Persian localization": "Persian localization",
   "Calendar": "Calendar",
   "Jalali": "Jalali",
-  "Gregorian": "Gregorian"
+  "Gregorian": "Gregorian",
+  "Digits": "Digits",
+  "Persian digits": "Persian",
+  "Latin digits": "Latin"
 }

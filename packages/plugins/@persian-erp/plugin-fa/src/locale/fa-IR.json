@@ -2,5 +2,8 @@
   "Persian localization": "فارسی‌سازی",
   "Calendar": "تقویم",
   "Jalali": "شمسی",
-  "Gregorian": "میلادی"
+  "Gregorian": "میلادی",
+  "Digits": "ارقام",
+  "Persian digits": "فارسی",
+  "Latin digits": "لاتین"
 }

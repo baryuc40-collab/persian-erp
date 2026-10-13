@@ -1,5 +1,6 @@
 import { Plugin } from '@nocobase/client';
 import models from './models';
+import { DigitsSettings } from './DigitsSettings';
 import { FaProvider } from './FaProvider';
 import {
   CalendarSettings,
@@ -21,6 +22,7 @@ export class PluginFaClient extends Plugin {
     this.app.addComponents({ DatePicker: JalaliDatePicker });
     installJalaliPickers();
     this.app.addUserCenterSettingsItem({ name: 'calendar', Component: CalendarSettings, sort: 360 });
+    this.app.addUserCenterSettingsItem({ name: 'digits', Component: DigitsSettings, sort: 361 });
     this.flowEngine.registerModels(models);
     registerJalaliModels(this.flowEngine);
     this.app.use(FaProvider);
