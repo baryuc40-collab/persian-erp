@@ -2,5 +2,10 @@
   "Persian localization": "Persian localization",
   "Calendar": "Calendar",
   "Jalali": "Jalali",
-  "Gregorian": "Gregorian"
+  "Gregorian": "Gregorian",
+  "Iranian currency": "Iranian currency",
+  "Stored in rials; shown and typed in rials or tomans.": "Stored in rials; shown and typed in rials or tomans.",
+  "Display unit": "Display unit",
+  "Rial": "Rial",
+  "Toman": "Toman"
 }
