@@ -31,3 +31,4 @@ dist/
 /storage/db/*
 !/storage/db/.gitkeep
 tsconfig.paths.json
+/docker/plugin-fa.tgz

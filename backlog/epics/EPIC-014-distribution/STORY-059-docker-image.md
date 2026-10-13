@@ -2,7 +2,7 @@
 id: STORY-059
 epic: EPIC-014
 title: ایمیج Docker فارسی
-status: todo
+status: in-review
 model: opus   # ساختار ایمیج رسمی و پیش‌فعال‌سازی پلاگین
 ---
 
@@ -35,10 +35,35 @@ model: opus   # ساختار ایمیج رسمی و پیش‌فعال‌سازی
 - آزمون خودکار: job ساخت و آزمون دود در CI.
 - بررسی دستی: نصب روی یک ماشین خالی و ورود.
 
+## تصمیم‌ها
+- **جای پلاگین در ایمیج:** `/app/nocobase/node_modules/@persian-erp/plugin-fa`. این مسیر بیرون از `storage/` است و volume آن را پنهان نمی‌کند. NocoBase پلاگین را از `NODE_MODULES_PATH` پیدا می‌کند. فایل `yarn tar` با `ADD` در همین مسیر باز می‌شود.
+- **پیش‌فعال‌سازی با `APPEND_PRESET_BUILT_IN_PLUGINS`، نه `APPEND_PRESET_LOCAL_PLUGINS`:** در 2.2.22 تابع `getLocalPlugins` در `preset-nocobase` همیشه فهرست خالی برمی‌گرداند. پس پلاگین «محلی» فقط پیدا می‌شود و هنگام نصب فعال نمی‌شود. پلاگین «توکار» هنگام نصب فعال می‌شود. محیط توسعه (`.env.example` ریشه) هم همین را دارد. پیامد: پلاگین فارسی در «مدیریت پلاگین» غیرفعال‌شدنی نیست. برای یک نسخه‌ی فارسی این پذیرفتنی است.
+- **پورت:** متغیر `HTTP_PORT` پورت سرور است و به پورت 80 داخل ایمیج (nginx ایمیج رسمی) وصل می‌شود. `APP_PORT` داخل ایمیج دست‌نخورده می‌ماند تا nginx و برنامه هم‌خوان بمانند.
+- **برچسب نسخه:**
+  - `com.nocobase.version`: همان `NOCOBASE_VERSION`
+  - `org.opencontainers.image.version`: `<NOCOBASE_VERSION>-fa.<RELEASE>`. `RELEASE` در ساخت محلی `dev` است و در STORY-062 شماره‌ی انتشار می‌شود.
+- **منطقه‌ی زمانی:** `TZ=Asia/Tehran` در ایمیج کار می‌کند. پایه Debian است و `tzdata` دارد. فقط ساعت لاگ و سرور را عوض می‌کند. NocoBase تاریخ را در پایگاه داده UTC نگه می‌دارد.
+
+## پیاده‌سازی
+- `docker/Dockerfile`: پایه `nocobase/nocobase:${NOCOBASE_VERSION}` بدون مقدار پیش‌فرض. ساخت بدون نسخه شکست می‌خورد.
+- `docker/build.sh`: نسخه را از `NOCOBASE_VERSION` می‌خواند. پلاگین را می‌سازد و با `yarn tar` بسته‌بندی می‌کند، سپس ایمیج را می‌سازد.
+- `docker/docker-compose.yml` و `docker/.env.example`: ایمیج منتشرشده و PostgreSQL 16، با `storage/` کنار فایل compose.
+- `yarn check:version` اکنون این را هم می‌سنجد که `docker/Dockerfile` نسخه‌ی NocoBase را خودش ننوشته باشد.
+- CI، job تازه‌ی «Docker image»:
+  - ایمیج را می‌سازد و برچسب `com.nocobase.version` را با `NOCOBASE_VERSION` می‌سنجد.
+  - یک نصب تازه با همین compose بالا می‌آورد.
+  - منطقه‌ی زمانی سرور را می‌سنجد (`+0330`).
+  - آزمون دود Playwright (`docker/smoke/`) را اجرا می‌کند. هیچ چیز push نمی‌شود.
+- آزمون دود:
+  - صفحه‌ی ورود نصب تازه `dir=rtl` و `lang=fa` است و دکمه‌ی «ورود» دارد.
+  - پلاگین فعال است و `appLang` برابر `fa-IR` است.
+  - پس از ورود، درخواست‌های داده سرآیند `x-calendar: jalali` دارند و صفحه‌ی کاربران فارسی است.
+- بررسی محلی: ایمیج ساخته شد، نصب تازه بالا آمد و هر سه آزمون دود سبز بود.
+
 ## پرسش‌های باز
-- آیا `APPEND_PRESET_LOCAL_PLUGINS` در 2.2.22 برای پلاگینی که بیرون از `packages/` ایمیج است کار می‌کند؟ اگر نه، پلاگین در `packages/plugins/@persian-erp/plugin-fa` ایمیج کپی می‌شود.
+- ~~آیا `APPEND_PRESET_LOCAL_PLUGINS` در 2.2.22 برای پلاگینی که بیرون از `packages/` ایمیج است کار می‌کند؟~~ پلاگین پیدا می‌شود ولی فعال نمی‌شود. به‌جای آن `APPEND_PRESET_BUILT_IN_PLUGINS` به کار رفت (بخش تصمیم‌ها را ببینید).
 
 ## تعریف انجام‌شده
-- [ ] کد و آزمون در یک PR
-- [ ] PR به این استوری لینک دارد
+- [x] کد و آزمون در یک PR
+- [x] PR به این استوری لینک دارد
 - [ ] بازبینی شد و ادغام شد
