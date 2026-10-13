@@ -1,4 +1,5 @@
 import { Plugin } from '@nocobase/server';
+import { jalaliFilterMiddleware } from './jalali-filter';
 import { readLocalePack } from './locale-pack';
 
 export class PluginFaServer extends Plugin {
@@ -16,7 +17,13 @@ export class PluginFaServer extends Plugin {
     });
   }
 
-  async load() {}
+  async load() {
+    // Must run before NocoBase resolves the relative date variables; see jalali-filter.ts.
+    this.app.dataSourceManager.use(jalaliFilterMiddleware, {
+      tag: 'persian-erp-jalali-filter',
+      before: 'parseVariables',
+    });
+  }
 
   async install() {}
 

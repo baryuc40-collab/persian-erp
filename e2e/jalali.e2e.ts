@@ -43,6 +43,18 @@ for (const kind of KINDS) {
   });
 }
 
+// Relative date filters ("this month") are resolved on the server, so the client tells it the calendar (STORY-042).
+for (const [locale, header] of [
+  ['fa-IR', 'jalali'],
+  ['en-US', undefined],
+] as const) {
+  test(`data requests in ${locale} ${header ? 'carry' : 'omit'} the calendar header`, async ({ page }) => {
+    const request = page.waitForRequest((r) => r.url().includes(`/api/${COLLECTION}:list`));
+    await openAs(page, locale, `/admin/${pages.classic}`);
+    expect((await request).headers()['x-calendar']).toBe(header);
+  });
+}
+
 test('the user menu switches Persian users to the Gregorian calendar', async ({ page }) => {
   await openAs(page, 'fa-IR', `/admin/${pages.classic}`);
   await expect(firstRow(page)).toContainText('1405-07-20');

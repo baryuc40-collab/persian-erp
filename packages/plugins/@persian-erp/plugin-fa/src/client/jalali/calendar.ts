@@ -40,6 +40,18 @@ export function usesJalali(language = languageSource()): boolean {
   return isPersian(language) && getCalendarPreference() !== 'gregory';
 }
 
+/** The request header that tells the server side of this plugin to resolve relative dates in Jalali (STORY-042). */
+export const CALENDAR_HEADER = 'X-Calendar';
+
+/** Adds the calendar header to a request's headers when the user reads the Jalali calendar. */
+export function withCalendarHeader<T extends { headers?: any }>(config: T): T {
+  if (usesJalali()) {
+    config.headers = config.headers || {};
+    config.headers[CALENDAR_HEADER] = 'jalali';
+  }
+  return config;
+}
+
 // jalaliday has no Jalali quarters or weeks, so those pickers stay Gregorian.
 const JALALI_PICKERS = ['date', 'month', 'year'];
 

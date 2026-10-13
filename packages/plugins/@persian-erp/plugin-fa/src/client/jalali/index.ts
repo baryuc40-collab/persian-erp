@@ -10,6 +10,8 @@ export {
   getCalendarPreference,
   setCalendarPreference,
   CALENDAR_STORAGE_KEY,
+  CALENDAR_HEADER,
+  withCalendarHeader,
 } from './calendar';
 export type { CalendarName } from './calendar';
 export { CalendarSettings } from './CalendarSettings';
