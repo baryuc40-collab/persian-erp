@@ -16,6 +16,7 @@ export type CalendarSetting = 'jalali' | 'gregory' | null;
 const CALENDARS = ['jalali', 'gregory'];
 
 interface SettingsDb {
+  getCollection(name: string): unknown;
   getRepository(
     name: string,
   ): {
@@ -24,10 +25,15 @@ interface SettingsDb {
   };
 }
 
-export async function getCalendarSetting(db: SettingsDb): Promise<CalendarSetting> {
-  const settings = await db.getRepository('systemSettings').findOne({ filterByTk: 1 });
-  const value = settings?.get(CALENDAR_FIELD);
+export function toCalendarSetting(value: unknown): CalendarSetting {
   return CALENDARS.includes(value as string) ? (value as CalendarSetting) : null;
+}
+
+export async function getCalendarSetting(db: SettingsDb): Promise<CalendarSetting> {
+  // plugin-system-settings is a core plugin, but tests and odd setups can run without it.
+  if (!db.getCollection('systemSettings')) return null;
+  const settings = await db.getRepository('systemSettings').findOne({ filterByTk: 1 });
+  return toCalendarSetting(settings?.get(CALENDAR_FIELD));
 }
 
 /** The calendar of work that runs without a user, such as workflows (used by STORY-049). */
