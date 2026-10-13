@@ -59,6 +59,9 @@ owner: mmsh
 | [STORY-042](STORY-042-relative-filters.md) | فیلترهای نسبی تاریخ با تقویم شمسی | in-review |
 | [STORY-043](STORY-043-excel-export-import.md) | تاریخ شمسی در خروجی و ورود اکسل | in-review |
 | [STORY-044](STORY-044-charts.md) | نمودار: برچسب و گروه‌بندی شمسی | in-review |
-| [STORY-045](STORY-045-calendar-block.md) | بلوک تقویم شمسی | todo |
-| [STORY-046](STORY-046-gantt.md) | گانت شمسی | todo |
-| [STORY-047](STORY-047-workflow-dates.md) | بررسی تاریخ در گردش‌کار | todo |
+| [STORY-045](STORY-045-calendar-block.md) | بلوک تقویم شمسی | blocked (NocoBase) |
+| [STORY-046](STORY-046-gantt.md) | گانت شمسی | blocked (NocoBase) |
+| [STORY-047](STORY-047-workflow-dates.md) | بررسی تاریخ در گردش‌کار | in-review |
+| [STORY-048](STORY-048-default-calendar-setting.md) | تنظیم سیستمی تقویم پیش‌فرض | todo |
+| [STORY-049](STORY-049-workflow-date-ranges.md) | بازه‌های تاریخ شمسی در گردش‌کار | todo |
+| [STORY-050](STORY-050-notification-helper.md) | تاریخ شمسی در متن پیام اعلان | todo |
