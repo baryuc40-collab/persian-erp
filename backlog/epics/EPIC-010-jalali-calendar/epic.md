@@ -2,7 +2,7 @@
 id: EPIC-010
 title: تقویم جلالی در ورود و نمایش تاریخ
 phase: 3
-status: in-progress
+status: done
 owner: mmsh
 ---
 
@@ -48,4 +48,4 @@ owner: mmsh
 | [STORY-038](STORY-038-jalali-core.md) | هسته‌ی جلالی plugin-fa: jalaliday و generateConfig | done |
 | [STORY-039](STORY-039-jalali-display.md) | نمایش جلالی تاریخ در جدول و جزئیات (v1 و v2) | done |
 | [STORY-040](STORY-040-jalali-picker.md) | انتخاب‌گر تاریخ و بازه‌ی جلالی (v1 و v2) | done |
-| [STORY-041](STORY-041-calendar-setting.md) | انتخاب تقویم جلالی یا میلادی برای کاربر | in-review |
+| [STORY-041](STORY-041-calendar-setting.md) | انتخاب تقویم جلالی یا میلادی برای کاربر | done |
