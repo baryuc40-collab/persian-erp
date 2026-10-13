@@ -51,7 +51,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-055](STORY-055-national-id.md) | فیلد کد ملی و شناسه‌ی ملی | todo |
+| [STORY-055](STORY-055-national-id.md) | فیلد کد ملی و شناسه‌ی ملی | in-review |
 | [STORY-056](STORY-056-sheba.md) | فیلد شماره‌ی شبا | todo |
 | [STORY-057](STORY-057-postal-code-mobile.md) | فیلد کد پستی و تلفن همراه | todo |
 | [STORY-058](STORY-058-province-city.md) | فیلد استان و شهر | todo |

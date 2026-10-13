@@ -10,5 +10,10 @@
   "Toman": "Toman",
   "Digits": "Digits",
   "Persian digits": "Persian",
-  "Latin digits": "Latin"
+  "Latin digits": "Latin",
+  "Iranian": "Iranian",
+  "National ID": "National ID",
+  "Legal entity ID": "Legal entity ID",
+  "{{field}} is not a valid national ID": "{{field}} is not a valid national ID",
+  "{{field}} is not a valid legal entity ID": "{{field}} is not a valid legal entity ID"
 }

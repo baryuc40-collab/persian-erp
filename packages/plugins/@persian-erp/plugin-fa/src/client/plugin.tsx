@@ -3,6 +3,7 @@ import { IranianCurrency, IranianCurrencyFieldInterface, registerCurrencyModels 
 import models from './models';
 import { DigitsSettings } from './DigitsSettings';
 import { FaProvider } from './FaProvider';
+import { registerIranianFields } from './iranian-fields';
 import {
   CalendarSettings,
   installJalali,
@@ -30,6 +31,8 @@ export class PluginFaClient extends Plugin {
     this.app.addComponents({ IranianCurrency });
     this.app.dataSourceManager.addFieldInterfaces([IranianCurrencyFieldInterface]);
     registerCurrencyModels(this.flowEngine);
+    // National ID, Sheba and other Iranian field types (EPIC-013).
+    registerIranianFields(this.app);
     this.app.use(FaProvider);
   }
 }

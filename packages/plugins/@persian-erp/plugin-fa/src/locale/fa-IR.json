@@ -10,5 +10,10 @@
   "Toman": "تومان",
   "Digits": "ارقام",
   "Persian digits": "فارسی",
-  "Latin digits": "لاتین"
+  "Latin digits": "لاتین",
+  "Iranian": "ایرانی",
+  "National ID": "کد ملی",
+  "Legal entity ID": "شناسه‌ی ملی",
+  "{{field}} is not a valid national ID": "«{{field}}» معتبر نیست؛ کد ملی ۱۰ رقم با رقم کنترل درست است.",
+  "{{field}} is not a valid legal entity ID": "«{{field}}» معتبر نیست؛ شناسه‌ی ملی ۱۱ رقم با رقم کنترل درست است."
 }
