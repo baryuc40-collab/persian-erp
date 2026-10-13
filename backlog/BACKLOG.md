@@ -15,7 +15,7 @@
 | [EPIC-007](epics/EPIC-007-workflow-rest-upstream/epic.md) | ترجمه‌ی گردش‌کار و بقیه‌ی پلاگین‌ها و ارسال به NocoBase | 1 | in-progress |
 | [EPIC-008](epics/EPIC-008-rtl-and-font/epic.md) | پلاگین plugin-fa: جهت RTL و فونت Vazirmatn | 2 | done |
 | [EPIC-009](epics/EPIC-009-core-rtl-fixes/epic.md) | اصلاح استایل‌های هسته برای RTL + آزمون تصویری | 2 | in-progress |
-| [EPIC-010](epics/EPIC-010-jalali-calendar/epic.md) | تقویم جلالی در ورود و نمایش تاریخ | 3 | in-progress |
+| [EPIC-010](epics/EPIC-010-jalali-calendar/epic.md) | تقویم جلالی در ورود و نمایش تاریخ | 3 | done |
 | EPIC-011 | جلالی در فیلترها، تقویم، گانت، نمودار، خروجی اکسل، گردش‌کار | 3 | draft |
 | EPIC-012 | ارقام فارسی، یکسان‌سازی ی/ک، پول ریال/تومان | 3 | draft |
 | EPIC-013 | فیلدهای ایرانی (کد ملی، شبا، کد پستی، تقسیمات کشوری) | 3 | draft |
