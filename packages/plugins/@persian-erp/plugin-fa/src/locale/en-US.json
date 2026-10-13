@@ -2,5 +2,11 @@
   "Persian localization": "Persian localization",
   "Calendar": "Calendar",
   "Jalali": "Jalali",
-  "Gregorian": "Gregorian"
+  "Gregorian": "Gregorian",
+  "Persian": "Persian",
+  "Default calendar": "Default calendar",
+  "Used for users who have not chosen a calendar, and for workflows.": "Used for users who have not chosen a calendar, and for workflows.",
+  "By language (Jalali in Persian)": "By language (Jalali in Persian)",
+  "Save": "Save",
+  "Saved successfully": "Saved successfully"
 }

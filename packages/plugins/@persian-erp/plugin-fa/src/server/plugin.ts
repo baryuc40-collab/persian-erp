@@ -5,6 +5,7 @@ import { registerJalaliHelper } from './jalali-handlebars';
 import { registerJalaliInterfaces } from './jalali-interfaces';
 import { registerLatinDigits } from './latin-digits';
 import { readLocalePack } from './locale-pack';
+import { CALENDAR_FIELD, settingsActions, SETTINGS_RESOURCE, SETTINGS_SNIPPET } from './settings';
 
 export class PluginFaServer extends Plugin {
   async afterAdd() {}
@@ -19,9 +20,14 @@ export class PluginFaServer extends Plugin {
       // Typed as optional, but Locale.reset() calls it on every storer.
       reset: async () => {},
     });
+    // The system's default calendar; see settings.ts. New columns are added when the plugin is enabled or upgraded.
+    this.db.extendCollection({ name: 'systemSettings', fields: [{ type: 'string', name: CALENDAR_FIELD }] });
+    this.app.acl.registerSnippet({ name: SETTINGS_SNIPPET, actions: [`${SETTINGS_RESOURCE}:setSettings`] });
   }
 
   async load() {
+    this.app.resourceManager.define({ name: SETTINGS_RESOURCE, actions: settingsActions(this.db) });
+    this.app.acl.allow(SETTINGS_RESOURCE, 'getSettings', 'public');
     // Must run before NocoBase resolves the relative date variables; see jalali-filter.ts.
     this.app.dataSourceManager.use(jalaliFilterMiddleware, {
       tag: 'persian-erp-jalali-filter',

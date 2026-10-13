@@ -2,5 +2,11 @@
   "Persian localization": "فارسی‌سازی",
   "Calendar": "تقویم",
   "Jalali": "شمسی",
-  "Gregorian": "میلادی"
+  "Gregorian": "میلادی",
+  "Persian": "فارسی",
+  "Default calendar": "تقویم پیش‌فرض",
+  "Used for users who have not chosen a calendar, and for workflows.": "برای کاربرانی که خودشان تقویمی انتخاب نکرده‌اند و برای گردش‌کارها به کار می‌رود.",
+  "By language (Jalali in Persian)": "بر اساس زبان (شمسی در فارسی)",
+  "Save": "ذخیره",
+  "Saved successfully": "با موفقیت ذخیره شد"
 }
