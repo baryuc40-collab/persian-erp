@@ -37,5 +37,5 @@ model: sonnet
 
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
-- [ ] PR به این استوری لینک دارد
+- [x] PR به این استوری لینک دارد ([#50](https://github.com/baryuc40-collab/persian-erp/pull/50))
 - [ ] بازبینی شد و ادغام شد
