@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { apiAs, enablePersian, openAs } from './helpers';
-import { seedCollection, seedV1Page, seedV2Page } from './jalali/seed';
+import { cleanup, seedCollection, seedV1Page, seedV2Page } from './jalali/seed';
 
 // Dates in tables are shown in the Jalali calendar in Persian and stay Gregorian in English (EPIC-010).
 // The browser runs in Tehran time so the sample moment falls on the next day there.
@@ -15,6 +15,12 @@ test.beforeAll(async ({ playwright, baseURL }) => {
   await seedCollection(api);
   pages.classic = await seedV1Page(api);
   pages.modern = await seedV2Page(api);
+  await api.request.dispose();
+});
+
+test.afterAll(async ({ playwright, baseURL }) => {
+  const api = await apiAs(playwright, baseURL!);
+  await cleanup(api);
   await api.request.dispose();
 });
 

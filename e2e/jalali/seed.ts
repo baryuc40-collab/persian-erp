@@ -174,3 +174,15 @@ export async function seedV2Page(api: Api): Promise<string> {
   });
   return pageUid;
 }
+
+// Removes the collection and the pages, so later tests (the collection list in the visual tests) do not see them.
+export async function cleanup(api: Api) {
+  for (const title of [V1_PAGE_TITLE, V2_PAGE_TITLE]) {
+    for (const route of await list(api, 'desktopRoutes', { title })) {
+      await api.call(`desktopRoutes:destroy?filterByTk=${route.id}`);
+    }
+  }
+  if ((await list(api, 'collections', { name: COLLECTION })).length) {
+    await api.call(`collections:destroy?filterByTk=${COLLECTION}`);
+  }
+}
