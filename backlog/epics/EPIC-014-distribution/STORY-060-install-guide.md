@@ -2,7 +2,7 @@
 id: STORY-060
 epic: EPIC-014
 title: راهنمای نصب فارسی
-status: in-review
+status: done
 model: sonnet
 ---
 
@@ -52,4 +52,4 @@ model: sonnet
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد

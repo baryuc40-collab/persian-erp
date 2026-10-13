@@ -2,7 +2,7 @@
 id: STORY-055
 epic: EPIC-013
 title: فیلد کد ملی و شناسه‌ی ملی
-status: in-review
+status: done
 model: sonnet
 ---
 
@@ -43,4 +43,4 @@ model: sonnet
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد
