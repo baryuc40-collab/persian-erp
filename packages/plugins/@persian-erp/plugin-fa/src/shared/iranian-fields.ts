@@ -88,6 +88,20 @@ export const SHEBA_BANKS: Record<string, string> = {
   '078': 'Middle East Bank',
 };
 
+// Mobile numbers are stored as 09xxxxxxxxx, however they were typed: +98 912 …, 0098912…, 912… or 0912….
+function normalizeMobile(text: string) {
+  const digits = digitsOnly(text).replace(/[()+]/g, '');
+  if (/^0098\d{10}$/.test(digits)) return `0${digits.slice(4)}`;
+  if (/^98\d{10}$/.test(digits)) return `0${digits.slice(2)}`;
+  if (/^9\d{9}$/.test(digits)) return `0${digits}`;
+  return digits;
+}
+
+export const isMobile = (value: string) => /^09\d{9}$/.test(value);
+
+// Postal codes are ten digits, the first not zero.
+export const isPostalCode = (value: string) => /^[1-9]\d{9}$/.test(value);
+
 export const IRANIAN_FIELD_KINDS: IranianFieldKind[] = [
   {
     name: 'iranNationalId',
@@ -114,6 +128,23 @@ export const IRANIAN_FIELD_KINDS: IranianFieldKind[] = [
     validate: isSheba,
     format: (value) => value.replace(/(.{4})(?=.)/g, '$1 '),
     describe: (value) => SHEBA_BANKS[value.slice(4, 7)],
+  },
+  {
+    name: 'iranPostalCode',
+    title: 'Postal code',
+    error: '{{field}} is not a valid postal code',
+    maxLength: 12,
+    normalize: digitsOnly,
+    validate: isPostalCode,
+    format: (value) => `${value.slice(0, 5)}-${value.slice(5)}`,
+  },
+  {
+    name: 'iranMobile',
+    title: 'Mobile number',
+    error: '{{field}} is not a valid mobile number',
+    maxLength: 17,
+    normalize: normalizeMobile,
+    validate: isMobile,
   },
 ];
 

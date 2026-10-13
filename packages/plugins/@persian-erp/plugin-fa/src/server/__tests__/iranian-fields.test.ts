@@ -12,6 +12,8 @@ describe('Iranian fields on save', () => {
         { type: 'string', name: 'nid', interface: 'iranNationalId', uiSchema: { title: 'کد ملی' } },
         { type: 'string', name: 'company', interface: 'iranLegalId' },
         { type: 'string', name: 'sheba', interface: 'iranSheba' },
+        { type: 'string', name: 'mobile', interface: 'iranMobile' },
+        { type: 'string', name: 'postal', interface: 'iranPostalCode' },
       ],
     });
     await app.db.sync();
@@ -49,6 +51,15 @@ describe('Iranian fields on save', () => {
     const res = await create({ sheba: 'IR120170000000123456789001' }, 'fa-IR');
     expect(res.status).toBe(400);
     expect(res.body.errors[0].message).toContain('شماره‌ی شبا');
+  });
+
+  it('stores mobile numbers as 09… and postal codes as ten digits', async () => {
+    expect((await create({ mobile: '+98 912 345 6789', postal: '13185-34567' })).status).toBe(200);
+    const record = await app.db.getRepository('people').findOne();
+    expect(record.get('mobile')).toBe('09123456789');
+    expect(record.get('postal')).toBe('1318534567');
+    expect((await create({ mobile: '021 1234 5678' })).status).toBe(400);
+    expect((await create({ postal: '0318534567' })).status).toBe(400);
   });
 
   it('accepts an empty value', async () => {

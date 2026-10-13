@@ -49,3 +49,25 @@ describe('Sheba numbers', () => {
     expect(screen.getByText(/Bank Melli Iran/)).toBeTruthy();
   });
 });
+
+describe('mobile numbers and postal codes', () => {
+  const mobile = getIranianFieldKind('iranMobile');
+  const postal = getIranianFieldKind('iranPostalCode');
+
+  it('stores every common way of writing a mobile number as 09…', () => {
+    for (const text of ['+98 912 345 6789', '00989123456789', '9123456789', '۰۹۱۲۳۴۵۶۷۸۹', '(0912) 345-6789']) {
+      expect(mobile.normalize(text)).toBe('09123456789');
+    }
+    expect(mobile.validate('09123456789')).toBe(true);
+    expect(mobile.validate('02112345678')).toBe(false);
+    expect(mobile.validate('0912345678')).toBe(false);
+  });
+
+  it('stores postal codes as ten digits and shows them with a dash', () => {
+    expect(postal.normalize('13185-34567')).toBe('1318534567');
+    expect(postal.validate('1318534567')).toBe(true);
+    expect(postal.validate('0318534567')).toBe(false);
+    expect(postal.validate('131853456')).toBe(false);
+    expect(postal.format('1318534567')).toBe('13185-34567');
+  });
+});
