@@ -30,7 +30,7 @@ export class PluginFaClient extends Plugin {
     this.app.dataSourceManager.addFieldInterfaces([IranianCurrencyFieldInterface]);
     registerCurrencyModels(this.flowEngine);
     // National ID, Sheba and other Iranian field types (EPIC-013).
-    registerIranianFields(this.app);
+    registerIranianFields(this.app, this.flowEngine);
     this.app.use(FaProvider);
   }
 }
