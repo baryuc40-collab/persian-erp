@@ -57,7 +57,7 @@ owner: mmsh
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
 | [STORY-042](STORY-042-relative-filters.md) | فیلترهای نسبی تاریخ با تقویم شمسی | in-review |
-| [STORY-043](STORY-043-excel-export-import.md) | تاریخ شمسی در خروجی و ورود اکسل | todo |
+| [STORY-043](STORY-043-excel-export-import.md) | تاریخ شمسی در خروجی و ورود اکسل | in-review |
 | [STORY-044](STORY-044-charts.md) | نمودار: برچسب و گروه‌بندی شمسی | todo |
 | [STORY-045](STORY-045-calendar-block.md) | بلوک تقویم شمسی | todo |
 | [STORY-046](STORY-046-gantt.md) | گانت شمسی | todo |
