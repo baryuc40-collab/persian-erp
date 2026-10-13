@@ -18,18 +18,23 @@ export const JALALI_MONTHS = [
   'اسفند',
 ];
 
+// Indexed by Date#getUTCDay: Sunday first.
+export const JALALI_WEEKDAYS = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
+
 const pad = (n: number, width = 2) => String(n).padStart(width, '0');
 
 /** Days since 1970-01-01 of a Gregorian calendar date. */
 export const gregorianDay = (year: number, month: number, day: number) => Date.UTC(year, month - 1, day) / 86400000;
 
 /**
- * A dayjs format with the date tokens (YYYY, YY, MMMM, MMM, MM, M, DD, D) replaced by the Jalali values of the
+ * A dayjs format with the date tokens (YYYY, YY, MMMM, MMM, MM, M, DD, D, dddd) replaced by the Jalali values of the
  * Gregorian calendar date `year-month-day`, as escaped literals; time tokens are left to dayjs.
  */
 export function jalaliFormat(format: string, year: number, month: number, day: number): string {
-  const { jy, jm, jd } = dayToJalali(gregorianDay(year, month, day));
+  const days = gregorianDay(year, month, day);
+  const { jy, jm, jd } = dayToJalali(days);
   const tokens: Record<string, string> = {
+    dddd: JALALI_WEEKDAYS[new Date(days * 86400000).getUTCDay()],
     YYYY: String(jy),
     YY: pad(jy % 100),
     MMMM: JALALI_MONTHS[jm - 1],
@@ -40,7 +45,7 @@ export function jalaliFormat(format: string, year: number, month: number, day: n
     D: String(jd),
   };
   // Bracketed text is already literal; Do (ordinal day) has no Persian form and is left to dayjs.
-  return format.replace(/\[[^\]]*\]|YYYY|YY|MMMM|MMM|MM|M|DD|D(?!o)/g, (match) =>
+  return format.replace(/\[[^\]]*\]|YYYY|YY|MMMM|MMM|MM|M|DD|D(?!o)|dddd/g, (match) =>
     match.startsWith('[') ? match : `[${tokens[match]}]`,
   );
 }
