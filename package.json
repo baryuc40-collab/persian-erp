@@ -26,6 +26,7 @@
     "check:i18n": "node tools/glossary-check packages/plugins/@persian-erp",
     "i18n:report": "node tools/i18n-report",
     "i18n:translate": "node tools/i18n-translate",
+    "upgrade:nocobase": "node tools/upgrade-nocobase",
     "test:tools": "node --test 'tools/**/__tests__/*.test.js'",
     "test:e2e": "playwright test -c e2e/playwright.config.ts"
   },
@@ -48,9 +49,9 @@
     "mariadb": "^2.5.6",
     "pg": "^8.14.1",
     "pg-hstore": "^2.3.4",
-    "@nocobase/app": "2.2.22"
+    "@nocobase/app": "2.2.24"
   },
   "devDependencies": {
-    "@nocobase/devtools": "2.2.22"
+    "@nocobase/devtools": "2.2.24"
   }
 }
