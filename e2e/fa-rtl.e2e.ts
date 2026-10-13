@@ -20,8 +20,23 @@ test('Persian: right-to-left layout, Vazirmatn and Persian text', async ({ page 
   await expect(page.getByText('کاربران و دسترسی‌ها').first()).toBeVisible();
   await expect(page.getByText('مدیریت پلاگین‌ها').first()).toBeVisible();
   await expect(page.locator('.ant-table').first()).toHaveClass(/ant-table-rtl/);
-  expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toMatch(/^Vazirmatn/);
-  expect(await loadedFonts(page)).toContain('Vazirmatn');
+  // Persian digits by default: Vazirmatn FD draws the Latin digits of the page with Persian shapes (STORY-051).
+  expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toMatch(/^"?Vazirmatn FD/);
+  const cell = page.locator('.ant-table-cell').filter({ hasText: /\d/ }).first();
+  expect(await cell.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^"?Vazirmatn FD/);
+  expect(await loadedFonts(page)).toContain('Vazirmatn FD');
+});
+
+test('the user menu switches Persian users to Latin digits', async ({ page }) => {
+  await openAs(page, 'fa-IR', '/admin/settings/users-permissions/users');
+  await page.locator('[data-testid="user-center-button"]').hover();
+  const item = page.getByRole('menuitem').filter({ hasText: 'ارقام' });
+  await expect(item).toContainText('فارسی');
+  await item.click();
+  await page.getByRole('option', { name: 'لاتین' }).click();
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByText('کاربران و دسترسی‌ها').first()).toBeVisible();
+  expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toMatch(/^"?Vazirmatn"?,/);
 });
 
 test('English: layout and font unchanged', async ({ page }) => {
