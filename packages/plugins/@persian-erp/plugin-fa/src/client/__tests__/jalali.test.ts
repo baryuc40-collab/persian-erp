@@ -5,7 +5,8 @@ import weekday from 'dayjs/plugin/weekday';
 import localeData from 'dayjs/plugin/localeData';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import 'dayjs/locale/fa';
-import { formatJalali, installJalali, jalaliGenerateConfig as config, toGregorian, toJalali } from '../jalali';
+import { formatJalali, installJalali, toGregorian, toJalali } from '../jalali/dayjs';
+import { jalaliGenerateConfig as config } from '../jalali/generateConfig';
 
 // The plugins NocoBase's shared dayjs instance already has (core/utils/src/dayjs.ts).
 dayjs.extend(utc);
