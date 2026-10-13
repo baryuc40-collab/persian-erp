@@ -2,7 +2,7 @@
 id: EPIC-014
 title: ایمیج Docker فارسی، راهنمای نصب و فرایند ارتقا
 phase: 4
-status: draft
+status: in-progress
 owner: mmsh
 ---
 
@@ -31,7 +31,7 @@ owner: mmsh
 - انتشار پلاگین در npm یا بازارچه‌ی NocoBase
 
 ## معیار پذیرش اپیک
-- [ ] روی سرور خالی با Docker، نصب از روی راهنما بدون دستور اضافه کار می‌کند و صفحه‌ی ورود فارسی است
+- [x] روی سرور خالی با Docker، نصب از روی راهنما بدون دستور اضافه کار می‌کند و صفحه‌ی ورود فارسی است
 - [ ] فایل پلاگین روی NocoBase رسمی همان نسخه بارگذاری و فعال می‌شود
 - [ ] یک ارتقای وصله‌ی کامل با همین فرایند انجام و منتشر شده است
 - [ ] هر انتشار در GitHub Release ایمیج، فایل پلاگین و یادداشت انتشار فارسی دارد
@@ -57,7 +57,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-059](STORY-059-docker-image.md) | ایمیج Docker فارسی | in-review |
-| [STORY-060](STORY-060-install-guide.md) | راهنمای نصب فارسی | in-review |
-| [STORY-061](STORY-061-upgrade-process.md) | فرایند و ابزار ارتقای وصله‌ی NocoBase | in-review |
+| [STORY-059](STORY-059-docker-image.md) | ایمیج Docker فارسی | done |
+| [STORY-060](STORY-060-install-guide.md) | راهنمای نصب فارسی | done |
+| [STORY-061](STORY-061-upgrade-process.md) | فرایند و ابزار ارتقای وصله‌ی NocoBase | done |
 | [STORY-062](STORY-062-release.md) | نسخه‌گذاری و انتشار در GitHub Release | todo |

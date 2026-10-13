@@ -17,8 +17,8 @@
 | [EPIC-009](epics/EPIC-009-core-rtl-fixes/epic.md) | اصلاح استایل‌های هسته برای RTL + آزمون تصویری | 2 | in-progress |
 | [EPIC-010](epics/EPIC-010-jalali-calendar/epic.md) | تقویم جلالی در ورود و نمایش تاریخ | 3 | done |
 | [EPIC-011](epics/EPIC-011-jalali-everywhere/epic.md) | جلالی در فیلترها، خروجی اکسل، نمودار، تقویم، گانت و گردش‌کار | 3 | in-progress |
-| [EPIC-012](epics/EPIC-012-persian-digits-and-text/epic.md) | ارقام فارسی، یکسان‌سازی ی و ک، و پول ریال و تومان | 3 | in-progress |
-| [EPIC-013](epics/EPIC-013-iranian-fields/epic.md) | فیلدهای ایرانی (کد ملی، شبا، کد پستی، تلفن همراه، تقسیمات کشوری) | 3 | in-progress |
-| [EPIC-014](epics/EPIC-014-distribution/epic.md) | ایمیج Docker فارسی، راهنمای نصب و فرایند ارتقا | 4 | draft |
+| [EPIC-012](epics/EPIC-012-persian-digits-and-text/epic.md) | ارقام فارسی، یکسان‌سازی ی و ک، و پول ریال و تومان | 3 | done |
+| [EPIC-013](epics/EPIC-013-iranian-fields/epic.md) | فیلدهای ایرانی (کد ملی، شبا، کد پستی، تلفن همراه، تقسیمات کشوری) | 3 | done |
+| [EPIC-014](epics/EPIC-014-distribution/epic.md) | ایمیج Docker فارسی، راهنمای نصب و فرایند ارتقا | 4 | in-progress |
 | [EPIC-015](epics/EPIC-015-erp-modules/epic.md) | قالب ماژول ERP: خروجی و ورودی ماژول و استاندارد کیفیت | 5 | draft |
 | EPIC-016 | اتصال موتور BPMN (اثبات مفهوم) | 6 | draft |
