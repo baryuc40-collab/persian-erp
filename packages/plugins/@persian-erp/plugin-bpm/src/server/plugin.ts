@@ -3,7 +3,9 @@ import { Plugin } from '@nocobase/server';
 import bpmSettingsCollection from './bpm-settings-collection';
 import { BpmEngine, BpmEngineError } from './engine';
 import { OperatonEngine, OperatonSettings } from './operaton';
+import { SERVICE_TASK_TRIGGER, ServiceTaskTrigger } from './service-task-trigger';
 import { START_INSTRUCTION, StartProcessInstruction } from './start-instruction';
+import { ServiceTaskWorker } from './worker';
 
 export const BPM_RESOURCE = 'bpm';
 export const BPM_SNIPPET = 'pm.bpm';
@@ -15,17 +17,31 @@ export class PluginBpmServer extends Plugin {
   /** Builds the engine of the saved settings; another adapter can take its place in tests. */
   createEngine: (settings: OperatonSettings) => BpmEngine = (settings) => new OperatonEngine(settings);
 
+  /** Runs the service tasks of the engine (STORY-081); off with BPM_WORKER=off. */
+  worker = new ServiceTaskWorker(this, { interval: Number(process.env.BPM_WORKER_INTERVAL) || undefined });
+
   async beforeLoad() {
     this.db.collection(bpmSettingsCollection);
     this.app.acl.registerSnippet({ name: BPM_SNIPPET, actions: [`${BPM_RESOURCE}:*`] });
   }
 
   async load() {
-    // The workflow node of STORY-080, when the workflow plugin is on.
+    // The workflow node of STORY-080 and the event of STORY-081, when the workflow plugin is on.
     const workflow = (this.app.pm.get('workflow') as unknown) as
-      | { registerInstruction(type: string, instruction: unknown): void }
+      | {
+          registerInstruction(type: string, instruction: unknown): void;
+          registerTrigger(type: string, trigger: unknown): void;
+        }
       | undefined;
-    workflow?.registerInstruction(START_INSTRUCTION, new StartProcessInstruction(workflow as never, this));
+    if (workflow) {
+      workflow.registerInstruction(START_INSTRUCTION, new StartProcessInstruction(workflow as never, this));
+      workflow.registerTrigger(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
+      if (process.env.BPM_WORKER !== 'off') {
+        this.app.on('afterStart', () => this.worker.start());
+        this.app.on('beforeStop', () => this.worker.stop());
+        this.app.on('beforeDestroy', () => this.worker.stop());
+      }
+    }
 
     // Not a collection, so the resource is defined here with its actions.
     this.app.resourceManager.define({
