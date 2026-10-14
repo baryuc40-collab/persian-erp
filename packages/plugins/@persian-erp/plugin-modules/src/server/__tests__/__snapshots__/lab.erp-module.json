@@ -285,7 +285,10 @@
             "tabSchemaName": "tab1",
             "title": null,
             "tooltip": null,
-            "type": "tabs"
+            "type": "tabs",
+            "uiLayouts": [
+              "admin-layout-model"
+            ]
           }
         ],
         "displayTitle": null,
@@ -301,7 +304,10 @@
         "tabSchemaName": null,
         "title": "کلاسیک",
         "tooltip": null,
-        "type": "page"
+        "type": "page",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
       },
       {
         "children": [
@@ -319,7 +325,10 @@
             "tabSchemaName": "tab1",
             "title": null,
             "tooltip": null,
-            "type": "tabs"
+            "type": "tabs",
+            "uiLayouts": [
+              "admin-layout-model"
+            ]
           }
         ],
         "displayTitle": null,
@@ -335,7 +344,10 @@
         "tabSchemaName": null,
         "title": "مدرن",
         "tooltip": null,
-        "type": "flowPage"
+        "type": "flowPage",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
       },
       {
         "displayTitle": null,
@@ -353,7 +365,10 @@
         "tabSchemaName": null,
         "title": "پیوند",
         "tooltip": null,
-        "type": "link"
+        "type": "link",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
       }
     ],
     "displayTitle": null,
@@ -369,7 +384,10 @@
     "tabSchemaName": null,
     "title": "آزمایشگاه",
     "tooltip": null,
-    "type": "group"
+    "type": "group",
+    "uiLayouts": [
+      "admin-layout-model"
+    ]
   },
   "uiSchemas": [
     {

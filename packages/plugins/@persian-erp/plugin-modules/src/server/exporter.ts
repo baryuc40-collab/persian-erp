@@ -37,15 +37,19 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
   const prefix = modulePrefix(moduleRow.key);
 
   // Menu: the group and everything below it.
-  const group = json(await db.getRepository('desktopRoutes').findOne({ filter: { schemaUid: moduleRow.groupSchemaUid } }));
+  // plugin-ui-layout shows a route only in the layouts it is linked to.
+  const appends = db.getCollection('desktopRoutes').getField('uiLayouts') ? ['uiLayouts'] : [];
+  const group = json(
+    await db.getRepository('desktopRoutes').findOne({ filter: { schemaUid: moduleRow.groupSchemaUid }, appends }),
+  );
   if (!group || group.type !== 'group' || group.parentId) {
     throw new ModuleExportError('The menu group of the module must be a top-level menu group');
   }
   const routes: Row[] = [group];
   for (let parents = [group.id]; parents.length; ) {
-    const children = (await db.getRepository('desktopRoutes').find({ filter: { parentId: { $in: parents } } })).map(
-      (route) => route.toJSON(),
-    );
+    const children = (
+      await db.getRepository('desktopRoutes').find({ filter: { parentId: { $in: parents } }, appends })
+    ).map((route) => route.toJSON());
     routes.push(...children);
     parents = children.map((route) => route.id);
   }

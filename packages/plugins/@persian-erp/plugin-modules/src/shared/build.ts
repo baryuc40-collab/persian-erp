@@ -99,10 +99,13 @@ function buildRoutes(routes: Row[], groupId: string | number) {
     refById.set(String(route.id), ref);
     const own = sortBy(children.get(String(route.id)) || [], (r) => r.sort ?? 0);
     const result: ModuleRoute = {
-      ...omit(route, ['id', 'parentId', 'sort', 'roles', 'children']),
+      ...omit(route, ['id', 'parentId', 'sort', 'roles', 'children', 'uiLayouts']),
       ref,
       type: route.type,
     };
+    if (Array.isArray(route.uiLayouts)) {
+      result.uiLayouts = sorted(route.uiLayouts.map((layout) => layout.uid));
+    }
     if (own.length) {
       // A route without schemaUid (a link) is named by its parent and position.
       result.children = own.map((child, index) => toModule(child, child.schemaUid || `${ref}/${index + 1}`));

@@ -54,6 +54,10 @@ async function buildLabModule(app: MockServer) {
       ],
     },
   });
+  // Routes made in the UI are linked to the layout they were made in (plugin-ui-layout).
+  for (const route of await db.getRepository('desktopRoutes').find()) {
+    await db.getRepository<any>('desktopRoutes.uiLayouts', route.get('id') as string).set({ tk: ['admin-layout-model'] });
+  }
   const routes = await db.getRepository('desktopRoutes').find({ filter: { parentId: group.get('id') } });
   const flowPage = routes.find((route) => route.get('schemaUid') === 'labflowpage');
 
@@ -238,6 +242,7 @@ describe('erpModules:export', () => {
         'client',
         'flow-engine',
         'ui-templates',
+        'ui-layout',
         'workflow',
         'workflow-action-trigger',
         PluginModulesServer,
@@ -276,6 +281,7 @@ describe('erpModules:export', () => {
     expect(file.routes.ref).toBe('labgroup001');
     expect(file.routes.children.map((r) => r.ref)).toEqual(['labclspage1', 'labflowpage', 'labgroup001/3']);
     expect(file.routes.children[1].children[0]).toMatchObject({ ref: 'labflowtab1', tabSchemaName: 'tab1' });
+    expect(file.routes.uiLayouts).toEqual(['admin-layout-model']);
 
     expect(file.uiSchemas.map((s) => s['x-uid'])).toEqual(['labclspage1']);
     expect(file.flowModels.map((m) => m.uid)).toEqual(['labgrid0001', 'labpopup001', 'labroot0001']);

@@ -72,6 +72,8 @@
 
 **ساختن:** `db.getRepository('desktopRoutes').create({ values: { ..., children: [...] }, transaction })`. فرزندهای تودرتو پشتیبانی می‌شوند.
 
+**چیدمان‌ها (plugin-ui-layout).** هر مسیر از راه جدول واسط `desktopRoutesUiLayouts` (`desktopRouteId`، `uiLayoutUid`) به یک یا چند چیدمان (`uiLayouts`) وصل است. `desktopRoutes:listAccessible` فقط مسیرهای چیدمان درخواست‌شده را برمی‌گرداند؛ پیش‌فرض چیدمان مدیر با uid `admin-layout-model` است. اتصال را یک pre-action روی `desktopRoutes:create` می‌سازد (`plugin-ui-layout/src/server/plugin.ts`، `addDesktopRouteWriteLayout`)، پس مسیری که با مخزن ساخته شود به هیچ چیدمانی وصل نیست و در منو دیده نمی‌شود. این در بررسی اول جا ماند و هنگام آزمودن ورود روی ایمیج پیدا شد (STORY-065).
+
 ## ۳. صفحه‌ی کلاسیک: `uiSchemas` و `uiSchemaTreePath` (plugin-ui-schema-storage)
 
 - `uiSchemas`: کلید `x-uid`، ستون‌های `name` و `schema` (همه‌ی کلیدهای `x-*`، `type` و `title`).
