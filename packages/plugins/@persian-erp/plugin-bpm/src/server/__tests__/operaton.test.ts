@@ -91,4 +91,25 @@ describe.skipIf(!url)('OperatonEngine', () => {
     const fetched = await engine.fetchServiceTasks('test-worker', [{ name: 'place-order', lockMs: 1000 }], 10);
     expect(fetched.filter((t) => t.businessKey === key(2))).toEqual([]);
   });
+  it('locks a service task to one worker, and makes an incident after the last retry', async () => {
+    await engine.start('purchase_request', key(3), { recordId: 3 });
+    const [task] = await engine.listUserTasks({ businessKey: key(3) });
+    await engine.completeUserTask(task.id, { approved: true });
+    const topics = [{ name: 'place-order', lockMs: 60000 }];
+    const mine = (tasks: { businessKey: string | null }[]) => tasks.filter((t) => t.businessKey === key(3));
+    // Two app instances in a cluster: the second worker does not get the task the first one locked.
+    const [order] = mine(await engine.fetchServiceTasks('worker-a', topics, 10));
+    expect(order).toBeTruthy();
+    expect(mine(await engine.fetchServiceTasks('worker-b', topics, 10))).toEqual([]);
+    // Only the worker that holds the lock can report on it.
+    await expect(engine.completeServiceTask('worker-b', order.id)).rejects.toBeInstanceOf(BpmEngineError);
+
+    await engine.failServiceTask('worker-a', order.id, { message: 'خطای آخر', retries: 0, retryMs: 0 });
+    expect(mine(await engine.fetchServiceTasks('worker-a', topics, 10))).toEqual([]);
+    const auth = Buffer.from(`${settings.username}:${settings.password}`).toString('base64');
+    const response = await fetch(`${url}/engine-rest/incident?processInstanceId=${order.processInstanceId}`, {
+      headers: { Authorization: `Basic ${auth}` },
+    });
+    expect(await response.json()).toEqual([expect.objectContaining({ incidentMessage: 'خطای آخر' })]);
+  });
 });
