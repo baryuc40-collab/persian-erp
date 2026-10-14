@@ -1,7 +1,7 @@
 // Settings > ERP modules (STORY-066): the modules of this install, their export, defining a module and importing one.
 // The page only talks to the server through `api`, so the v1 and v2 clients both use it.
 
-import { App, Alert, Button, Card, Descriptions, Form, Input, Modal, Select, Space, Table, Tag, Upload } from 'antd';
+import { App, Alert, Button, Card, Descriptions, Form, Input, List, Modal, Select, Space, Table, Tag, Typography, Upload } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 // @ts-ignore
@@ -26,6 +26,17 @@ export interface ImportPreview {
   problems: string[];
   conflicts: string[];
 }
+
+/** A module file that comes with the plugin (STORY-070), with what an import of it would say. */
+export interface CatalogItem extends ImportPreview {
+  file: string;
+  installed: boolean;
+}
+
+// Where an import comes from: a file the administrator chose, or a module of the catalog.
+type ImportSource = { file: unknown } | { key: string };
+
+const isBlocked = (preview: ImportPreview) => preview.problems.length + preview.conflicts.length > 0;
 
 const errorMessage = (error: any) =>
   error?.response?.data?.errors?.map((e: { message: string }) => e.message).join('\n') || error?.message || String(error);
@@ -176,21 +187,71 @@ const DefineModule = ({ api, open, onClose, used }: { api: ModulesApi; open: boo
   );
 };
 
+export const ModulesCatalog = ({ items, onInstall }: { items: CatalogItem[]; onInstall: (item: CatalogItem) => void }) => {
+  const { t } = useTranslation([pkg.name, 'client']);
+  if (!items.length) return null;
+  return (
+    <Card size="small" title={t('Catalog')} style={{ marginBlockEnd: 16 }}>
+      <List
+        dataSource={items}
+        rowKey="file"
+        renderItem={(item) => (
+          <List.Item
+            actions={[
+              item.installed ? (
+                <Tag key="state" color="green">
+                  {t('Installed')}
+                </Tag>
+              ) : (
+                <Button key="install" type="link" disabled={isBlocked(item)} onClick={() => onInstall(item)}>
+                  {t('Install')}
+                </Button>
+              ),
+            ]}
+          >
+            <List.Item.Meta
+              title={
+                <Space>
+                  <span>{item.summary.title || item.file}</span>
+                  {item.summary.version && <Typography.Text type="secondary">{item.summary.version}</Typography.Text>}
+                </Space>
+              }
+              description={
+                <>
+                  {item.summary.description && <div>{item.summary.description}</div>}
+                  {!item.installed && isBlocked(item) && (
+                    <Typography.Text type="danger">{[...item.problems, ...item.conflicts].join(' ')}</Typography.Text>
+                  )}
+                </>
+              }
+            />
+          </List.Item>
+        )}
+      />
+    </Card>
+  );
+};
+
 export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
   const { t } = useTranslation([pkg.name, 'client']);
   const { message, modal } = App.useApp();
   const [modules, setModules] = useState<InstalledModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [defining, setDefining] = useState(false);
-  const [file, setFile] = useState<unknown>(null);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [source, setSource] = useState<ImportSource | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [importing, setImporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.request({ url: 'erpModules:overview' });
-      setModules(data?.data || []);
+      const [installed, available] = await Promise.all([
+        api.request({ url: 'erpModules:overview' }),
+        api.request({ url: 'erpModules:catalog' }),
+      ]);
+      setModules(installed.data?.data || []);
+      setCatalog(available.data?.data || []);
     } finally {
       setLoading(false);
     }
@@ -224,7 +285,7 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
     }
     try {
       const { data } = await api.request({ url: 'erpModules:import', method: 'post', params: { dryRun: true }, data: parsed });
-      setFile(parsed);
+      setSource({ file: parsed });
       setPreview(data?.data);
     } catch (error) {
       message.error(errorMessage(error));
@@ -235,9 +296,13 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
   const runImport = async () => {
     setImporting(true);
     try {
-      await api.request({ url: 'erpModules:import', method: 'post', data: file });
+      if ('key' in source) {
+        await api.request({ url: 'erpModules:install', method: 'post', params: { filterByTk: source.key } });
+      } else {
+        await api.request({ url: 'erpModules:import', method: 'post', data: source.file });
+      }
       setPreview(null);
-      setFile(null);
+      setSource(null);
       await load();
       // The menu is read when the app starts, so the new menu shows after a reload.
       modal.success({
@@ -253,7 +318,7 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
     }
   };
 
-  const blocked = !!preview && preview.problems.length + preview.conflicts.length > 0;
+  const blocked = !!preview && isBlocked(preview);
 
   return (
     <Card bordered={false}>
@@ -263,6 +328,13 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
         </Upload>
         <Button onClick={() => setDefining(true)}>{t('Define a module')}</Button>
       </Space>
+      <ModulesCatalog
+        items={catalog}
+        onInstall={(item) => {
+          setSource({ key: item.summary.key });
+          setPreview(item);
+        }}
+      />
       <Table<InstalledModule>
         rowKey="key"
         loading={loading}
@@ -310,7 +382,7 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
         onOk={runImport}
         onCancel={() => {
           setPreview(null);
-          setFile(null);
+          setSource(null);
         }}
       >
         {preview && <ImportPreviewView preview={preview} />}
