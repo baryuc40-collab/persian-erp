@@ -3,6 +3,7 @@ import { Plugin } from '@nocobase/server';
 import { ModuleExportError } from '../shared/build';
 import { isModuleKey, MODULE_FILE_SUFFIX, ModuleFile, stringifyModule } from '../shared/format';
 import { summarizeModule } from '../shared/summary';
+import { readCatalog } from './catalog';
 import erpModulesCollection from './erp-modules-collection';
 import { exportModule, ModuleRow } from './exporter';
 import { checkImport, ConflictKind, importModule, ModuleImportError } from './importer';
@@ -25,6 +26,8 @@ export class PluginModulesServer extends Plugin {
       [`${MODULES_RESOURCE}:import`]: (ctx: Context, next: Next) => this.importAction(ctx, next),
       [`${MODULES_RESOURCE}:overview`]: (ctx: Context, next: Next) => this.overviewAction(ctx, next),
       [`${MODULES_RESOURCE}:create`]: (ctx: Context, next: Next) => this.createAction(ctx, next),
+      [`${MODULES_RESOURCE}:catalog`]: (ctx: Context, next: Next) => this.catalogAction(ctx, next),
+      [`${MODULES_RESOURCE}:install`]: (ctx: Context, next: Next) => this.installAction(ctx, next),
     });
   }
 
@@ -98,7 +101,8 @@ export class PluginModulesServer extends Plugin {
     await next();
   }
 
-  async importAction(ctx: Context, next: Next) {
+  /** Messages of an import, translated for the request. */
+  private messages(ctx: Context) {
     const t = (message: string, values: Record<string, unknown> = {}) => ctx.t(message, { ns: NAMESPACE, ...values });
     const translate = (problem: FileProblem) => t(problem.message, problem.values);
     const kinds: Record<ConflictKind, string> = {
@@ -118,27 +122,32 @@ export class PluginModulesServer extends Plugin {
         const more = names.length - MAX_NAMES_PER_LINE;
         return [`${kinds[kind]}: ${shown}${more > 0 ? ` ${t('and {{count}} more', { count: more })}` : ''}`];
       });
-    const file = ctx.action.params.values as ModuleFile;
-    // A preview runs the checks of an import and changes nothing.
-    if (['true', true, '1'].includes(ctx.action.params.dryRun)) {
-      const summary = summarizeModule(file && typeof file === 'object' ? file : {});
-      try {
-        const { warnings } = await checkImport(this.app, file);
-        ctx.body = { summary, warnings: warnings.map(translate), problems: [], conflicts: [] };
-      } catch (error) {
-        if (!(error instanceof ModuleImportError)) throw error;
-        ctx.body = {
-          summary,
-          warnings: [],
-          problems: error.problems.map(translate),
-          conflicts: conflictLines(error.conflicts),
-        };
-      }
-      return next();
+    return { t, translate, conflictLines };
+  }
+
+  /** The checks of an import without any change: what the file holds and what would stop it. */
+  async preview(ctx: Context, file: ModuleFile) {
+    const { translate, conflictLines } = this.messages(ctx);
+    const summary = summarizeModule(file && typeof file === 'object' ? file : {});
+    try {
+      const { warnings } = await checkImport(this.app, file);
+      return { summary, warnings: warnings.map(translate), problems: [] as string[], conflicts: [] as string[] };
+    } catch (error) {
+      if (!(error instanceof ModuleImportError)) throw error;
+      return {
+        summary,
+        warnings: [] as string[],
+        problems: error.problems.map(translate),
+        conflicts: conflictLines(error.conflicts),
+      };
     }
+  }
+
+  async runImport(ctx: Context, file: ModuleFile) {
+    const { translate, conflictLines } = this.messages(ctx);
     try {
       const result = await importModule(this.app, file);
-      ctx.body = { ...result, warnings: result.warnings.map(translate) };
+      return { ...result, warnings: result.warnings.map(translate) };
     } catch (error) {
       if (error instanceof ModuleImportError) {
         const lines = [...error.problems.map(translate), ...conflictLines(error.conflicts)];
@@ -146,8 +155,49 @@ export class PluginModulesServer extends Plugin {
       }
       throw error;
     }
+  }
+
+  async importAction(ctx: Context, next: Next) {
+    const file = ctx.action.params.values as ModuleFile;
+    // A preview runs the checks of an import and changes nothing.
+    ctx.body = isTrue(ctx.action.params.dryRun) ? await this.preview(ctx, file) : await this.runImport(ctx, file);
+    await next();
+  }
+
+  /** The module files that come with the plugin, each with whether it is installed and what an import would say. */
+  async catalogAction(ctx: Context, next: Next) {
+    const { t } = this.messages(ctx);
+    const installed = new Set(
+      (await this.db.getRepository(MODULES_RESOURCE).find({ fields: ['key'] })).map((row) => row.get('key') as string),
+    );
+    const items = [];
+    for (const entry of readCatalog()) {
+      if (!entry.module) {
+        items.push({ file: entry.file, installed: false, summary: summarizeModule({}), warnings: [], problems: [t('This is not an ERP module file')], conflicts: [] });
+        continue;
+      }
+      const key = entry.module.module?.key;
+      if (installed.has(key)) {
+        items.push({ file: entry.file, installed: true, summary: summarizeModule(entry.module), warnings: [], problems: [], conflicts: [] });
+      } else {
+        items.push({ file: entry.file, installed: false, ...(await this.preview(ctx, entry.module)) });
+      }
+    }
+    ctx.body = items;
+    await next();
+  }
+
+  /** Installs a module of the catalog by its key. */
+  async installAction(ctx: Context, next: Next) {
+    const { t } = this.messages(ctx);
+    const key = ctx.action.params.filterByTk;
+    const entry = readCatalog().find((e) => e.module?.module?.key === key);
+    if (!entry) ctx.throw(404, t('Module not found'));
+    ctx.body = await this.runImport(ctx, entry.module);
     await next();
   }
 }
+
+const isTrue = (value: unknown) => value === true || value === 'true' || value === '1';
 
 export default PluginModulesServer;

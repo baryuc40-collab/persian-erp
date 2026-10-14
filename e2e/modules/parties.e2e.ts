@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { expect, Page, test } from '@playwright/test';
 import { apiAs, enablePersian, openAs } from '../helpers';
+import { removeImportedModule } from './remove-module';
 
 // The «اشخاص» reference module (STORY-068): imported from modules/parties, used by its own limited role.
 
@@ -26,27 +27,12 @@ test.beforeAll(async ({ playwright, baseURL }) => {
   await api.request.dispose();
 });
 
-// Removes what the import made, so the tests after this one (reference screenshots among them) see the install as
-// it was. There is no module removal yet, so the parts are removed one by one.
 test.afterAll(async ({ playwright, baseURL }) => {
   const api = await apiAs(playwright, baseURL!);
-  const file = JSON.parse(fs.readFileSync(FILE, 'utf8'));
   for (const user of await api.call(`users:list?${query({ email: EXPERT.email })}`)) {
     await api.call(`users:destroy?filterByTk=${user.id}`);
   }
-  const routeUids = (route) => [route.schemaUid, ...(route.children || []).flatMap(routeUids)];
-  const routes = await api.call(`desktopRoutes:list?${query({ schemaUid: { $in: routeUids(file.routes) } })}`);
-  for (const route of routes.sort((a, b) => (b.parentId ? 1 : 0) - (a.parentId ? 1 : 0))) {
-    await api.call(`desktopRoutes:destroy?filterByTk=${route.id}`);
-  }
-  for (const model of file.flowModels) await api.call(`flowModels:destroy?filterByTk=${model.uid}`);
-  for (const schema of file.uiSchemas) await api.call(`uiSchemas:remove/${schema['x-uid']}`);
-  for (const template of file.flowModelTemplates) {
-    await api.call(`flowModelTemplates:destroy?filterByTk=${template.uid}`);
-  }
-  for (const role of file.roles) await api.call(`roles:destroy?filterByTk=${role.name}`);
-  for (const collection of file.collections) await api.call(`collections:destroy?filterByTk=${collection.name}`);
-  await api.call('erpModules:destroy?filterByTk=parties');
+  await removeImportedModule(api, JSON.parse(fs.readFileSync(FILE, 'utf8')));
   await api.request.dispose();
 });
 

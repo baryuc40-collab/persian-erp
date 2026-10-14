@@ -2,7 +2,7 @@
 id: EPIC-017
 title: کاتالوگ ماژول‌ها، راهنمای ساخت و بازبینی ماژول کاربران
 phase: 5
-status: draft
+status: in-progress
 owner: mmsh
 ---
 
@@ -56,5 +56,5 @@ owner: mmsh
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
 | [STORY-069](STORY-069-module-guide.md) | راهنمای فارسی ساخت ماژول | todo |
-| [STORY-070](STORY-070-module-catalog.md) | کاتالوگ ماژول‌های همراه ایمیج | todo |
+| [STORY-070](STORY-070-module-catalog.md) | کاتالوگ ماژول‌های همراه ایمیج | in-review |
 | [STORY-071](STORY-071-module-review.md) | فرایند بازبینی و آزمون CI ماژول‌های کاربران | todo |

@@ -22,4 +22,4 @@
 | [EPIC-014](epics/EPIC-014-distribution/epic.md) | ایمیج Docker فارسی، راهنمای نصب و فرایند ارتقا | 4 | draft |
 | [EPIC-015](epics/EPIC-015-erp-modules/epic.md) | قالب ماژول ERP: خروجی و ورودی ماژول و استاندارد کیفیت | 5 | in-progress |
 | EPIC-016 | اتصال موتور BPMN (اثبات مفهوم) | 6 | draft |
-| [EPIC-017](epics/EPIC-017-module-catalog/epic.md) | کاتالوگ ماژول‌ها، راهنمای ساخت و بازبینی ماژول کاربران | 5 | draft |
+| [EPIC-017](epics/EPIC-017-module-catalog/epic.md) | کاتالوگ ماژول‌ها، راهنمای ساخت و بازبینی ماژول کاربران | 5 | in-progress |

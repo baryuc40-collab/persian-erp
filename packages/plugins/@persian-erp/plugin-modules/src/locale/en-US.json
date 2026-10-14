@@ -48,5 +48,8 @@
   "The module was imported": "The module was imported",
   "Reload the page to see its menu.": "Reload the page to see its menu.",
   "Reload": "Reload",
-  "and {{count}} more": "and {{count}} more"
+  "and {{count}} more": "and {{count}} more",
+  "Catalog": "Catalog",
+  "Installed": "Installed",
+  "Install": "Install"
 }
