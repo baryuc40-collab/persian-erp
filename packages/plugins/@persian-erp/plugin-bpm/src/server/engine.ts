@@ -15,12 +15,27 @@ export interface ProcessDefinition {
 export interface UserTask {
   id: string;
   name: string | null;
+  /** The ID of the task in the model, like `approve`. */
+  taskKey: string;
   processKey: string;
+  processName: string | null;
+  processDefinitionId: string;
   processInstanceId: string;
   businessKey: string | null;
   assignee: string | null;
   candidateGroups: string[];
   created: string;
+}
+
+/** A field of a user task's form, as the model declares it (operaton:formField). */
+export interface FormField {
+  id: string;
+  label: string | null;
+  type: 'string' | 'long' | 'boolean' | 'date' | 'enum';
+  required: boolean;
+  defaultValue: string | null;
+  /** The choices of an enum field. */
+  options: { id: string; name: string | null }[];
 }
 
 export interface ServiceTask {
@@ -50,6 +65,8 @@ export interface BpmEngine {
   sendMessage(name: string, businessKey: string, variables?: Variables): Promise<void>;
   listUserTasks(filter: { candidateGroups?: string[]; assignee?: string; businessKey?: string }): Promise<UserTask[]>;
   getUserTask(taskId: string): Promise<UserTask | null>;
+  /** The form fields of the task in its model; none when the model declares no form. */
+  getTaskForm(task: UserTask): Promise<FormField[]>;
   completeUserTask(taskId: string, variables?: Variables): Promise<void>;
   fetchServiceTasks(workerId: string, topics: { name: string; lockMs: number }[], max: number): Promise<ServiceTask[]>;
   completeServiceTask(workerId: string, taskId: string, variables?: Variables): Promise<void>;

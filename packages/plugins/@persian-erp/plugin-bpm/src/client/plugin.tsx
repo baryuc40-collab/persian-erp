@@ -2,6 +2,7 @@ import { Plugin } from '@nocobase/client';
 import React from 'react';
 // @ts-ignore
 import pkg from '../../package.json';
+import { BpmTaskInboxBlockModel } from '../client-v2/TaskInboxBlockModel';
 import ServiceTaskTrigger, { SERVICE_TASK_TRIGGER } from '../client-v2/ServiceTaskTrigger';
 import StartProcessInstruction, { START_INSTRUCTION } from '../client-v2/StartProcessInstruction';
 import { BPM_SETTINGS_KEY, BpmSettings } from './BpmSettings';
@@ -24,6 +25,9 @@ export class PluginBpmClient extends Plugin {
       | undefined;
     workflow?.registerInstruction?.(START_INSTRUCTION, StartProcessInstruction);
     workflow?.registerTrigger?.(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
+
+    // The task inbox block of modern pages (STORY-082).
+    this.flowEngine.registerModels({ BpmTaskInboxBlockModel });
   }
 }
 

@@ -64,6 +64,18 @@ describe.skipIf(!url)('OperatonEngine', () => {
     });
     expect(await engine.listUserTasks({ candidateGroups: ['clerk'], businessKey: key(1) })).toEqual([]);
     expect(await engine.getUserTask(task.id)).toEqual(task);
+    expect(task).toMatchObject({ taskKey: 'approve', processName: 'درخواست خرید' });
+    expect(await engine.getTaskForm(task)).toEqual([
+      {
+        id: 'approved',
+        label: 'درخواست تأیید می‌شود؟',
+        type: 'boolean',
+        required: true,
+        defaultValue: null,
+        options: [],
+      },
+      { id: 'managerNote', label: 'یادداشت مدیر', type: 'string', required: false, defaultValue: null, options: [] },
+    ]);
     await engine.completeUserTask(task.id, { approved: true });
     expect(await engine.getUserTask(task.id)).toBeNull();
 
