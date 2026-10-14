@@ -147,6 +147,15 @@ test('M007: what the module uses from outside is in requires', () => {
   ]);
 });
 
+test('M007: a notification node names its channel in requires', () => {
+  const bad = good();
+  bad.workflows[0].nodes.push({ key: 'crmnotify', type: 'notification', config: { channelName: 'erp_in_app' } });
+  bad.requires.workflowInstructions.push('notification');
+  assert.deepStrictEqual(rules(bad), ['M007 workflows[crmwelcome].nodes[crmnotify].config.channelName']);
+  bad.requires.notificationChannels = ['erp_in_app'];
+  assert.deepStrictEqual(rules(bad), []);
+});
+
 test('M007: a classic page that shows a collection the module does not have', () => {
   const bad = good();
   bad.uiSchemas = [

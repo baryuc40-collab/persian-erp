@@ -14,7 +14,7 @@ if (!baseURL || !account || !password) {
 }
 
 const KEY = 'inventory';
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 let token;
 
 async function call(action, body, { text = false } = {}) {
@@ -125,6 +125,24 @@ const COLLECTIONS = [
       quantity('quantity', 'موجودی'),
     ],
   },
+  // Version 1.2: the kardex. The approval writes one movement for each item of a document, with the balance after it.
+  {
+    name: `${KEY}_movements`,
+    title: 'گردش کالا',
+    titleField: 'key',
+    filterTargetKey: 'key',
+    systemFields: false,
+    fields: [
+      { name: 'key', interface: 'input', type: 'string', primaryKey: true, allowNull: false, uiSchema: { type: 'string', title: 'کلید', 'x-component': 'Input' } },
+      dateOnly('date', 'تاریخ'),
+      belongsTo('document', 'سند', `${KEY}_documents`, 'number'),
+      belongsTo('item', 'کالا', `${KEY}_items`, 'name'),
+      belongsTo('warehouse', 'انبار', `${KEY}_warehouses`, 'name'),
+      quantity('quantityIn', 'ورود'),
+      quantity('quantityOut', 'خروج'),
+      quantity('balance', 'مانده'),
+    ],
+  },
 ];
 
 // The stock table has only its key and timestamps; it has no id, and nobody creates or updates its rows by hand.
@@ -133,9 +151,11 @@ const fieldNames = (collection) => [...systemFields(collection), ...collection.f
 
 const GROUP = { title: 'انبار', icon: 'DatabaseOutlined' };
 // The lines of a document are written and shown as a table inside its form.
+// Notification nodes of ERP modules send through this channel; plugin-modules makes it on every install.
+const CHANNEL = 'erp_in_app';
 const LINES = { key: 'lines', field: 'lines', fieldType: 'subTable', titleField: 'quantity', fields: ['item', 'quantity'] };
 
-const page = (title, icon, collection, fields, formFields = fields, { detailFields = formFields, extraRecordActions = [], readOnly = false, formLayout, detailLayout } = {}) => ({
+const page = (title, icon, collection, fields, formFields = fields, { detailFields = formFields, extraRecordActions = [], readOnly = false, formLayout, detailLayout, sorting } = {}) => ({
   version: '1',
   mode: 'create',
   navigation: { group: GROUP, item: { title, icon } },
@@ -150,6 +170,7 @@ const page = (title, icon, collection, fields, formFields = fields, { detailFiel
           type: 'table',
           collection,
           fields,
+          ...(sorting ? { settings: { sorting } } : {}),
           actions: [
             'filter',
             'refresh',
@@ -227,6 +248,19 @@ async function setFieldModels(file) {
     'flowSurfaces:applyBlueprint',
     page('موجودی', 'BarChartOutlined', `${KEY}_stock`, [{ field: 'item', key: 'stockItem' }, { field: 'warehouse', key: 'stockWarehouse' }, 'quantity'], ['item', 'warehouse', 'quantity'], { readOnly: true }),
   );
+  // The kardex: every movement in the order it happened; the filter narrows it to one item or warehouse.
+  const MOVEMENT_FIELDS = ['date', 'document', 'item', 'warehouse', 'quantityIn', 'quantityOut', 'balance'];
+  await call(
+    'flowSurfaces:applyBlueprint',
+    page(
+      'کاردکس',
+      'HistoryOutlined',
+      `${KEY}_movements`,
+      MOVEMENT_FIELDS.map((field) => ({ field, key: `movement_${field}` })),
+      MOVEMENT_FIELDS,
+      { readOnly: true, sorting: [{ field: 'createdAt', direction: 'asc' }] },
+    ),
+  );
   const [group] = await list('desktopRoutes', { title: GROUP.title, parentId: { $empty: true } });
   if (!group) throw new Error('the menu group was not created');
 
@@ -277,17 +311,34 @@ async function setFieldModels(file) {
   const APPLY = `WITH doc AS (
     UPDATE ${docs} SET status = 'approved', "updatedAt" = now()
     WHERE id = :id AND status = 'draft' AND :status = 'approved'
-    RETURNING id, kind, "warehouseId"
+    RETURNING id, kind, "warehouseId", "date"
   ),
   ${need('doc')},
   moved AS (
     UPDATE ${KEY}_stock s SET quantity = s.quantity + need.delta, "updatedAt" = now()
     FROM need WHERE s.key = need."itemId" || ':' || need."warehouseId" AND s.quantity + need.delta >= 0
-    RETURNING s.key
+    RETURNING s.key, s."itemId", s."warehouseId", s.quantity
+  ),
+  logged AS (
+    INSERT INTO ${KEY}_movements (key, "date", "documentId", "itemId", "warehouseId", "quantityIn", "quantityOut", balance, "createdAt", "updatedAt")
+    SELECT doc.id || ':' || moved."itemId", doc."date", doc.id, moved."itemId", moved."warehouseId",
+      GREATEST(need.delta, 0), GREATEST(-need.delta, 0), moved.quantity, now(), now()
+    FROM moved JOIN need ON moved.key = need."itemId" || ':' || need."warehouseId" CROSS JOIN doc
+  ),
+  -- An issue that leaves an item under its minimum stock tells the inventory managers.
+  low AS (
+    SELECT format('موجودی %s در %s به %s رسید', i.name, w.name, translate(moved.quantity::text, '0123456789.', '۰۱۲۳۴۵۶۷۸۹٫')) AS message
+    FROM moved
+    JOIN need ON moved.key = need."itemId" || ':' || need."warehouseId"
+    JOIN ${KEY}_items i ON i.id = moved."itemId"
+    JOIN ${KEY}_warehouses w ON w.id = moved."warehouseId"
+    WHERE need.delta < 0 AND moved.quantity < i."minStock"
   )
   -- A line that could not move fails the statement, so that no line of the document moves.
   SELECT CASE WHEN (SELECT COUNT(*) FROM moved) = (SELECT COUNT(*) FROM need) THEN (SELECT COUNT(*) FROM moved)::int
-    ELSE 1 / (SELECT COUNT(*) FROM moved WHERE false)::int END AS moved`;
+      ELSE 1 / (SELECT COUNT(*) FROM moved WHERE false)::int END AS moved,
+    (SELECT COUNT(*)::int FROM low) AS low,
+    (SELECT string_agg(message, '، ') FROM low) AS message`;
 
   const approval = await call('workflows:create', {
     title: 'تأیید سند انبار',
@@ -307,7 +358,27 @@ async function setFieldModels(file) {
   });
   const message = await node({ type: 'response-message', title: 'پیام کمبود', upstreamId: condition.id, branchIndex: 1, config: { message: `{{$jobsMapByNodeKey.${check.key}.0.message}}` } });
   await node({ type: 'end', title: 'رد تأیید', upstreamId: message.id, config: { endStatus: -1 } });
-  await node({ type: 'sql', title: 'اعمال ردیف‌ها', upstreamId: condition.id, config: { dataSource: 'main', sql: APPLY, variables: params } });
+  const apply = await node({ type: 'sql', title: 'اعمال ردیف‌ها', upstreamId: condition.id, config: { dataSource: 'main', sql: APPLY, variables: params } });
+  const low = await node({
+    type: 'condition',
+    title: 'زیر حداقل موجودی؟',
+    upstreamId: apply.id,
+    config: { rejectOnFalse: false, engine: 'basic', calculation: { group: { type: 'and', calculations: [{ calculator: 'gt', operands: [`{{$jobsMapByNodeKey.${apply.key}.0.low}}`, 0] }] } } },
+  });
+  // A notification that fails to go out does not stop the approval.
+  await node({
+    type: 'notification',
+    title: 'اعلان حداقل موجودی',
+    upstreamId: low.id,
+    branchIndex: 1,
+    config: {
+      channelName: CHANNEL,
+      receivers: [{ filter: { 'roles.name': `${KEY}_manager` } }],
+      title: 'موجودی کم',
+      content: `{{$jobsMapByNodeKey.${apply.key}.0.message}}`,
+      ignoreFail: true,
+    },
+  });
 
   // «مدیر انبار» defines items and warehouses; «انباردار» sees them. Both write receipts and issues, and change or
   // delete them only while they are drafts. The stock is only read.
@@ -322,7 +393,7 @@ async function setFieldModels(file) {
   const MASTER = [`${KEY}_categories`, `${KEY}_items`, `${KEY}_warehouses`];
   const drafts = (collection) => ['view', 'create', 'update', 'destroy'].map((action) => ({ action, scopeId: action === 'update' || action === 'destroy' ? scopeIds[collection] : undefined }));
   const actionsOf = (role, collection) => {
-    if (collection === `${KEY}_stock`) return [{ action: 'view' }];
+    if (collection === `${KEY}_stock` || collection === `${KEY}_movements`) return [{ action: 'view' }];
     if (!MASTER.includes(collection)) return drafts(collection);
     return (role === 'manager' ? ['view', 'create', 'update', 'destroy'] : ['view']).map((action) => ({ action }));
   };
@@ -349,7 +420,7 @@ async function setFieldModels(file) {
     key: KEY,
     title: 'انبار',
     version: VERSION,
-    description: 'کالا، گروه کالا و انبار برای کسب‌وکار کوچک، با رسید و حواله‌ای که پس از تأیید موجودی هر کالا را در هر انبار به‌روز می‌کند. نقش‌ها: «مدیر انبار» و «انباردار».',
+    description: 'کالا، گروه کالا و انبار برای کسب‌وکار کوچک، با رسید و حواله‌ای که پس از تأیید موجودی هر کالا را در هر انبار به‌روز می‌کند، کاردکس هر کالا و اعلان به «مدیر انبار» وقتی موجودی از حداقل کمتر شود. نقش‌ها: «مدیر انبار» و «انباردار».',
     groupSchemaUid: group.schemaUid,
   });
   const exported = JSON.parse(await call(`erpModules:export?filterByTk=${KEY}`, undefined, { text: true }));

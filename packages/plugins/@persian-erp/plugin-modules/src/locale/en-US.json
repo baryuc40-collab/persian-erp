@@ -14,6 +14,7 @@
   "The workflow plugin is not enabled": "The workflow plugin is not enabled",
   "This install has no workflow trigger {{name}}": "This install has no workflow trigger {{name}}",
   "This install has no workflow node type {{name}}": "This install has no workflow node type {{name}}",
+  "This install has no notification channel {{name}}": "This install has no notification channel {{name}}",
   "The plugin that stores {{name}} is not enabled": "The plugin that stores {{name}} is not enabled",
   "The module conflicts with what this install already has": "The module conflicts with what this install already has",
   "Module": "Module",

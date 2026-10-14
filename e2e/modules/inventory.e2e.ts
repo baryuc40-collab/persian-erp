@@ -5,7 +5,8 @@ import { apiAs, enablePersian } from '../helpers';
 import { removeImportedModule } from './remove-module';
 
 // The «انبار» reference module, imported from modules/inventory and used by its two roles: items, categories and
-// warehouses (version 1.0, STORY-084), and receipts and issues that move the stock when approved (1.1, STORY-085).
+// warehouses (version 1.0, STORY-084), receipts and issues that move the stock when approved (1.1, STORY-085), and the
+// kardex with the low-stock notification (1.2, STORY-086).
 
 test.describe.configure({ mode: 'serial' });
 
@@ -13,6 +14,9 @@ const FILE = path.resolve(__dirname, '../../modules/inventory/inventory.erp-modu
 const PASSWORD = 'Inventory-pass-123';
 const MANAGER = { email: 'inventory.manager@example.com', nickname: 'مدیر انبار', roles: ['inventory_manager'] };
 const KEEPER = { email: 'inventory.keeper@example.com', nickname: 'انباردار', roles: ['inventory_keeper'] };
+
+// The documents of the keeper's test, for the manager's test after it.
+const docs = { run: Date.now().toString(36), numbers: [] as string[] };
 
 const query = (filter: object) => `paginate=false&filter=${encodeURIComponent(JSON.stringify(filter))}`;
 
@@ -134,9 +138,9 @@ test('the keeper writes a receipt and issues, and an approved document moves the
   playwright,
   baseURL,
 }) => {
-  const run = Date.now().toString(36);
+  const { run } = docs;
   const api = await apiAs(playwright, baseURL as string);
-  await api.call('inventory_items:create', { code: `S-${run}`, name: `پیچ ${run}` });
+  await api.call('inventory_items:create', { code: `S-${run}`, name: `پیچ ${run}`, minStock: 5 });
   await api.call('inventory_warehouses:create', { name: `انبار مرکزی ${run}` });
   await api.request.dispose();
 
@@ -211,4 +215,61 @@ test('the keeper writes a receipt and issues, and an approved document moves the
   await expect(page.getByText(`موجودی پیچ ${run} در انبار مرکزی ${run} کافی نیست`)).toBeVisible();
   await expect(rowOf(tooMuch)).toContainText('پیش‌نویس');
   expect(await stockOf()).toContain('6');
+
+  // An issue of 3 leaves 3, under the minimum of 5.
+  const last = await writeDocument('حواله', '3');
+  expect((await approve(last)).ok()).toBeTruthy();
+  expect(await stockOf()).toContain('3');
+  docs.numbers.push(receipt, issue, last);
+});
+
+// Today in the Persian calendar as the tables show dates: 1405-07-22.
+function persianToday() {
+  const parts = new Intl.DateTimeFormat('en-US-u-ca-persian', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const part = (type: string) => parts.find((p) => p.type === type)!.value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+test('the manager sees the kardex of the item and was told when it went under its minimum', async ({
+  page,
+  playwright,
+  baseURL,
+}) => {
+  const { run, numbers } = docs;
+  expect(numbers).toHaveLength(3);
+  await signIn(page, MANAGER.email);
+  await openPage(page, 'کاردکس');
+  for (const column of ['تاریخ', 'سند', 'کالا', 'انبار', 'ورود', 'خروج', 'مانده']) {
+    await expect(page.getByRole('columnheader', { name: column, exact: true })).toBeVisible();
+  }
+  // One movement for each approved document, in order, with the balance after it; the refused issue has none.
+  const rows = page
+    .locator('.ant-table-tbody tr.ant-table-row')
+    .filter({ visible: true })
+    .filter({ hasText: `پیچ ${run}` });
+  await expect(rows).toHaveCount(3);
+  const cells = async (index: number) =>
+    (await rows.nth(index).innerText()).replace(`پیچ ${run}`, '').replace(`انبار مرکزی ${run}`, '').split(/\s+/);
+  const today = persianToday();
+  for (const [index, [number, quantityIn, quantityOut, balance]] of [
+    [numbers[0], '10', '0', '10'],
+    [numbers[1], '0', '4', '6'],
+    [numbers[2], '0', '3', '3'],
+  ].entries()) {
+    expect(await cells(index)).toEqual(expect.arrayContaining([today, number, quantityIn, quantityOut, balance]));
+  }
+
+  // Only the last issue went under the minimum, and the managers got one in-app message for it.
+  const token = await page.evaluate(() => localStorage.getItem('NOCOBASE_TOKEN'));
+  const api = await apiAs(playwright, baseURL as string);
+  const res = await api.request.post('/api/myInAppMessages:list', { headers: { Authorization: `Bearer ${token}` } });
+  const messages = (await res.json()).data.messages.filter((m: { content: string }) => m.content.includes(run));
+  expect(messages.map((m: { title: string; content: string }) => [m.title, m.content])).toEqual([
+    ['موجودی کم', `موجودی پیچ ${run} در انبار مرکزی ${run} به ۳ رسید`],
+  ]);
+  await api.request.dispose();
 });

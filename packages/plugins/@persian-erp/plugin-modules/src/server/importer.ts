@@ -138,6 +138,12 @@ export async function checkImport(app: Application, file: ModuleFile, owned?: Ow
       problems.push({ message: 'This install has no workflow node type {{name}}', values: { name: type } });
     }
   }
+  for (const name of file.requires?.notificationChannels || []) {
+    const channels = db.getCollection('notificationChannels') && db.getRepository('notificationChannels');
+    if (!channels || !(await channels.findOne({ filterByTk: name }))) {
+      problems.push({ message: 'This install has no notification channel {{name}}', values: { name } });
+    }
+  }
   for (const name of ['uiSchemas', 'flowModels', 'flowModelTemplates']) {
     if (file[name].length && !db.getCollection(name)) {
       problems.push({ message: 'The plugin that stores {{name}} is not enabled', values: { name } });

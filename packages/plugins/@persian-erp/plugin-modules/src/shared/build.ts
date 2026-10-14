@@ -235,6 +235,13 @@ export function buildModuleFile(records: ModuleRecords): ModuleFile {
       if (nodeCollection) referenced.add(nodeCollection);
     }
   }
+  const channels = sorted(
+    workflows.flatMap((w) =>
+      w.nodes
+        .filter((n) => n.type === 'notification' && typeof n.config.channelName === 'string')
+        .map((n) => n.config.channelName as string),
+    ),
+  );
   const file: ModuleFile = {
     format: MODULE_FORMAT,
     formatVersion: MODULE_FORMAT_VERSION,
@@ -246,6 +253,7 @@ export function buildModuleFile(records: ModuleRecords): ModuleFile {
       fieldInterfaces: sorted(records.collections.flatMap((c) => (c.fields || []).map((f) => f.interface))),
       workflowTriggers: sorted(workflows.map((w) => w.type)),
       workflowInstructions: sorted(workflows.flatMap((w) => w.nodes.map((n) => n.type))),
+      ...(channels.length ? { notificationChannels: channels } : {}),
       models: sorted(refs.models),
     },
     collections: buildCollections(records.collections),

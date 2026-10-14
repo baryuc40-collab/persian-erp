@@ -14,6 +14,8 @@ import type { FileProblem } from '../shared/validate';
 export const MODULES_RESOURCE = 'erpModules';
 export const MODULES_SNIPPET = 'pm.erp-modules';
 const NAMESPACE = '@persian-erp/plugin-modules';
+/** The in-app channel that the notification nodes of ERP modules send through. */
+export const MODULES_NOTIFICATION_CHANNEL = 'erp_in_app';
 const MAX_NAMES_PER_LINE = 5;
 
 export class PluginModulesServer extends Plugin {
@@ -32,6 +34,27 @@ export class PluginModulesServer extends Plugin {
       [`${MODULES_RESOURCE}:install`]: (ctx: Context, next: Next) => this.installAction(ctx, next),
       [`${MODULES_RESOURCE}:remove`]: (ctx: Context, next: Next) => this.removeAction(ctx, next),
       [`${MODULES_RESOURCE}:upgrade`]: (ctx: Context, next: Next) => this.upgradeAction(ctx, next),
+    });
+    this.app.on('afterStart', () => this.ensureNotificationChannel());
+  }
+
+  /**
+   * A fresh install has no notification channel, and a module file cannot bring one, so the channel the modules
+   * name (MODULES_NOTIFICATION_CHANNEL) is made here when in-app messages are enabled. One an administrator changed
+   * is left as it is.
+   */
+  async ensureNotificationChannel() {
+    if (!this.db.getCollection('notificationChannels') || !this.db.getCollection('notificationInAppMessages')) return;
+    const channels = this.db.getRepository('notificationChannels');
+    if (await channels.findOne({ filterByTk: MODULES_NOTIFICATION_CHANNEL })) return;
+    await channels.create({
+      values: {
+        name: MODULES_NOTIFICATION_CHANNEL,
+        title: 'اعلان‌های ماژول‌ها',
+        notificationType: 'in-app-message',
+        options: {},
+        description: 'اعلان درون‌برنامه‌ای که گردش‌کارهای ماژول‌های ERP می‌فرستند.',
+      },
     });
   }
 

@@ -141,6 +141,9 @@ describe('erpModules:import', () => {
     res = await importLab({ ...file, requires: { ...file.requires, workflowTriggers: ['no-such-trigger'] } });
     expect(errorOf(res)).toBe('This install has no workflow trigger no-such-trigger');
 
+    res = await importLab({ ...file, requires: { ...file.requires, notificationChannels: ['erp_in_app'] } });
+    expect(errorOf(res)).toBe('This install has no notification channel erp_in_app');
+
     res = await importLab({ ...file, routes: { ...file.routes, uiLayouts: ['no-such-layout'] } });
     expect(errorOf(res)).toBe('This install has no UI layout no-such-layout');
 
