@@ -55,6 +55,6 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-069](STORY-069-module-guide.md) | راهنمای فارسی ساخت ماژول | todo |
+| [STORY-069](STORY-069-module-guide.md) | راهنمای فارسی ساخت ماژول | in-review |
 | [STORY-070](STORY-070-module-catalog.md) | کاتالوگ ماژول‌های همراه ایمیج | in-review |
 | [STORY-071](STORY-071-module-review.md) | فرایند بازبینی و آزمون CI ماژول‌های کاربران | in-review |

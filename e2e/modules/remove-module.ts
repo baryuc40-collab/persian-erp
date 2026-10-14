@@ -18,6 +18,11 @@ export async function removeImportedModule(api: Api, file: any) {
   for (const template of file.flowModelTemplates) {
     await api.call(`flowModelTemplates:destroy?filterByTk=${template.uid}`);
   }
+  for (const workflow of file.workflows || []) {
+    for (const { id } of await api.call(`workflows:list?${query({ key: workflow.key })}`)) {
+      await api.call(`workflows:destroy?filterByTk=${id}`);
+    }
+  }
   for (const role of file.roles) await api.call(`roles:destroy?filterByTk=${role.name}`);
   for (const collection of file.collections) await api.call(`collections:destroy?filterByTk=${collection.name}`);
   await api.call(`erpModules:destroy?filterByTk=${file.module.key}`);

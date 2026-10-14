@@ -25,6 +25,7 @@
     "check:glossary": "node tools/check-glossary.js",
     "check:i18n": "node tools/glossary-check packages/plugins/@persian-erp",
     "check:module": "node tools/check-module",
+    "docs:module-guide": "playwright test -c tools/module-guide/playwright.config.ts",
     "i18n:report": "node tools/i18n-report",
     "i18n:translate": "node tools/i18n-translate",
     "upgrade:nocobase": "node tools/upgrade-nocobase",
