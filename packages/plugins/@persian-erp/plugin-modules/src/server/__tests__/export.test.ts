@@ -61,6 +61,8 @@ async function buildLabModule(app: MockServer) {
     type: 'void',
     'x-component': 'Page',
     'x-uid': 'labclspage1',
+    // Generated when missing; fixed here so the reference file does not change between runs.
+    name: 'labclspage',
     properties: {
       tab1: {
         type: 'void',
