@@ -1,0 +1,209 @@
+import { BpmEngine, BpmEngineError, ProcessDefinition, ServiceTask, UserTask, Variables } from './engine';
+
+export interface OperatonSettings {
+  url: string;
+  username?: string;
+  password?: string;
+  /** Milliseconds before a request is given up. */
+  timeout?: number;
+}
+
+type Row = Record<string, any>;
+
+// Variables of Operaton's REST API: {name: {value, type}}. Only the simple types of decision 0007 go in or come out.
+const toOperaton = (variables: Variables = {}) =>
+  Object.fromEntries(
+    Object.entries(variables).map(([name, value]) => {
+      if (value === null) return [name, { value: null, type: 'Null' }];
+      if (typeof value === 'boolean') return [name, { value, type: 'Boolean' }];
+      if (typeof value === 'number') return [name, { value, type: Number.isInteger(value) ? 'Long' : 'Double' }];
+      return [name, { value: String(value), type: 'String' }];
+    }),
+  );
+
+const fromOperaton = (variables: Row = {}): Variables =>
+  Object.fromEntries(
+    Object.entries(variables)
+      .filter(
+        ([, v]) => v && ['Null', 'Boolean', 'Integer', 'Long', 'Short', 'Double', 'String', 'Date'].includes(v.type),
+      )
+      .map(([name, v]) => [name, v.value ?? null]),
+  );
+
+const definition = (row: Row): ProcessDefinition => ({
+  id: row.id,
+  key: row.key,
+  name: row.name ?? null,
+  version: row.version,
+  deploymentId: row.deploymentId,
+});
+
+/** The engine of decision 0007: Operaton (a Camunda 7 fork) through its REST API at <url>/engine-rest. */
+export class OperatonEngine implements BpmEngine {
+  private base: string;
+
+  constructor(private settings: OperatonSettings) {
+    this.base = `${settings.url.replace(/\/+$/, '')}/engine-rest`;
+  }
+
+  private async call<T = any>(method: string, path: string, body?: unknown, form?: FormData): Promise<T> {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (this.settings.username) {
+      const token = Buffer.from(`${this.settings.username}:${this.settings.password || ''}`).toString('base64');
+      headers.Authorization = `Basic ${token}`;
+    }
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    let res: Response;
+    try {
+      res = await fetch(`${this.base}${path}`, {
+        method,
+        headers,
+        body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
+        signal: AbortSignal.timeout(this.settings.timeout ?? 10000),
+      });
+    } catch (error) {
+      const reason = (error as Error & { cause?: Error }).cause?.message || (error as Error).message;
+      throw new BpmEngineError('The BPMN engine cannot be reached: {{reason}}', { reason });
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new BpmEngineError('The BPMN engine did not accept the user name or password', {}, res.status);
+    }
+    const text = await res.text();
+    if (!res.ok) {
+      let message = text;
+      try {
+        message = JSON.parse(text).message || text;
+      } catch {
+        // Not JSON; the text is the message.
+      }
+      throw new BpmEngineError(
+        'The BPMN engine answered {{status}}: {{message}}',
+        { status: res.status, message },
+        res.status,
+      );
+    }
+    return (text ? JSON.parse(text) : undefined) as T;
+  }
+
+  async version() {
+    return (await this.call<{ version: string }>('GET', '/version')).version;
+  }
+
+  async deploy(name: string, files: { name: string; content: string }[]) {
+    const form = new FormData();
+    form.append('deployment-name', name);
+    // The same files again make no new version (checked in decision 0007).
+    form.append('enable-duplicate-filtering', 'true');
+    form.append('deploy-changed-only', 'true');
+    for (const file of files) form.append(file.name, new Blob([file.content], { type: 'application/xml' }), file.name);
+    const result = await this.call<Row>('POST', '/deployment/create', undefined, form);
+    const processes = Object.values(result.deployedProcessDefinitions || {}).map(definition);
+    return { id: result.id as string, processes };
+  }
+
+  async listProcesses() {
+    const rows = await this.call<Row[]>('GET', '/process-definition?latestVersion=true&sortBy=key&sortOrder=asc');
+    return rows.map(definition);
+  }
+
+  async start(processKey: string, businessKey: string, variables?: Variables) {
+    // The engine does not keep business keys unique (decision 0007, section 6).
+    const running = await this.call<Row[]>(
+      'GET',
+      `/process-instance?processDefinitionKey=${encodeURIComponent(processKey)}&businessKey=${encodeURIComponent(
+        businessKey,
+      )}`,
+    );
+    if (running.length) return { instanceId: running[0].id as string, created: false };
+    const instance = await this.call<Row>('POST', `/process-definition/key/${encodeURIComponent(processKey)}/start`, {
+      businessKey,
+      variables: toOperaton(variables),
+    });
+    return { instanceId: instance.id as string, created: true };
+  }
+
+  async sendMessage(name: string, businessKey: string, variables?: Variables) {
+    await this.call('POST', '/message', { messageName: name, businessKey, processVariables: toOperaton(variables) });
+  }
+
+  private async userTask(row: Row): Promise<UserTask> {
+    const links = await this.call<Row[]>('GET', `/task/${row.id}/identity-links?type=candidate`);
+    const instance = row.processInstanceId
+      ? await this.call<Row>('GET', `/process-instance/${row.processInstanceId}`).catch(() => null)
+      : null;
+    const definitionRow = await this.call<Row>('GET', `/process-definition/${row.processDefinitionId}`);
+    return {
+      id: row.id,
+      name: row.name ?? null,
+      processKey: definitionRow.key,
+      processInstanceId: row.processInstanceId,
+      businessKey: instance?.businessKey ?? null,
+      assignee: row.assignee ?? null,
+      candidateGroups: links.filter((l) => l.groupId).map((l) => l.groupId),
+      created: row.created,
+    };
+  }
+
+  async listUserTasks(filter: { candidateGroups?: string[]; assignee?: string; businessKey?: string }) {
+    const query: Row = { sorting: [{ sortBy: 'created', sortOrder: 'desc' }] };
+    if (filter.businessKey) query.processInstanceBusinessKey = filter.businessKey;
+    const or: Row = {};
+    if (filter.candidateGroups?.length) or.candidateGroups = filter.candidateGroups;
+    if (filter.assignee) or.assignee = filter.assignee;
+    if (Object.keys(or).length) query.orQueries = [or];
+    const rows = await this.call<Row[]>('POST', '/task', query);
+    return Promise.all(rows.map((row) => this.userTask(row)));
+  }
+
+  async getUserTask(taskId: string) {
+    try {
+      return await this.userTask(await this.call<Row>('GET', `/task/${encodeURIComponent(taskId)}`));
+    } catch (error) {
+      if (error instanceof BpmEngineError && error.status === 404) return null;
+      throw error;
+    }
+  }
+
+  async completeUserTask(taskId: string, variables?: Variables) {
+    await this.call('POST', `/task/${encodeURIComponent(taskId)}/complete`, { variables: toOperaton(variables) });
+  }
+
+  async fetchServiceTasks(workerId: string, topics: { name: string; lockMs: number }[], max: number) {
+    const rows = await this.call<Row[]>('POST', '/external-task/fetchAndLock', {
+      workerId,
+      maxTasks: max,
+      topics: topics.map((topic) => ({ topicName: topic.name, lockDuration: topic.lockMs })),
+    });
+    return rows.map(
+      (row): ServiceTask => ({
+        id: row.id,
+        topic: row.topicName,
+        processKey: row.processDefinitionKey,
+        processInstanceId: row.processInstanceId,
+        businessKey: row.businessKey ?? null,
+        variables: fromOperaton(row.variables),
+        retries: row.retries ?? null,
+      }),
+    );
+  }
+
+  async completeServiceTask(workerId: string, taskId: string, variables?: Variables) {
+    await this.call('POST', `/external-task/${encodeURIComponent(taskId)}/complete`, {
+      workerId,
+      variables: toOperaton(variables),
+    });
+  }
+
+  async failServiceTask(
+    workerId: string,
+    taskId: string,
+    error: { message: string; retries: number; retryMs: number },
+  ) {
+    await this.call('POST', `/external-task/${encodeURIComponent(taskId)}/failure`, {
+      workerId,
+      errorMessage: error.message,
+      retries: error.retries,
+      retryTimeout: error.retryMs,
+    });
+  }
+}
