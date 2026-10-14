@@ -1,0 +1,6 @@
+{
+  "Module not found": "Module not found",
+  "The menu group of the module does not exist": "The menu group of the module does not exist",
+  "The menu group of the module must be a top-level menu group": "The menu group of the module must be a top-level menu group",
+  "A page of the module opens a popup that belongs to a page outside the module": "A page of the module opens a popup that belongs to a page outside the module"
+}

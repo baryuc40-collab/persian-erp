@@ -65,7 +65,7 @@ owner: mmsh
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
 | [STORY-063](STORY-063-module-format.md) | تصمیم قالب ماژول و نقشه‌ی ارجاع‌ها | in-review |
-| [STORY-064](STORY-064-module-export.md) | خروجی ماژول (سرور) | todo |
+| [STORY-064](STORY-064-module-export.md) | خروجی ماژول (سرور) | in-review |
 | [STORY-065](STORY-065-module-import.md) | ورودی ماژول (سرور) | todo |
 | [STORY-066](STORY-066-modules-settings-page.md) | صفحه‌ی «ماژول‌ها» در تنظیمات | todo |
 | [STORY-067](STORY-067-module-standard.md) | استاندارد کیفیت ماژول و `yarn check:module` | todo |
