@@ -1,6 +1,6 @@
 # استاندارد کیفیت ماژول ERP
 
-این سند می‌گوید ماژول خوب چه ویژگی‌هایی دارد. قالب فایل ماژول در [تصمیم ۰۰۰۵](../decisions/0005-erp-module-format.md) آمده است.
+این سند می‌گوید ماژول خوب چه ویژگی‌هایی دارد. قالب فایل ماژول در [تصمیم ۰۰۰۵](../decisions/0005-erp-module-format.md) آمده است. ساختن ماژول گام‌به‌گام در [راهنمای ساخت ماژول](guide.md) آمده است.
 
 ## بررسی خودکار
 
@@ -25,9 +25,13 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 
 ## قاعده‌ها
 
+<a id="m000"></a>
+
 ### M000: فایل ماژول معتبر
 
 فایل باید JSON باشد و `format` آن `persian-erp-module` باشد. اگر این قاعده نقض شود، قاعده‌های دیگر بررسی نمی‌شوند.
+
+<a id="m001"></a>
 
 ### M001: کلید و پیشوند نام‌ها
 
@@ -36,6 +40,8 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 | درست | نادرست |
 |---|---|
 | کلید `crm`، مجموعه‌ی `crm_people`، نقش `crm_clerk` | کلید `CRM`، مجموعه‌ی `people`، نقش `clerk` |
+
+<a id="m002"></a>
 
 ### M002: عنوان فارسی
 
@@ -53,6 +59,8 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 |---|---|
 | مجموعه‌ی `crm_people` با عنوان «شخص» | عنوان «People»، عنوان خالی، یا «كارها» با کاف عربی |
 
+<a id="m003"></a>
+
 ### M003: تاریخ در فیلد تاریخ
 
 تاریخ در فیلد تاریخ (`datetime`، `datetimeNoTz`، `date` و مانند آن‌ها) نگه داشته می‌شود. پایگاه داده تاریخ را میلادی نگه می‌دارد و plugin-fa آن را برای کاربر فارسی‌زبان جلالی نشان می‌دهد و جلالی می‌گیرد. تاریخی که در فیلد متنی نوشته شود، نه جلالی نشان داده می‌شود و نه مرتب یا فیلتر می‌شود.
@@ -62,6 +70,8 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 | درست | نادرست |
 |---|---|
 | `birthDate` با رابط `datetime` و عنوان «تاریخ تولد» | `birthDate` با رابط `input` |
+
+<a id="m004"></a>
 
 ### M004: فیلدهای ایرانی (هشدار)
 
@@ -82,6 +92,8 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 |---|---|
 | `nationalId` با رابط `iranNationalId` و عنوان «کد ملی» | `nationalId` با رابط `input` |
 
+<a id="m005"></a>
+
 ### M005: نقشی با دسترسی محدود
 
 ماژول دست‌کم یک نقش دارد که کاربران روزمره‌ی آن به کار می‌برند، و دست‌کم یکی از نقش‌هایش محدود است. نقش محدود ویژگی‌های زیر را دارد:
@@ -92,6 +104,8 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 |---|---|
 | `crm_clerk` با تکه‌های `!pm`، `!pm.*`، `!ui.*` و دسترسی دیدن، و ویرایش فقط روی `crm_people` | ماژول بدون نقش، یا تنها نقش آن تکه‌ی `ui.*` یا `strategy.actions: ["update"]` دارد |
 
+<a id="m006"></a>
+
 ### M006: گردش‌کار با عنوان و توضیح
 
 هر گردش‌کار عنوان فارسی (M002) و توضیحی دارد که می‌گوید چه زمانی اجرا می‌شود و چه می‌کند. کسی که ماژول را وارد می‌کند، گردش‌کارها را از همین توضیح می‌شناسد.
@@ -99,6 +113,8 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 | درست | نادرست |
 |---|---|
 | «خوش‌آمد»: «وقتی شخص تازه ثبت شود، مسئولش را خود ثبت‌کننده می‌گذارد.» | عنوان «Welcome» یا توضیح خالی |
+
+<a id="m007"></a>
 
 ### M007: ارجاع به بیرون از ماژول فقط با `requires`
 
