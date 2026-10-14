@@ -20,6 +20,7 @@ export interface ModuleInfo {
 
 export interface ModuleRequires {
   collections: string[];
+  fieldTypes: string[];
   fieldInterfaces: string[];
   workflowTriggers: string[];
   workflowInstructions: string[];

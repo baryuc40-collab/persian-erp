@@ -239,6 +239,7 @@ export function buildModuleFile(records: ModuleRecords): ModuleFile {
     nocobase: records.nocobase,
     requires: {
       collections: sorted([...referenced].filter((name) => !collectionNames.has(name))),
+      fieldTypes: sorted(records.collections.flatMap((c) => (c.fields || []).map((f) => f.type))),
       fieldInterfaces: sorted(records.collections.flatMap((c) => (c.fields || []).map((f) => f.interface))),
       workflowTriggers: sorted(workflows.map((w) => w.type)),
       workflowInstructions: sorted(workflows.flatMap((w) => w.nodes.map((n) => n.type))),

@@ -186,6 +186,12 @@
       "number",
       "o2m"
     ],
+    "fieldTypes": [
+      "belongsTo",
+      "double",
+      "hasMany",
+      "string"
+    ],
     "models": [
       "BlockGridModel",
       "ChildPageModel",
@@ -367,7 +373,7 @@
   },
   "uiSchemas": [
     {
-      "name": "7apwzrnd9d8",
+      "name": "w5p8n3n4oq6",
       "properties": {
         "tab1": {
           "properties": {
