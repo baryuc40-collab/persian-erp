@@ -121,6 +121,25 @@ describe('erpModules:upgrade', () => {
     expect(linked).toBe(1);
   });
 
+  // Each run of a module's build.js makes the menu anew, so the next version can give the group another schemaUid.
+  it('keeps the menu group when the new version gives it another schemaUid', async () => {
+    const group = await app.db.getRepository('desktopRoutes').findOne({ filter: { schemaUid: 'labgroup001' } });
+    await app.db.getRepository<any>('roles.desktopRoutes', 'member').add([group.get('id')]);
+    // The menu refs are made from the group's schemaUid too.
+    const v2 = JSON.parse(JSON.stringify(nextVersion(v1)).replace(/labgroup001/g, 'labgroup002'));
+    expect((await upgrade(v2)).status).toBe(200);
+    const groups = await app.db.getRepository('desktopRoutes').find({ filter: { type: 'group', parentId: null } });
+    expect(groups.map((g) => [g.get('id'), g.get('schemaUid')])).toEqual([[group.get('id'), 'labgroup002']]);
+    expect((await app.db.getRepository('erpModules').findOne({ filterByTk: 'lab' })).get('groupSchemaUid')).toBe(
+      'labgroup002',
+    );
+    const linked = await app.db.getRepository('rolesDesktopRoutes').count({
+      filter: { roleName: 'member', desktopRouteId: group.get('id') },
+    });
+    expect(linked).toBe(1);
+    expect(withoutDefaultSourceKey(await exportLab())).toEqual(withoutDefaultSourceKey(v2));
+  });
+
   it('refuses a version that is not higher, a field whose type changes, and another module', async () => {
     const same = await upgrade(v1);
     expect(same.status).toBe(400);

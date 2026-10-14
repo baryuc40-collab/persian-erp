@@ -4,7 +4,8 @@ import { expect, Page, test } from '@playwright/test';
 import { apiAs, enablePersian } from '../helpers';
 import { removeImportedModule } from './remove-module';
 
-// The «انبار» reference module, version 1.0 (STORY-084): imported from modules/inventory and used by its two roles.
+// The «انبار» reference module, imported from modules/inventory and used by its two roles: items, categories and
+// warehouses (version 1.0, STORY-084), and receipts and issues that move the stock when approved (1.1, STORY-085).
 
 test.describe.configure({ mode: 'serial' });
 
@@ -70,7 +71,9 @@ const formItem = (page: Page, label: string) =>
     .locator('.ant-form-item', { has: page.locator('label', { hasText: new RegExp(`^\\s*${label}\\s*:?\\s*$`) }) });
 
 async function submit(page: Page, collection: string) {
-  const saved = page.waitForResponse((res) => res.url().includes(`${collection}:create`));
+  const saved = page.waitForResponse(
+    (res) => res.url().includes(`${collection}:create`) && res.request().method() === 'POST',
+  );
   await page.locator('form').last().getByRole('button', { name: 'ثبت' }).click();
   return saved;
 }
@@ -124,4 +127,88 @@ test('the keeper sees items and warehouses but cannot change them', async ({ pag
   await page.getByRole('menuitem', { name: 'انبارها' }).click();
   await expect(page.getByRole('columnheader', { name: 'استان و شهر', exact: true })).toBeVisible();
   await expect(addButton(page)).toHaveCount(0);
+});
+
+test('the keeper writes a receipt and issues, and an approved document moves the stock', async ({
+  page,
+  playwright,
+  baseURL,
+}) => {
+  const run = Date.now().toString(36);
+  const api = await apiAs(playwright, baseURL as string);
+  await api.call('inventory_items:create', { code: `S-${run}`, name: `پیچ ${run}` });
+  await api.call('inventory_warehouses:create', { name: `انبار مرکزی ${run}` });
+  await api.request.dispose();
+
+  await signIn(page, KEEPER.email);
+  await openPage(page, 'رسید و حواله');
+
+  // Writes a document with one line and returns its number.
+  const writeDocument = async (kind: string, quantity: string) => {
+    await addButton(page).click();
+    await formItem(page, 'نوع سند').locator('.ant-select').click();
+    await page.locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: kind }).click();
+    await formItem(page, 'تاریخ').locator('.ant-picker input').click();
+    await page.locator('.ant-picker-dropdown:visible .ant-picker-cell-today').click();
+    await formItem(page, 'انبار').locator('.ant-select').click();
+    await page
+      .locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: `انبار مرکزی ${run}` })
+      .click();
+    const lines = formItem(page, 'ردیف‌ها');
+    await expect(lines.getByText('انتخاب رکورد')).toHaveCount(0);
+    await lines.getByRole('button', { name: /افزودن/ }).click();
+    await lines.locator('.ant-table-tbody .ant-select').first().click();
+    await page.locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: `پیچ ${run}` }).click();
+    await lines.locator('.ant-table-tbody input.ant-input-number-input').first().fill(quantity);
+    const saved = await submit(page, 'inventory_documents');
+    expect(saved.ok(), await saved.text()).toBeTruthy();
+    return (await saved.json()).data.number as string;
+  };
+  const rowOf = (number: string) =>
+    page.locator('.ant-table-tbody tr.ant-table-row').filter({ visible: true }).filter({ hasText: number });
+  const approve = async (number: string) => {
+    const done = page.waitForResponse((res) => res.url().includes('inventory_documents:update'));
+    await rowOf(number).getByText('تأیید سند').click();
+    const confirm = page.locator(
+      '.ant-modal-confirm:visible .ant-btn-primary, .ant-popconfirm:visible .ant-btn-primary',
+    );
+    if (await confirm.count()) await confirm.first().click();
+    return done;
+  };
+  const stockOf = async () => {
+    await page.getByRole('menuitem', { name: 'موجودی' }).click();
+    const row = page
+      .locator('.ant-table-tbody tr.ant-table-row')
+      .filter({ visible: true })
+      .filter({ hasText: `پیچ ${run}` });
+    await expect(row).toHaveCount(1);
+    // The quantity, without the names (the run id in them may have digits).
+    const text = (await row.innerText()).replace(`پیچ ${run}`, '').replace(`انبار مرکزی ${run}`, '').split(/\s+/);
+    await page.getByRole('menuitem', { name: 'رسید و حواله' }).click();
+    return text;
+  };
+
+  // A receipt of 10 makes the stock 10.
+  const receipt = await writeDocument('رسید', '10');
+  await expect(rowOf(receipt)).toContainText('پیش‌نویس');
+  expect((await approve(receipt)).ok()).toBeTruthy();
+  await expect(rowOf(receipt)).toContainText('تأییدشده');
+  expect(await stockOf()).toContain('10');
+
+  // An approved document is closed: the keeper cannot change, delete or approve it again.
+  for (const action of ['ویرایش', 'حذف', 'تأیید سند']) {
+    await expect(rowOf(receipt).getByText(action, { exact: true })).toHaveCount(0);
+  }
+
+  // An issue of 4 leaves 6.
+  const issue = await writeDocument('حواله', '4');
+  expect((await approve(issue)).ok()).toBeTruthy();
+  expect(await stockOf()).toContain('6');
+
+  // An issue of 8 is more than there is: refused in Persian, and nothing moves.
+  const tooMuch = await writeDocument('حواله', '8');
+  expect((await approve(tooMuch)).status()).toBe(400);
+  await expect(page.getByText(`موجودی پیچ ${run} در انبار مرکزی ${run} کافی نیست`)).toBeVisible();
+  await expect(rowOf(tooMuch)).toContainText('پیش‌نویس');
+  expect(await stockOf()).toContain('6');
 });

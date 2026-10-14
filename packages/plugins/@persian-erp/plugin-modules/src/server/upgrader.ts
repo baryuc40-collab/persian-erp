@@ -276,9 +276,14 @@ async function upgradeRoutes(app: Application, current: ModuleFile, file: Module
     if (layouts) values.uiLayouts = Array.isArray(uiLayouts) && uiLayouts.length ? uiLayouts : [DEFAULT_LAYOUT];
     // Children take the order of the file; the group keeps its place among the other menus.
     if (sort !== undefined) values.sort = sort;
-    const existing = route.schemaUid
-      ? await repository.findOne({ filter: { schemaUid: route.schemaUid }, transaction })
-      : null;
+    // The group is the module's own menu even when a new build of the module gave it another schemaUid, so it keeps
+    // its record, and the menus of roles outside the module that link to it.
+    const existing =
+      parentId === null
+        ? await repository.findOne({ filter: { schemaUid: current.routes.schemaUid }, transaction })
+        : route.schemaUid
+        ? await repository.findOne({ filter: { schemaUid: route.schemaUid }, transaction })
+        : null;
     let id: unknown;
     if (existing) {
       id = existing.get('id');
@@ -294,10 +299,7 @@ async function upgradeRoutes(app: Application, current: ModuleFile, file: Module
     let index = 0;
     for (const child of children || []) await write(child, id, ++index);
   };
-  await write(file.routes, null);
-
-  // Routes the new version no longer has, and links (which have no schemaUid), children first.
-  const kept = new Set([...ids.values()].map(String));
+  // Read before writing, since the group may take a new schemaUid.
   const installed = await repository.find({
     filter: {
       schemaUid: {
@@ -308,6 +310,10 @@ async function upgradeRoutes(app: Application, current: ModuleFile, file: Module
     },
     transaction,
   });
+  await write(file.routes, null);
+
+  // Routes the new version no longer has, and links (which have no schemaUid), children first.
+  const kept = new Set([...ids.values()].map(String));
   const below = async (parents: unknown[]): Promise<Row[]> => {
     if (!parents.length) return [];
     const children = (await repository.find({ filter: { parentId: { $in: parents } }, transaction })).map((r) =>
@@ -397,7 +403,12 @@ export async function upgradeModule(app: Application, row: ModuleRow, file: Modu
     }
     await db.getRepository('erpModules').update({
       filterByTk: row.key,
-      values: { title: file.module.title, version: file.module.version, description: file.module.description },
+      values: {
+        title: file.module.title,
+        version: file.module.version,
+        description: file.module.description,
+        groupSchemaUid: file.routes.schemaUid,
+      },
       transaction,
     });
     await options.beforeCommit?.(transaction);
