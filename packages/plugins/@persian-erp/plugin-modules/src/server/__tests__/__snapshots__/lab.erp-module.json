@@ -49,12 +49,38 @@
         },
         {
           "description": null,
+          "interface": "integer",
+          "isForeignKey": true,
+          "name": "categoryId",
+          "type": "bigInt",
+          "uiSchema": {
+            "title": "categoryId",
+            "type": "number",
+            "x-component": "InputNumber",
+            "x-read-pretty": true
+          }
+        },
+        {
+          "description": null,
           "foreignKey": "ownerId",
           "interface": "m2o",
           "name": "owner",
           "target": "users",
           "targetKey": "id",
           "type": "belongsTo"
+        },
+        {
+          "description": null,
+          "interface": "integer",
+          "isForeignKey": true,
+          "name": "ownerId",
+          "type": "bigInt",
+          "uiSchema": {
+            "title": "ownerId",
+            "type": "number",
+            "x-component": "InputNumber",
+            "x-read-pretty": true
+          }
         },
         {
           "description": null,
@@ -182,12 +208,14 @@
     ],
     "fieldInterfaces": [
       "input",
+      "integer",
       "m2o",
       "number",
       "o2m"
     ],
     "fieldTypes": [
       "belongsTo",
+      "bigInt",
       "double",
       "hasMany",
       "string"
@@ -443,7 +471,7 @@
         "collection": "users"
       },
       "description": null,
-      "enabled": false,
+      "enabled": true,
       "invalid": false,
       "key": "labapprove1",
       "nodes": [],
