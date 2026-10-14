@@ -70,11 +70,26 @@ describe('erpModules catalog', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({ key: 'lab', collections: ['lab_categories', 'lab_items'] });
     expect(app.db.getCollection('lab_items')).toBeTruthy();
-    expect((await catalog())[1]).toMatchObject({ installed: true, problems: [] });
+    expect((await catalog())[1]).toMatchObject({ installed: true, installedVersion: '1.0.0', upgrade: false, problems: [] });
 
     // A second install is stopped by the conflicts, like an import.
     expect((await agent.resource('erpModules').install({ filterByTk: 'lab' })).status).toBe(400);
     expect((await agent.resource('erpModules').install({ filterByTk: 'none' })).status).toBe(404);
+  });
+
+  it('offers a newer version of an installed module and upgrades to it by its key', async () => {
+    const agent = await rootAgent(app);
+    expect((await agent.resource('erpModules').install({ filterByTk: 'lab' })).status).toBe(200);
+    // As if the catalog came with a newer version than the installed one.
+    await app.db.getRepository('erpModules').update({ filterByTk: 'lab', values: { version: '0.9.0' } });
+    const lab = () => agent.resource('erpModules').catalog().then((res) => res.body.data[1]);
+    expect(await lab()).toMatchObject({ installed: true, installedVersion: '0.9.0', upgrade: true });
+
+    const preview = await agent.resource('erpModules').upgrade({ filterByTk: 'lab', dryRun: true });
+    expect(preview.body.data).toMatchObject({ problems: [], plan: { from: '0.9.0', to: '1.0.0' } });
+    expect((await agent.resource('erpModules').upgrade({ filterByTk: 'lab' })).status).toBe(200);
+    expect(await lab()).toMatchObject({ installedVersion: '1.0.0', upgrade: false });
+    expect((await agent.resource('erpModules').upgrade({ filterByTk: 'none' })).status).toBe(404);
   });
 
   it('is only for administrators', async () => {

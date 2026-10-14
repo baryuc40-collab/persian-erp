@@ -11,6 +11,7 @@ import {
   ModulesCatalog,
   ModulesSettings,
   RemovalPlan,
+  UpgradePlan,
 } from '../ModulesSettings';
 
 const summary: ModuleSummary = {
@@ -131,6 +132,7 @@ describe('Settings > ERP modules', () => {
       <ModulesCatalog
         items={[item('people'), item('stock', { installed: true }), item('old', { problems: ['Made with NocoBase 1.0.0'] })]}
         onInstall={onInstall}
+        onUpgrade={vi.fn()}
       />,
     );
     const row = (title: string) => screen.getByText(title).closest('li') as HTMLElement;
@@ -144,7 +146,84 @@ describe('Settings > ERP modules', () => {
   });
 
   it('shows nothing when the plugin has no catalog', () => {
-    const { container } = render(<ModulesCatalog items={[]} onInstall={vi.fn()} />);
+    const { container } = render(<ModulesCatalog items={[]} onInstall={vi.fn()} onUpgrade={vi.fn()} />);
     expect(container.textContent).toBe('');
+  });
+
+  const upgradePlan: UpgradePlan = {
+    key: 'lab',
+    title: 'آزمایشگاه',
+    from: '1.0.0',
+    to: '1.1.0',
+    localChanges: false,
+    collections: { added: [], updated: ['lab_items'], kept: [] },
+    fields: { added: ['lab_items.note'], updated: [], kept: ['lab_items.old'] },
+    routes: { added: [], updated: ['اقلام'], removed: ['پیوند'] },
+    workflows: { added: [], revised: ['labstatus01'], disabled: [] },
+    roles: { added: [], updated: [], kept: [] },
+  };
+
+  it('shows what an upgrade changes, with a reminder to back up first', () => {
+    const preview = { summary, warnings: [], problems: [], conflicts: [], plan: upgradePlan };
+    const { rerender } = render(<ImportPreviewView preview={preview} upgrade />);
+    expect(screen.getByText('Back up the database before the upgrade.')).toBeTruthy();
+    expect(screen.queryByText(/^The module was changed after it was installed/)).toBeNull();
+    const row = (label: string) => screen.getByText(label).closest('tr') as HTMLElement;
+    expect(within(row('New fields')).getByText('lab_items.note')).toBeTruthy();
+    expect(within(row('Workflows with a new version')).getByText('labstatus01')).toBeTruthy();
+    expect(within(row('Deleted menu items')).getByText('پیوند')).toBeTruthy();
+    expect(within(row('Kept, not in the new version')).getByText('lab_items.old')).toBeTruthy();
+    // Parts with no change get no row.
+    expect(screen.queryByText('New roles')).toBeNull();
+
+    rerender(<ImportPreviewView preview={{ ...preview, plan: { ...upgradePlan, localChanges: true } }} upgrade />);
+    expect(screen.getByText(/^The module was changed after it was installed/)).toBeTruthy();
+  });
+
+  it('upgrades a catalog module that has a newer version', async () => {
+    const installed: InstalledModule[] = [{ ...summary, groupSchemaUid: 'labgroup001' }];
+    const catalog: CatalogItem[] = [
+      {
+        file: 'lab.erp-module.json',
+        installed: true,
+        installedVersion: '1.0.0',
+        upgrade: true,
+        summary: { ...summary, version: '1.1.0' },
+        warnings: [],
+        problems: [],
+        conflicts: [],
+      },
+    ];
+    const api: ModulesApi = {
+      request: vi.fn(async ({ url, params }) => {
+        if (url === 'erpModules:overview') return { data: { data: installed } };
+        if (url === 'erpModules:catalog') return { data: { data: catalog } };
+        if (params?.dryRun) return { data: { data: { summary, warnings: [], problems: [], conflicts: [], plan: upgradePlan } } };
+        return { data: { data: { key: 'lab', plan: upgradePlan, warnings: [] } } };
+      }),
+    };
+    render(
+      <App>
+        <ModulesSettings api={api} />
+      </App>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: /^Upgrade to version/ }));
+    expect(await screen.findByText('Upgrade the module')).toBeTruthy();
+    expect(api.request).toHaveBeenCalledWith({
+      url: 'erpModules:upgrade',
+      method: 'post',
+      params: { dryRun: true, filterByTk: 'lab' },
+      data: undefined,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Upgrade' }));
+    await waitFor(() =>
+      expect(api.request).toHaveBeenCalledWith({
+        url: 'erpModules:upgrade',
+        method: 'post',
+        params: { filterByTk: 'lab' },
+        data: undefined,
+      }),
+    );
+    expect(await screen.findByText('The module was upgraded')).toBeTruthy();
   });
 });

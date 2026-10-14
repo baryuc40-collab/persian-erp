@@ -97,9 +97,9 @@ test('a module is exported from the settings page and imported back after it is 
   await expect(page.getByText(GROUP).first()).toBeVisible();
   expect((await list(api, 'collections', { name: `${KEY}_notes` })).length).toBe(1);
 
-  // Importing the same file again is stopped before anything changes.
+  // The same file again is an upgrade to the same version, which is stopped before anything changes (STORY-077).
   await page.locator('input[type=file]').setInputFiles(file);
-  await expect(page.getByRole('dialog')).toContainText('این ماژول وارد نمی‌شود');
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'ورود ماژول' })).toBeDisabled();
+  await expect(page.getByRole('dialog')).toContainText('این ماژول ارتقا نمی‌یابد');
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'ارتقا', exact: true })).toBeDisabled();
   await api.request.dispose();
 });
