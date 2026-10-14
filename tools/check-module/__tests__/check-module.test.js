@@ -146,3 +146,11 @@ test('M007: what the module uses from outside is in requires', () => {
     'M007 workflows[crmwelcome].nodes[crmnode1].type',
   ]);
 });
+
+test('M007: a classic page that shows a collection the module does not have', () => {
+  const bad = good();
+  bad.uiSchemas = [
+    { 'x-uid': 'crmlist', 'x-decorator': 'TableBlockProvider', 'x-decorator-props': { collection: 'crm_peple', action: 'list' } },
+  ];
+  assert.deepStrictEqual(rules(bad), ['M007 uiSchemas[crmlist]']);
+});
