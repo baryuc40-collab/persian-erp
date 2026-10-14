@@ -1,4 +1,4 @@
-import { BpmEngine, BpmEngineError, ProcessDefinition, ServiceTask, UserTask, Variables } from './engine';
+import { BpmEngine, BpmEngineError, FormField, ProcessDefinition, ServiceTask, UserTask, Variables } from './engine';
 
 export interface OperatonSettings {
   url: string;
@@ -38,9 +38,61 @@ const definition = (row: Row): ProcessDefinition => ({
   deploymentId: row.deploymentId,
 });
 
+const decode = (text: string) =>
+  text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&amp;/g, '&');
+
+const attributes = (text: string) =>
+  Object.fromEntries(
+    Array.from(text.matchAll(/([\w:-]+)\s*=\s*"([^"]*)"/g), ([, name, value]) => [name, decode(value)]),
+  );
+
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const FORM_TYPES = ['string', 'long', 'boolean', 'date', 'enum'];
+
+/**
+ * The form fields of a user task in a BPMN model (operaton:formField, as Camunda Modeler writes them). The models are
+ * the ones an administrator deployed, so a small reader of these elements is enough.
+ */
+export function parseFormFields(xml: string, taskKey: string): FormField[] {
+  const task = new RegExp(
+    `<(?:[\\w-]+:)?userTask\\b[^>]*\\bid="${escapeRegExp(taskKey)}"[^>]*?(?:/>|>([\\s\\S]*?)</(?:[\\w-]+:)?userTask>)`,
+  ).exec(xml);
+  const body = task?.[1] || '';
+  return Array.from(body.matchAll(/<(?:[\w-]+:)?formField\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:[\w-]+:)?formField>)/g)).map(
+    ([, attrs, inner = '']) => {
+      const field = attributes(attrs);
+      const constraints = Array.from(inner.matchAll(/<(?:[\w-]+:)?constraint\b([^>]*?)\/?>/g), ([, a]) =>
+        attributes(a),
+      );
+      return {
+        id: field.id,
+        label: field.label || null,
+        type: (FORM_TYPES.includes(field.type) ? field.type : 'string') as FormField['type'],
+        required: constraints.some((c) => c.name === 'required' && c.config !== 'false'),
+        defaultValue: field.defaultValue ?? null,
+        options: Array.from(inner.matchAll(/<(?:[\w-]+:)?value\b([^>]*?)\/?>/g), ([, a]) => {
+          const value = attributes(a);
+          return { id: value.id, name: value.name || null };
+        }),
+      };
+    },
+  );
+}
+
 /** The engine of decision 0007: Operaton (a Camunda 7 fork) through its REST API at <url>/engine-rest. */
 export class OperatonEngine implements BpmEngine {
   private base: string;
+  // Process definitions and their models never change once deployed, so they are kept by ID.
+  private definitions = new Map<string, Promise<Row>>();
+  private models = new Map<string, Promise<string>>();
 
   constructor(private settings: OperatonSettings) {
     this.base = `${settings.url.replace(/\/+$/, '')}/engine-rest`;
@@ -126,16 +178,40 @@ export class OperatonEngine implements BpmEngine {
     await this.call('POST', '/message', { messageName: name, businessKey, processVariables: toOperaton(variables) });
   }
 
+  private definition(id: string) {
+    if (!this.definitions.has(id)) {
+      const row = this.call<Row>('GET', `/process-definition/${encodeURIComponent(id)}`);
+      row.catch(() => this.definitions.delete(id));
+      this.definitions.set(id, row);
+    }
+    return this.definitions.get(id);
+  }
+
+  async getTaskForm(task: UserTask) {
+    const id = task.processDefinitionId;
+    if (!this.models.has(id)) {
+      const xml = this.call<Row>('GET', `/process-definition/${encodeURIComponent(id)}/xml`).then(
+        (row) => row.bpmn20Xml as string,
+      );
+      xml.catch(() => this.models.delete(id));
+      this.models.set(id, xml);
+    }
+    return parseFormFields(await this.models.get(id), task.taskKey);
+  }
+
   private async userTask(row: Row): Promise<UserTask> {
     const links = await this.call<Row[]>('GET', `/task/${row.id}/identity-links?type=candidate`);
     const instance = row.processInstanceId
       ? await this.call<Row>('GET', `/process-instance/${row.processInstanceId}`).catch(() => null)
       : null;
-    const definitionRow = await this.call<Row>('GET', `/process-definition/${row.processDefinitionId}`);
+    const definitionRow = await this.definition(row.processDefinitionId);
     return {
       id: row.id,
       name: row.name ?? null,
+      taskKey: row.taskDefinitionKey,
       processKey: definitionRow.key,
+      processName: definitionRow.name ?? null,
+      processDefinitionId: row.processDefinitionId,
       processInstanceId: row.processInstanceId,
       businessKey: instance?.businessKey ?? null,
       assignee: row.assignee ?? null,

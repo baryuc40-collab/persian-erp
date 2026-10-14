@@ -62,5 +62,5 @@ owner: mmsh
 | [STORY-079](STORY-079-bpm-plugin-and-engine.md) | Operaton در محیط توسعه و پلاگین plugin-bpm | in-review |
 | [STORY-080](STORY-080-start-process-node.md) | نود گردش‌کار «شروع فرایند BPMN» | in-review |
 | [STORY-081](STORY-081-service-task-worker.md) | Worker کارهای سرویس روی مجموعه‌ها | in-review |
-| [STORY-082](STORY-082-task-inbox.md) | صندوق کار فارسی | todo |
+| [STORY-082](STORY-082-task-inbox.md) | صندوق کار فارسی | in-review |
 | [STORY-083](STORY-083-purchase-request-poc.md) | فرایند نمونه‌ی «درخواست خرید» و بازبینی امنیت | todo |

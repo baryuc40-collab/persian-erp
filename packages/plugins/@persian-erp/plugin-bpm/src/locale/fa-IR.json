@@ -47,5 +47,20 @@
   "Record ID": "شناسه‌ی رکورد",
   "Collection": "مجموعه",
   "Service task": "کار سرویس",
-  "Task ID": "شناسه‌ی کار"
+  "Task ID": "شناسه‌ی کار",
+  "The task is no longer open": "این کار دیگر باز نیست",
+  "This task is not yours": "این کار مال شما نیست",
+  "Fill in {{label}}": "«{{label}}» را پر کنید",
+  "The value of {{label}} is not valid": "مقدار «{{label}}» درست نیست",
+  "Task inbox": "صندوق کار",
+  "Task": "کار",
+  "Record": "رکورد",
+  "Created at": "زمان ایجاد",
+  "No tasks for you": "کاری برای شما نیست",
+  "The task is done": "کار انجام شد",
+  "Refresh": "تازه‌سازی",
+  "Yes": "بله",
+  "No": "خیر",
+  "Submit": "ثبت",
+  "Cancel": "انصراف"
 }
