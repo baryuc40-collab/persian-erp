@@ -68,6 +68,9 @@ services:
       OPERATON_BPM_RUN_EXAMPLE_ENABLED: 'false'
       OPERATON_BPM_ADMIN_USER_ID: ${BPM_ENGINE_USERNAME:-nocobase}
       OPERATON_BPM_ADMIN_USER_PASSWORD: ${BPM_ENGINE_PASSWORD:-change-me}
+      # از production.yml خود موتور (بازبینی STORY-083): authorization روشن، تنها کاربر مدیر سرویس همه را می‌بیند؛
+      # بررسی نوع در deserialization متغیرها؛ بدون CORS باز و WADL.
+      SPRING_APPLICATION_JSON: '{"operaton":{"bpm":{"authorization":{"enabled":true},"generic-properties":{"properties":{"deserialization-type-validation-enabled":true}},"run":{"cors":{"enabled":false},"rest":{"disable-wadl":true}}}}}'
     depends_on:
       operaton-schema:
         condition: service_completed_successfully

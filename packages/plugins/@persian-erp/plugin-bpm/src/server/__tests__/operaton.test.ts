@@ -96,13 +96,18 @@ describe.skipIf(!url)('OperatonEngine', () => {
     expect(await engine.start('purchase_request', key(1))).toMatchObject({ created: true });
   });
 
-  it('ends a rejected request without the service task', async () => {
+  it('sends a rejected request to the reject task, not to the order', async () => {
     await engine.start('purchase_request', key(2), { recordId: 2 });
     const [task] = await engine.listUserTasks({ businessKey: key(2) });
     await engine.completeUserTask(task.id, { approved: false });
-    const fetched = await engine.fetchServiceTasks('test-worker', [{ name: 'place-order', lockMs: 1000 }], 10);
-    expect(fetched.filter((t) => t.businessKey === key(2))).toEqual([]);
+    const topics = [
+      { name: 'place-order', lockMs: 1000 },
+      { name: 'reject-request', lockMs: 1000 },
+    ];
+    const fetched = await engine.fetchServiceTasks('test-worker', topics, 10);
+    expect(fetched.filter((t) => t.businessKey === key(2)).map((t) => t.topic)).toEqual(['reject-request']);
   });
+
   it('locks a service task to one worker, and makes an incident after the last retry', async () => {
     await engine.start('purchase_request', key(3), { recordId: 3 });
     const [task] = await engine.listUserTasks({ businessKey: key(3) });

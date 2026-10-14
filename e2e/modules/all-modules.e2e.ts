@@ -29,6 +29,12 @@ for (const file of files) {
 
   test.describe(path.relative(MODULES, file), () => {
     test.describe.configure({ mode: 'serial' });
+    // A module built on plugin-bpm (STORY-083) needs the plugin and an engine, which only the "E2E (BPMN)" job has.
+    const needsBpm = [
+      ...(module.requires?.workflowTriggers || []),
+      ...(module.requires?.workflowInstructions || []),
+    ].some((type: string) => type.startsWith('bpm-'));
+    test.skip(needsBpm && !process.env.BPM_E2E, 'Needs plugin-bpm and a BPMN engine (BPM_E2E=1)');
 
     test.beforeAll(async ({ playwright, baseURL }) => {
       const api = await apiAs(playwright, baseURL!);
