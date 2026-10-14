@@ -12,6 +12,9 @@ export class ModuleRemoveError extends Error {}
 interface TreeRepository {
   remove(uid: string, options: { transaction: Transaction }): Promise<void>;
 }
+interface CollectionRepository {
+  load(options: { filter: Record<string, unknown> }): Promise<void>;
+}
 interface AclPlugin {
   writeRoleToACL(role: unknown, options?: { transaction?: Transaction }): Promise<void>;
 }
@@ -137,7 +140,9 @@ export async function removeModule(
     // The rollback brings the rows back, not what hooks took out of memory on the way: collections, roles in the
     // ACL and the triggers of enabled workflows.
     const names = records.collections.map((collection) => collection.name);
-    await db.getRepository('collections').load({ filter: { name: { $in: names } } });
+    await ((db.getRepository('collections') as unknown) as CollectionRepository).load({
+      filter: { name: { $in: names } },
+    });
     const acl = app.pm.get('acl') as unknown as AclPlugin;
     for (const role of await db.getRepository('roles').find({
       filter: { name: { $in: records.roles.map((r) => r.name) } },

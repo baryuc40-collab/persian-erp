@@ -61,5 +61,9 @@
   "{{count}} versions": "{{count}} versions",
   "Type {{key}} to confirm": "Type {{key}} to confirm",
   "The module was deleted": "The module was deleted",
-  "Reload the page to update the menu.": "Reload the page to update the menu."
+  "Reload the page to update the menu.": "Reload the page to update the menu.",
+  "The file is module {{name}}, not this module": "The file is module {{name}}, not this module",
+  "The module version {{version}} is not of the form 1.2.3": "The module version {{version}} is not of the form 1.2.3",
+  "Version {{version}} of the module is installed; the file has version {{fileVersion}}": "Version {{version}} of the module is installed; the file has version {{fileVersion}}",
+  "The field {{name}} changes its type from {{from}} to {{to}}": "The field {{name}} changes its type from {{from}} to {{to}}"
 }
