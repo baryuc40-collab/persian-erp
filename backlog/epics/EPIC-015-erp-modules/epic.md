@@ -68,5 +68,5 @@ owner: mmsh
 | [STORY-064](STORY-064-module-export.md) | خروجی ماژول (سرور) | in-review |
 | [STORY-065](STORY-065-module-import.md) | ورودی ماژول (سرور) | in-review |
 | [STORY-066](STORY-066-modules-settings-page.md) | صفحه‌ی «ماژول‌ها» در تنظیمات | in-review |
-| [STORY-067](STORY-067-module-standard.md) | استاندارد کیفیت ماژول و `yarn check:module` | todo |
+| [STORY-067](STORY-067-module-standard.md) | استاندارد کیفیت ماژول و `yarn check:module` | in-review |
 | [STORY-068](STORY-068-reference-module-parties.md) | ماژول مرجع «اشخاص» | todo |
