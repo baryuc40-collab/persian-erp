@@ -2,7 +2,7 @@
 id: EPIC-016
 title: اتصال موتور BPMN (اثبات مفهوم)
 phase: 6
-status: draft
+status: in-progress
 owner: mmsh
 ---
 
@@ -58,7 +58,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-078](STORY-078-engine-decision.md) | تصمیم موتور BPMN و طراحی اتصال | todo |
+| [STORY-078](STORY-078-engine-decision.md) | تصمیم موتور BPMN و طراحی اتصال | in-review |
 | [STORY-079](STORY-079-bpm-plugin-and-engine.md) | Operaton در محیط توسعه و پلاگین plugin-bpm | todo |
 | [STORY-080](STORY-080-start-process-node.md) | نود گردش‌کار «شروع فرایند BPMN» | todo |
 | [STORY-081](STORY-081-service-task-worker.md) | Worker کارهای سرویس روی مجموعه‌ها | todo |
