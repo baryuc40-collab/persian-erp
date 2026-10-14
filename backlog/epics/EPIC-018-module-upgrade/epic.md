@@ -54,6 +54,6 @@ owner: mmsh
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
 | [STORY-074](STORY-074-upgrade-decision.md) | تصمیم ارتقا و حذف ماژول | in-review |
-| [STORY-075](STORY-075-module-remove.md) | حذف ماژول نصب‌شده | todo |
+| [STORY-075](STORY-075-module-remove.md) | حذف ماژول نصب‌شده | in-review |
 | [STORY-076](STORY-076-module-upgrade-server.md) | ارتقای ماژول (سرور) | todo |
 | [STORY-077](STORY-077-module-upgrade-ui.md) | ارتقای ماژول در صفحه‌ی ماژول‌ها و کاتالوگ | todo |

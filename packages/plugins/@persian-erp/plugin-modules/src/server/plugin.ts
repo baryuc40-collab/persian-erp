@@ -7,6 +7,7 @@ import { readCatalog } from './catalog';
 import erpModulesCollection from './erp-modules-collection';
 import { exportModule, ModuleRow } from './exporter';
 import { checkImport, ConflictKind, importModule, ModuleImportError } from './importer';
+import { ModuleRemoveError, planRemoval, removeModule } from './remover';
 import type { FileProblem } from '../shared/validate';
 
 export const MODULES_RESOURCE = 'erpModules';
@@ -28,6 +29,7 @@ export class PluginModulesServer extends Plugin {
       [`${MODULES_RESOURCE}:create`]: (ctx: Context, next: Next) => this.createAction(ctx, next),
       [`${MODULES_RESOURCE}:catalog`]: (ctx: Context, next: Next) => this.catalogAction(ctx, next),
       [`${MODULES_RESOURCE}:install`]: (ctx: Context, next: Next) => this.installAction(ctx, next),
+      [`${MODULES_RESOURCE}:remove`]: (ctx: Context, next: Next) => this.removeAction(ctx, next),
     });
   }
 
@@ -194,6 +196,23 @@ export class PluginModulesServer extends Plugin {
     const entry = readCatalog().find((e) => e.module?.module?.key === key);
     if (!entry) ctx.throw(404, t('Module not found'));
     ctx.body = await this.runImport(ctx, entry.module);
+    await next();
+  }
+
+  /** Removes a module with its collections and data; with dryRun, only says what would go. */
+  async removeAction(ctx: Context, next: Next) {
+    const { t } = this.messages(ctx);
+    const { filterByTk: key, dryRun, confirm } = ctx.action.params;
+    const row = await this.db.getRepository(MODULES_RESOURCE).findOne({ filterByTk: key });
+    if (!row) ctx.throw(404, t('Module not found'));
+    try {
+      ctx.body = isTrue(dryRun)
+        ? (await planRemoval(this.app, row.toJSON() as ModuleRow)).plan
+        : await removeModule(this.app, row.toJSON() as ModuleRow, confirm ?? ctx.action.params.values?.confirm);
+    } catch (error) {
+      if (error instanceof ModuleRemoveError || error instanceof ModuleExportError) ctx.throw(400, t(error.message));
+      throw error;
+    }
     await next();
   }
 }
