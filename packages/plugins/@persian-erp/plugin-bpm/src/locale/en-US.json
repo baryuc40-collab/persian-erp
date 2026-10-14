@@ -25,5 +25,19 @@
   "The BPMN engine answered {{status}}: {{message}}": "The BPMN engine answered {{status}}: {{message}}",
   "The engine address must start with http:// or https://": "The engine address must start with http:// or https://",
   "This is not a BPMN file": "This is not a BPMN file",
-  "The BPMN file is too large": "The BPMN file is too large"
+  "The BPMN file is too large": "The BPMN file is too large",
+  "Start a BPMN process": "Start a BPMN process",
+  "Starts a process of the BPMN engine for a business key, or finds the one already running for it.": "Starts a process of the BPMN engine for a business key, or finds the one already running for it.",
+  "Process instance ID": "Process instance ID",
+  "Business key": "Business key",
+  "Started now": "Started now",
+  "Process": "Process",
+  "Choose a deployed process": "Choose a deployed process",
+  "Usually the collection and the record ID, such as purchase_requests:{{id}}": "Usually the collection and the record ID, such as purchase_requests:{{id}}",
+  "Process variables": "Process variables",
+  "Only IDs and decisions; the record itself stays in NocoBase.": "Only IDs and decisions; the record itself stays in NocoBase.",
+  "Variable name": "Variable name",
+  "Delete": "Delete",
+  "Add a variable": "Add a variable",
+  "Choose a process and a business key": "Choose a process and a business key"
 }
