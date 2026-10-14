@@ -208,6 +208,9 @@ function checkModule(file) {
     declaredOnce('workflowTriggers', workflow.type, `workflows[${workflow.key}].type`, 'workflow trigger');
     for (const node of list(workflow.nodes)) {
       declaredOnce('workflowInstructions', node.type, `workflows[${workflow.key}].nodes[${node.key}].type`, 'workflow node type');
+      if (node.type === 'notification' && node.config && typeof node.config.channelName === 'string') {
+        declaredOnce('notificationChannels', node.config.channelName, `workflows[${workflow.key}].nodes[${node.key}].config.channelName`, 'notification channel');
+      }
     }
   }
   return findings;

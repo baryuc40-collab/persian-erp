@@ -14,6 +14,7 @@
   "The workflow plugin is not enabled": "پلاگین گردش‌کار فعال نیست",
   "This install has no workflow trigger {{name}}": "این نصب رویداد شروع گردش‌کار {{name}} را ندارد",
   "This install has no workflow node type {{name}}": "این نصب نوع نود گردش‌کار {{name}} را ندارد",
+  "This install has no notification channel {{name}}": "این نصب کانال اعلان {{name}} را ندارد",
   "The plugin that stores {{name}} is not enabled": "پلاگینی که {{name}} را نگه می‌دارد فعال نیست",
   "The module conflicts with what this install already has": "ماژول با چیزهایی که این نصب از پیش دارد تداخل دارد",
   "Module": "ماژول",

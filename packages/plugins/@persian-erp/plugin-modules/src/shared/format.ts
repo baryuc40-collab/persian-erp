@@ -24,6 +24,8 @@ export interface ModuleRequires {
   fieldInterfaces: string[];
   workflowTriggers: string[];
   workflowInstructions: string[];
+  /** Notification channels the notification nodes of the workflows send through; absent when there are none. */
+  notificationChannels?: string[];
   models: string[];
 }
 
