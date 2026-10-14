@@ -115,7 +115,7 @@ jobs:
       - name: Lint
         run: yarn eslint packages/plugins/@persian-erp tools
       - name: Build plugins
-        run: yarn build @persian-erp/plugin-fa --no-dts
+        run: yarn build @persian-erp/plugin-fa @persian-erp/plugin-modules --no-dts
       - name: Test
         run: yarn test --server packages/plugins/@persian-erp --run
       - name: Client tests
@@ -170,7 +170,7 @@ jobs:
       - name: Install
         run: yarn install --ignore-engines --network-timeout 600000
       - name: Build plugins
-        run: yarn build @persian-erp/plugin-fa --no-dts
+        run: yarn build @persian-erp/plugin-fa @persian-erp/plugin-modules --no-dts
       - name: Install and start NocoBase
         run: |
           yarn start --quickstart -d

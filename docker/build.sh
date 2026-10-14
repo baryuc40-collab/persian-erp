@@ -8,17 +8,22 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
 nocobase_version="$(tr -d ' \r\n' < NOCOBASE_VERSION)"
-plugin_version="$(node -p "require('./packages/plugins/@persian-erp/plugin-fa/package.json').version")"
+version_of() { node -p "require('./packages/plugins/@persian-erp/$1/package.json').version"; }
+plugin_version="$(version_of plugin-fa)"
+modules_version="$(version_of plugin-modules)"
 release="${RELEASE:-dev}"
 tag="${1:-persian-erp:${nocobase_version}-fa.${release}}"
 
-yarn build @persian-erp/plugin-fa --no-dts
-yarn tar @persian-erp/plugin-fa
-cp "storage/tar/@persian-erp/plugin-fa-${plugin_version}.tgz" docker/plugin-fa.tgz
+yarn build @persian-erp/plugin-fa @persian-erp/plugin-modules --no-dts
+for plugin in plugin-fa plugin-modules; do
+  yarn tar "@persian-erp/${plugin}"
+  cp "storage/tar/@persian-erp/${plugin}-$(version_of "$plugin").tgz" "docker/${plugin}.tgz"
+done
 
 docker build \
   --build-arg "NOCOBASE_VERSION=${nocobase_version}" \
   --build-arg "PLUGIN_VERSION=${plugin_version}" \
+  --build-arg "MODULES_VERSION=${modules_version}" \
   --build-arg "RELEASE=${release}" \
   -t "$tag" \
   docker

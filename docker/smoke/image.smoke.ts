@@ -17,6 +17,7 @@ test('the Persian plugin is enabled and Persian is the app language', async ({ p
   expect(res.ok()).toBeTruthy();
   const names = ((await res.json()).data as { packageName: string }[]).map((p) => p.packageName);
   expect(names).toContain('@persian-erp/plugin-fa');
+  expect(names).toContain('@persian-erp/plugin-modules');
   const settings = await api.request.get('/api/systemSettings:get', { headers: api.headers });
   const { appLang, enabledLanguages } = (await settings.json()).data;
   expect(appLang).toBe('fa-IR');

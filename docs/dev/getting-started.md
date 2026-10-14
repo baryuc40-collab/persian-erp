@@ -61,7 +61,7 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 
 ### زبان فارسی
 
-plugin-fa با `APPEND_PRESET_BUILT_IN_PLUGINS` در `.env` هنگام نصب فعال می‌شود. برای اینکه فارسی از همان نصب اول زبان پیش‌فرض باشد، پیش از نصب در `.env` بگذارید `INIT_APP_LANG=fa-IR`.
+plugin-fa و plugin-modules با `APPEND_PRESET_BUILT_IN_PLUGINS` در `.env` هنگام نصب فعال می‌شوند. برای اینکه فارسی از همان نصب اول زبان پیش‌فرض باشد، پیش از نصب در `.env` بگذارید `INIT_APP_LANG=fa-IR`.
 
 روی برنامه‌ای که پیش‌تر نصب شده:
 
