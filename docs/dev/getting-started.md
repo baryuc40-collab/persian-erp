@@ -95,6 +95,19 @@ yarn i18n:translate client --export todo.json   # کلیدهای ترجمه‌ن
 yarn i18n:translate client --import todo.json   # ادغام، با همان بررسی‌ها
 ```
 
+## موتور BPMN (اختیاری)
+
+پلاگین `@persian-erp/plugin-bpm` به موتور Operaton وصل می‌شود ([تصمیم ۰۰۰۷](../decisions/0007-bpmn-engine.md)). موتور پشت profile `bpm` است:
+
+```bash
+docker compose --profile bpm up -d
+```
+
+- موتور در schema جدای `operaton` همان PostgreSQL نصب می‌شود و درگاهش بیرون نمی‌آید.
+- کاربر سرویس از `BPM_ENGINE_USERNAME` و `BPM_ENGINE_PASSWORD` در `.env` می‌آید. پیش از استفاده‌ی واقعی رمز `change-me` را عوض کنید.
+- پلاگین را در «مدیر پلاگین» فعال کنید. «تنظیمات ← موتور BPMN» اتصال را نشان می‌دهد، «آزمون اتصال» دارد و فایل `.bpmn` را مستقر می‌کند.
+- آزمون‌های `OperatonEngine` فقط با `OPERATON_URL` اجرا می‌شوند. دستور اجرای یک موتور آزمایشی در بالای `plugin-bpm/src/server/__tests__/operaton.test.ts` آمده است.
+
 ## پلاگین جدید
 
 ```bash
