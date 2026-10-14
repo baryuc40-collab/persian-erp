@@ -54,8 +54,8 @@ describe('FaProvider', () => {
     const { unmount } = await renderIn('fa-IR');
     expect(screen.getByTestId('font').textContent).toMatch(/^'Vazirmatn FD', /);
     const css = fontStyle()?.textContent || '';
-    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/fonts/Vazirmatn-Regular.woff2')");
-    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/fonts/Vazirmatn-FD-Bold.woff2')");
+    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/dist/client/fonts/Vazirmatn-Regular.woff2')");
+    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/dist/client/fonts/Vazirmatn-FD-Bold.woff2')");
     expect(css).toContain('font-weight:700');
     expect(css).toContain("body{font-family:'Vazirmatn FD',");
     expect(css).not.toMatch(/https?:/);
