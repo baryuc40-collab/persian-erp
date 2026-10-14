@@ -51,5 +51,15 @@
   "and {{count}} more": "و {{count}} مورد دیگر",
   "Catalog": "کاتالوگ",
   "Installed": "نصب‌شده",
-  "Install": "نصب"
+  "Install": "نصب",
+  "Type the module key to confirm the deletion": "برای تأیید حذف، کلید ماژول را بنویسید",
+  "Delete": "حذف",
+  "Delete the module": "حذف ماژول",
+  "Deleting the module deletes its collections with all their records, its pages, workflows and roles. Back up the database first.": "حذف ماژول جدول‌هایش را با همه‌ی رکوردهایشان، و صفحه‌ها، گردش‌کارها و نقش‌هایش را پاک می‌کند. پیش از حذف از پایگاه داده پشتیبان بگیرید.",
+  "{{count}} records": "{{count}} رکورد",
+  "{{count}} users": "{{count}} کاربر",
+  "{{count}} versions": "{{count}} نسخه",
+  "Type {{key}} to confirm": "برای تأیید، {{key}} را بنویسید",
+  "The module was deleted": "ماژول حذف شد",
+  "Reload the page to update the menu.": "صفحه را دوباره بارگذاری کنید تا منو به‌روز شود."
 }

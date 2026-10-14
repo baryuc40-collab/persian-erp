@@ -106,6 +106,105 @@ export const ImportPreviewView = ({ preview }: { preview: ImportPreview }) => {
   );
 };
 
+/** What deleting a module takes away (erpModules:remove with dryRun, STORY-075). */
+export interface RemovalPlan {
+  key: string;
+  title: string;
+  version: string;
+  collections: { name: string; title: string; records: number }[];
+  pages: { title: string; type: string }[];
+  workflows: { key: string; title: string; versions: number }[];
+  roles: { name: string; title: string; users: number }[];
+}
+
+/** Deletes a module after showing what goes and asking for its key, which the server checks again. */
+export const DeleteModule = ({
+  api,
+  moduleKey,
+  onClose,
+}: {
+  api: ModulesApi;
+  moduleKey: string | null;
+  onClose: (deleted: boolean) => void;
+}) => {
+  const { t } = useTranslation([pkg.name, 'client']);
+  const title = useTitle();
+  const { message } = App.useApp();
+  const [plan, setPlan] = useState<RemovalPlan | null>(null);
+  const [typed, setTyped] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setPlan(null);
+    setTyped('');
+    if (!moduleKey) return;
+    api
+      .request({ url: 'erpModules:remove', method: 'post', params: { filterByTk: moduleKey, dryRun: true } })
+      .then(({ data }) => setPlan(data?.data))
+      .catch((error) => {
+        message.error(errorMessage(error));
+        onClose(false);
+      });
+  }, [api, moduleKey]);
+
+  const remove = async () => {
+    setDeleting(true);
+    try {
+      await api.request({ url: 'erpModules:remove', method: 'post', params: { filterByTk: moduleKey, confirm: typed } });
+      onClose(true);
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const lines = (items: string[]) => (items.length ? items.map((item) => <Tag key={item}>{item}</Tag>) : '-');
+  return (
+    <Modal
+      open={!!moduleKey}
+      title={t('Delete the module')}
+      width={640}
+      okText={t('Delete')}
+      cancelText={t('Cancel')}
+      okButtonProps={{ danger: true, disabled: !plan || typed !== moduleKey }}
+      confirmLoading={deleting}
+      onOk={remove}
+      onCancel={() => onClose(false)}
+    >
+      {plan && (
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Alert
+            type="warning"
+            showIcon
+            message={t(
+              'Deleting the module deletes its collections with all their records, its pages, workflows and roles. Back up the database first.',
+            )}
+          />
+          <Descriptions column={1} size="small" bordered>
+            <Descriptions.Item label={t('Title')}>{`${plan.title} (${plan.key})`}</Descriptions.Item>
+            <Descriptions.Item label={t('Collections')}>
+              {lines(plan.collections.map((c) => `${title(c.title) || c.name}: ${t('{{count}} records', { count: c.records })}`))}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('Pages')}>{lines(plan.pages.map((p) => title(p.title)))}</Descriptions.Item>
+            <Descriptions.Item label={t('Workflows')}>
+              {lines(plan.workflows.map((w) => `${w.title || w.key}: ${t('{{count}} versions', { count: w.versions })}`))}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('Roles')}>
+              {lines(plan.roles.map((r) => `${title(r.title) || r.name}: ${t('{{count}} users', { count: r.users })}`))}
+            </Descriptions.Item>
+          </Descriptions>
+          <Form layout="vertical">
+            <Form.Item label={t('Type {{key}} to confirm', { key: plan.key })} htmlFor="erp-module-delete-confirm">
+              <Input id="erp-module-delete-confirm" value={typed} autoComplete="off" onChange={(e) => setTyped(e.target.value.trim())} />
+            </Form.Item>
+          </Form>
+        </Space>
+      )}
+    </Modal>
+  );
+};
+
 const DefineModule = ({ api, open, onClose, used }: { api: ModulesApi; open: boolean; onClose: (saved: boolean) => void; used: string[] }) => {
   const { t } = useTranslation([pkg.name, 'client']);
   const title = useTitle();
@@ -238,6 +337,7 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
   const [modules, setModules] = useState<InstalledModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [defining, setDefining] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [source, setSource] = useState<ImportSource | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -355,12 +455,32 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
             title: t('Actions'),
             key: 'actions',
             render: (_, r) => (
-              <Button type="link" disabled={!!r.error} onClick={() => exportModule(r.key)}>
-                {t('Export')}
-              </Button>
+              <Space size={0}>
+                <Button type="link" disabled={!!r.error} onClick={() => exportModule(r.key)}>
+                  {t('Export')}
+                </Button>
+                <Button type="link" danger disabled={!!r.error} onClick={() => setDeleting(r.key)}>
+                  {t('Delete')}
+                </Button>
+              </Space>
             ),
           },
         ]}
+      />
+      <DeleteModule
+        api={api}
+        moduleKey={deleting}
+        onClose={async (deleted) => {
+          setDeleting(null);
+          if (!deleted) return;
+          await load();
+          modal.success({
+            title: t('The module was deleted'),
+            content: t('Reload the page to update the menu.'),
+            okText: t('Reload'),
+            onOk: () => window.location.reload(),
+          });
+        }}
       />
       <DefineModule
         api={api}
