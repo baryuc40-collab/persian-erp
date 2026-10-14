@@ -61,3 +61,4 @@ owner: mmsh
 | [STORY-060](STORY-060-install-guide.md) | راهنمای نصب فارسی | in-review |
 | [STORY-061](STORY-061-upgrade-process.md) | فرایند و ابزار ارتقای وصله‌ی NocoBase | in-review |
 | [STORY-062](STORY-062-release.md) | نسخه‌گذاری و انتشار در GitHub Release | todo |
+| [STORY-072](STORY-072-font-in-image.md) | فونت وزیرمتن در ایمیج Docker | in-review |
