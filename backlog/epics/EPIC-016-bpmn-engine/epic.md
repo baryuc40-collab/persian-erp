@@ -63,4 +63,4 @@ owner: mmsh
 | [STORY-080](STORY-080-start-process-node.md) | نود گردش‌کار «شروع فرایند BPMN» | in-review |
 | [STORY-081](STORY-081-service-task-worker.md) | Worker کارهای سرویس روی مجموعه‌ها | in-review |
 | [STORY-082](STORY-082-task-inbox.md) | صندوق کار فارسی | in-review |
-| [STORY-083](STORY-083-purchase-request-poc.md) | فرایند نمونه‌ی «درخواست خرید» و بازبینی امنیت | todo |
+| [STORY-083](STORY-083-purchase-request-poc.md) | فرایند نمونه‌ی «درخواست خرید» و بازبینی امنیت | in-review |

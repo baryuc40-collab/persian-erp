@@ -1,5 +1,5 @@
 import os from 'os';
-import type { BpmEngine, ServiceTask } from './engine';
+import { BpmEngine, BpmEngineError, ServiceTask } from './engine';
 import { SERVICE_TASK_TRIGGER } from './service-task-trigger';
 import type PluginBpmServer from './plugin';
 
@@ -33,6 +33,7 @@ export class ServiceTaskWorker {
   readonly workerId = `nocobase-${os.hostname()}-${process.pid}`;
   private timer: NodeJS.Timeout | null = null;
   private running = false;
+  private lastError: string | null = null;
   options: WorkerOptions;
 
   constructor(private bpm: PluginBpmServer, options: Partial<WorkerOptions> = {}) {
@@ -65,8 +66,16 @@ export class ServiceTaskWorker {
     let handled = 0;
     try {
       handled = await this.runOnce();
+      if (this.lastError) this.logger.info('bpm worker: the engine answers again');
+      this.lastError = null;
     } catch (error) {
-      this.logger.warn(`bpm worker: ${(error as Error).message}`);
+      const message =
+        error instanceof BpmEngineError
+          ? await this.bpm.translate(error.message, error.values)
+          : (error as Error).message;
+      // Once per outage, not on every poll while the engine is down.
+      if (message !== this.lastError) this.logger.warn(`bpm worker: ${message}`);
+      this.lastError = message;
     }
     // Right away when there may be more tasks, else after the interval.
     this.schedule(handled >= this.options.maxTasks ? 0 : this.options.interval);

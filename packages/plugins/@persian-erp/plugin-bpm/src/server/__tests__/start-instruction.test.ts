@@ -1,6 +1,7 @@
 import { createMockServer, MockServer } from '@nocobase/test';
 import { BpmEngine, BpmEngineError, Variables } from '../engine';
 import PluginBpmServer from '../plugin';
+import { StartProcessInstruction } from '../start-instruction';
 
 // The workflow node «Start a BPMN process» (STORY-080), with a stand-in engine.
 
@@ -122,5 +123,26 @@ describe('workflow node bpm-start', () => {
     await sleep(500);
     expect((await lastJob()).result).toEqual({ error: 'Choose a process and a business key' });
     expect(started).toEqual([]);
+  });
+
+  it('starts one instance when two nodes start the same business key at once', async () => {
+    // Like the engine: a look for a running instance, then the start, with time between them.
+    engine.start = async (processKey, businessKey, variables = {}) => {
+      const running = started.some((s) => s.businessKey === businessKey);
+      await sleep(100);
+      if (running) return { instanceId: 'pi-1', created: false };
+      started.push({ processKey, businessKey, variables });
+      return { instanceId: `pi-${started.length}`, created: true };
+    };
+    const bpm = app.pm.get(PluginBpmServer) as PluginBpmServer;
+    const instruction = new StartProcessInstruction(app.pm.get('workflow') as never, bpm);
+    const node = { id: 1, config: { processKey: 'purchase_request', businessKey: 'purchase_requests:7' } };
+    const processor = { getParsedValue: (config) => config, logger: console };
+    const results = await Promise.all([
+      instruction.run(node as never, null, processor as never),
+      instruction.run(node as never, null, processor as never),
+    ]);
+    expect(results.map((r) => (r.result as { created: boolean }).created).sort()).toEqual([false, true]);
+    expect(started).toHaveLength(1);
   });
 });

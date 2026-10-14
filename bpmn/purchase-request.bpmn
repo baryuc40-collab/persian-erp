@@ -16,10 +16,12 @@
     <bpmn:sequenceFlow id="f2" sourceRef="approve" targetRef="gw" />
     <bpmn:exclusiveGateway id="gw" />
     <bpmn:sequenceFlow id="yes" sourceRef="gw" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="no" sourceRef="gw" targetRef="rejected"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${!approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="no" sourceRef="gw" targetRef="reject"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${!approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
     <bpmn:serviceTask id="order" name="ثبت سفارش" operaton:type="external" operaton:topic="place-order" />
     <bpmn:sequenceFlow id="f3" sourceRef="order" targetRef="done" />
     <bpmn:endEvent id="done" />
+    <bpmn:serviceTask id="reject" name="ثبت رد" operaton:type="external" operaton:topic="reject-request" />
+    <bpmn:sequenceFlow id="f4" sourceRef="reject" targetRef="rejected" />
     <bpmn:endEvent id="rejected" />
   </bpmn:process>
 </bpmn:definitions>

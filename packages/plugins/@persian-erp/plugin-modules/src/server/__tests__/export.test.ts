@@ -21,6 +21,26 @@ describe('erpModules:export', () => {
   };
   const exportLab = async () => (await login('root')).resource('erpModules').export({ filterByTk: 'lab' });
 
+  it('takes a workflow without a collection when one of its nodes works on a module collection', async () => {
+    await buildLabModule(app);
+    const workflows = app.db.getRepository('workflows');
+    const nodes = app.db.getRepository('flow_nodes');
+    for (const [key, collection] of [
+      ['labschedul1', 'lab_items'],
+      ['otherschedu', 'users'],
+    ]) {
+      const workflow = await workflows.create({
+        values: { key, title: 'زمان‌بندی', type: 'schedule', config: { mode: 0 } },
+      });
+      await nodes.create({
+        values: { key: `${key}n`, workflowId: workflow.get('id'), type: 'update', config: { collection, params: {} } },
+      });
+    }
+    const file = JSON.parse((await exportLab()).text);
+    expect(file.workflows.map((w) => w.key)).toEqual(['labapprove1', 'labschedul1', 'labstatus01']);
+    expect(file.requires.workflowTriggers).toEqual(['action', 'collection', 'schedule']);
+  });
+
   it('returns the module as one file with every part of it', async () => {
     const ids = await buildLabModule(app);
     const res = await exportLab();
@@ -69,9 +89,7 @@ describe('erpModules:export', () => {
         ],
       },
     ]);
-    expect(role.scopes).toEqual([
-      { key: 'labopenscop', name: 'باز', resourceName: 'lab_items', scope: { amount: 1 } },
-    ]);
+    expect(role.scopes).toEqual([{ key: 'labopenscop', name: 'باز', resourceName: 'lab_items', scope: { amount: 1 } }]);
     expect(role.routes).toEqual([
       'labclsgrid1',
       'labclspage1',

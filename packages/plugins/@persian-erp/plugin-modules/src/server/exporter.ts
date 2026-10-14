@@ -68,10 +68,12 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
     const existing = await db.getRepository('uiSchemas').find({ filter: { 'x-uid': { $in: routeUids } } });
     const withParent = new Set(
       (
-        await db.getRepository('uiSchemaTreePath').find({ filter: { descendant: { $in: routeUids }, depth: { $gt: 0 } } })
+        await db
+          .getRepository('uiSchemaTreePath')
+          .find({ filter: { descendant: { $in: routeUids }, depth: { $gt: 0 } } })
       ).map((path) => path.get('descendant') as string),
     );
-    const repository = db.getRepository('uiSchemas') as unknown as UiSchemaRepository;
+    const repository = (db.getRepository('uiSchemas') as unknown) as UiSchemaRepository;
     for (const uid of existing.map((schema) => schema.get('x-uid') as string).filter((uid) => !withParent.has(uid))) {
       uiSchemas.push({ ...(await repository.getJsonSchema(uid, { includeAsyncNode: true })), 'x-uid': uid });
     }
@@ -83,7 +85,7 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
   const refs = emptyRefs();
   uiSchemas.forEach((schema) => collectRefs(schema, refs));
   if (has('flowModels')) {
-    const repository = db.getRepository('flowModels') as unknown as FlowModelRepository;
+    const repository = (db.getRepository('flowModels') as unknown) as FlowModelRepository;
     const parentOf = async (uid: string) =>
       (await db.getRepository('flowModelTreePath').findOne({ filter: { descendant: uid, depth: 1 } }))?.get(
         'ancestor',
@@ -147,12 +149,20 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
     );
   }
 
-  // Workflows: current versions triggered on a module collection or run from a module page.
+  // Workflows: current versions triggered on a module collection, run from a module page, or with a node that works on
+  // a module collection, like a workflow of the BPMN service task event (STORY-083), which has no collection itself.
   const workflows: Row[] = [];
   if (has('workflows')) {
-    for (const workflow of await db.getRepository('workflows').find({ filter: { current: true }, appends: ['nodes'] })) {
+    const inModule = (config?: Row) => collectionNames.has(collectionFromConfig(config?.collection));
+    for (const workflow of await db
+      .getRepository('workflows')
+      .find({ filter: { current: true }, appends: ['nodes'] })) {
       const row = workflow.toJSON();
-      if (collectionNames.has(collectionFromConfig(row.config?.collection)) || refs.workflowKeys.has(row.key)) {
+      if (
+        inModule(row.config) ||
+        refs.workflowKeys.has(row.key) ||
+        (row.nodes || []).some((n: Row) => inModule(n.config))
+      ) {
         workflows.push(row);
       }
     }
@@ -170,9 +180,9 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
     ).map((resource) => resource.toJSON());
     const scopeIds = resources.flatMap((resource) => (resource.actions || []).map((a) => a.scopeId)).filter(Boolean);
     const scopes = scopeIds.length
-      ? (await db.getRepository('dataSourcesRolesResourcesScopes').find({ filter: { id: { $in: scopeIds } } })).map(
-          (scope) => scope.toJSON(),
-        )
+      ? (
+          await db.getRepository('dataSourcesRolesResourcesScopes').find({ filter: { id: { $in: scopeIds } } })
+        ).map((scope) => scope.toJSON())
       : [];
     const menu = (await db.getRepository('rolesDesktopRoutes').find({ filter: { roleName: role.name } }))
       .map((row) => String(row.get('desktopRouteId')))
