@@ -8,7 +8,8 @@ import erpModulesCollection from './erp-modules-collection';
 import { exportModule, ModuleRow } from './exporter';
 import { checkImport, ConflictKind, importModule, ModuleImportError } from './importer';
 import { ModuleRemoveError, planRemoval, removeModule } from './remover';
-import { compareVersions, planUpgrade, upgradeModule } from './upgrader';
+import { compareVersions } from '../shared/validate';
+import { planUpgrade, upgradeModule } from './upgrader';
 import type { FileProblem } from '../shared/validate';
 
 export const MODULES_RESOURCE = 'erpModules';
@@ -298,7 +299,8 @@ export class PluginModulesServer extends Plugin {
         ? (await planRemoval(this.app, row.toJSON() as ModuleRow)).plan
         : await removeModule(this.app, row.toJSON() as ModuleRow, confirm ?? ctx.action.params.values?.confirm);
     } catch (error) {
-      if (error instanceof ModuleRemoveError || error instanceof ModuleExportError) ctx.throw(400, t(error.message));
+      if (error instanceof ModuleRemoveError) ctx.throw(400, t(error.message, error.values));
+      if (error instanceof ModuleExportError) ctx.throw(400, t(error.message));
       throw error;
     }
     await next();

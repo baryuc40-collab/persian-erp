@@ -10,6 +10,8 @@ export interface ModuleSummary {
   pages: { title: string; type: string }[];
   workflows: { key: string; title: string; enabled: boolean }[];
   roles: { name: string; title: string }[];
+  /** Other modules it needs installed first, with the lowest version (requires.modules). */
+  requiredModules: { key: string; version: string }[];
 }
 
 const PAGE_TYPES = new Set(['page', 'flowPage']);
@@ -40,5 +42,8 @@ export function summarizeModule(file: Partial<ModuleFile>): ModuleSummary {
       enabled: !!w.enabled,
     })),
     roles: list<Record<string, unknown>>(file.roles).map((r) => ({ name: text(r.name), title: text(r.title) })),
+    requiredModules: Object.entries(
+      file.requires?.modules && typeof file.requires.modules === 'object' ? file.requires.modules : {},
+    ).map(([key, version]) => ({ key, version: text(version) })),
   };
 }

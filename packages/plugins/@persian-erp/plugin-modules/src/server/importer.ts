@@ -1,7 +1,7 @@
 import type Application from '@nocobase/server';
 import type { BelongsToManyRepository, Transaction } from '@nocobase/database';
 import { ModuleFile, ModuleRoute } from '../shared/format';
-import { checkModuleFile, FileProblem } from '../shared/validate';
+import { checkModuleFile, compareVersions, FileProblem } from '../shared/validate';
 import { saveInstalledHash } from './installed-hash';
 
 type Row = Record<string, any>;
@@ -136,6 +136,18 @@ export async function checkImport(app: Application, file: ModuleFile, owned?: Ow
   for (const type of workflow ? file.requires?.workflowInstructions || [] : []) {
     if (!workflow.instructions.get(type)) {
       problems.push({ message: 'This install has no workflow node type {{name}}', values: { name: type } });
+    }
+  }
+  for (const [key, version] of Object.entries(file.requires?.modules || {})) {
+    const installed = await db.getRepository('erpModules').findOne({ filterByTk: key });
+    const found = installed?.get('version') as string | undefined;
+    if (!found || (compareVersions(found, version) ?? -1) < 0) {
+      problems.push({
+        message: found
+          ? 'This module needs the module {{key}} version {{version}} or later; this install has version {{installed}}'
+          : 'This module needs the module {{key}} version {{version}} or later; install it first',
+        values: { key, version, ...(found ? { installed: found } : {}) },
+      });
     }
   }
   for (const name of file.requires?.notificationChannels || []) {

@@ -1,7 +1,7 @@
 import type { BelongsToManyRepository, Transaction } from '@nocobase/database';
 import type Application from '@nocobase/server';
 import { canonicalize, ModuleFile, ModuleRoute, ModuleWorkflow } from '../shared/format';
-import type { FileProblem } from '../shared/validate';
+import { compareVersions, FileProblem } from '../shared/validate';
 import { exportModule, ModuleRow, readModuleRecords } from './exporter';
 import { moduleHash, saveInstalledHash } from './installed-hash';
 import {
@@ -30,19 +30,6 @@ interface CollectionRepository {
 }
 interface AclPlugin {
   writeRoleToACL(role: unknown, options?: { transaction?: Transaction }): Promise<void>;
-}
-
-const VERSION = /^(\d+)\.(\d+)\.(\d+)/;
-/** Compares x.y.z versions; null when one of them is not of that form. */
-export function compareVersions(a: string, b: string): number | null {
-  const x = VERSION.exec(String(a || ''));
-  const y = VERSION.exec(String(b || ''));
-  if (!x || !y) return null;
-  for (let i = 1; i <= 3; i++) {
-    const diff = Number(x[i]) - Number(y[i]);
-    if (diff) return Math.sign(diff);
-  }
-  return 0;
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(canonicalize(a)) === JSON.stringify(canonicalize(b));

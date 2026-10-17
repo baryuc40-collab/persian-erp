@@ -87,5 +87,10 @@
   "Upgrade to version {{version}}": "Upgrade to version {{version}}",
   "Upgrade the module": "Upgrade the module",
   "Upgrade": "Upgrade",
-  "The module was upgraded": "The module was upgraded"
+  "The module was upgraded": "The module was upgraded",
+  "This module needs the module {{key}} version {{version}} or later; install it first": "This module needs the module {{key}} version {{version}} or later; install it first",
+  "This module needs the module {{key}} version {{version}} or later; this install has version {{installed}}": "This module needs the module {{key}} version {{version}} or later; this install has version {{installed}}",
+  "The module {{modules}} depends on this module; remove it first": "The module {{modules}} depends on this module; remove it first",
+  "Required modules": "Required modules",
+  "{{key}} version {{version}} or later": "{{key}} version {{version}} or later"
 }

@@ -2,11 +2,15 @@ import type { Transaction } from '@nocobase/database';
 import type Application from '@nocobase/server';
 import { buildModuleFile, ModuleRecords } from '../shared/build';
 import { summarizeModule } from '../shared/summary';
-import { ModuleRow, readModuleRecords } from './exporter';
+import { exportModule, ModuleRow, readModuleRecords } from './exporter';
 
 type Row = Record<string, any>;
 
-export class ModuleRemoveError extends Error {}
+export class ModuleRemoveError extends Error {
+  constructor(message: string, public values: Record<string, string> = {}) {
+    super(message);
+  }
+}
 
 // Repositories of optional plugins have no typings here, so they are reached through these shapes.
 interface TreeRepository {
@@ -28,6 +32,23 @@ export interface RemovalPlan {
   pages: { title: string; type: string }[];
   workflows: { key: string; title: string; versions: number }[];
   roles: { name: string; title: string; users: number }[];
+  /** Installed modules whose collections point at this one's; while there are any, it cannot be removed. */
+  dependents: { key: string; title: string }[];
+}
+
+/** The other installed modules whose export lists the module in requires.modules. */
+async function dependentsOf(app: Application, key: string) {
+  const dependents: { key: string; title: string }[] = [];
+  for (const row of await app.db.getRepository('erpModules').find({ filter: { key: { $ne: key } }, sort: ['key'] })) {
+    const other = row.toJSON() as ModuleRow;
+    try {
+      if ((await exportModule(app, other)).requires.modules?.[key])
+        dependents.push({ key: other.key, title: other.title });
+    } catch {
+      // A module that cannot be exported (its menu group is gone) holds nothing that could point at this one.
+    }
+  }
+  return dependents;
 }
 
 /** Reads a module the way an export does and counts the records its removal deletes. */
@@ -43,6 +64,7 @@ export async function planRemoval(app: Application, row: ModuleRow) {
     pages: summary.pages,
     workflows: [],
     roles: [],
+    dependents: await dependentsOf(app, row.key),
   };
   for (const collection of records.collections) {
     const records = db.getCollection(collection.name) ? await db.getRepository(collection.name).count() : 0;
@@ -85,10 +107,10 @@ async function removeRecords(app: Application, records: ModuleRecords, transacti
 
   // Pages, then the templates they used. Removing a route removes its own models too (plugin-client).
   for (const model of records.flowModels) {
-    await (db.getRepository('flowModels') as unknown as TreeRepository).remove(model.uid, { transaction });
+    await ((db.getRepository('flowModels') as unknown) as TreeRepository).remove(model.uid, { transaction });
   }
   for (const schema of records.uiSchemas) {
-    await (db.getRepository('uiSchemas') as unknown as TreeRepository).remove(schema['x-uid'], { transaction });
+    await ((db.getRepository('uiSchemas') as unknown) as TreeRepository).remove(schema['x-uid'], { transaction });
   }
   const templateUids = records.flowModelTemplates.map((template) => template.uid);
   if (templateUids.length) {
@@ -129,6 +151,11 @@ export async function removeModule(
   if (confirm !== row.key) throw new ModuleRemoveError('Type the module key to confirm the deletion');
   const db = app.db;
   const { plan, records } = await planRemoval(app, row);
+  if (plan.dependents.length) {
+    throw new ModuleRemoveError('The module {{modules}} depends on this module; remove it first', {
+      modules: plan.dependents.map((module) => module.key).join(', '),
+    });
+  }
   const enabled = records.workflows.filter((workflow) => workflow.enabled).map((workflow) => workflow.id);
   const transaction = await db.sequelize.transaction();
   try {
@@ -143,7 +170,7 @@ export async function removeModule(
     await ((db.getRepository('collections') as unknown) as CollectionRepository).load({
       filter: { name: { $in: names } },
     });
-    const acl = app.pm.get('acl') as unknown as AclPlugin;
+    const acl = (app.pm.get('acl') as unknown) as AclPlugin;
     for (const role of await db.getRepository('roles').find({
       filter: { name: { $in: records.roles.map((r) => r.name) } },
       appends: ['resources', 'resources.actions'],

@@ -1,7 +1,23 @@
 // Settings > ERP modules (STORY-066): the modules of this install, their export, defining a module and importing one.
 // The page only talks to the server through `api`, so the v1 and v2 clients both use it.
 
-import { App, Alert, Button, Card, Descriptions, Form, Input, List, Modal, Select, Space, Table, Tag, Typography, Upload } from 'antd';
+import {
+  App,
+  Alert,
+  Button,
+  Card,
+  Descriptions,
+  Form,
+  Input,
+  List,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+  Upload,
+} from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 // @ts-ignore
@@ -59,7 +75,9 @@ type ImportSource = ({ file: unknown } | { key: string }) & { upgrade?: boolean 
 const isBlocked = (preview: ImportPreview) => preview.problems.length + preview.conflicts.length > 0;
 
 const errorMessage = (error: any) =>
-  error?.response?.data?.errors?.map((e: { message: string }) => e.message).join('\n') || error?.message || String(error);
+  error?.response?.data?.errors?.map((e: { message: string }) => e.message).join('\n') ||
+  error?.message ||
+  String(error);
 
 // The menu title may be a translation template; the page shows it as the menu does.
 const useTitle = () => {
@@ -92,8 +110,17 @@ export const ModuleContents = ({ summary }: { summary: ModuleSummary }) => {
         {names(summary.collections.map((c) => (c.title ? `${title(c.title)} (${c.name})` : c.name)))}
       </Descriptions.Item>
       <Descriptions.Item label={t('Pages')}>{names(summary.pages.map((p) => title(p.title)))}</Descriptions.Item>
-      <Descriptions.Item label={t('Workflows')}>{names(summary.workflows.map((w) => w.title || w.key))}</Descriptions.Item>
-      <Descriptions.Item label={t('Roles')}>{names(summary.roles.map((r) => title(r.title) || r.name))}</Descriptions.Item>
+      <Descriptions.Item label={t('Workflows')}>
+        {names(summary.workflows.map((w) => w.title || w.key))}
+      </Descriptions.Item>
+      <Descriptions.Item label={t('Roles')}>
+        {names(summary.roles.map((r) => title(r.title) || r.name))}
+      </Descriptions.Item>
+      {!!summary.requiredModules?.length && (
+        <Descriptions.Item label={t('Required modules')}>
+          {names(summary.requiredModules.map((m) => t('{{key}} version {{version}} or later', m)))}
+        </Descriptions.Item>
+      )}
     </Descriptions>
   );
 };
@@ -123,15 +150,13 @@ export const UpgradePlanView = ({ plan }: { plan: UpgradePlan }) => {
     [t('Disabled workflows'), plan.workflows.disabled, 'red'],
     [t('New roles'), plan.roles.added, 'green'],
     [t('Updated roles'), plan.roles.updated],
-    [
-      t('Kept, not in the new version'),
-      [...plan.collections.kept, ...plan.fields.kept, ...plan.roles.kept],
-      'orange',
-    ],
+    [t('Kept, not in the new version'), [...plan.collections.kept, ...plan.fields.kept, ...plan.roles.kept], 'orange'],
   ];
   return (
     <Descriptions column={1} size="small" bordered>
-      <Descriptions.Item label={t('Version')}>{t('From {{from}} to {{to}}', { from: plan.from, to: plan.to })}</Descriptions.Item>
+      <Descriptions.Item label={t('Version')}>
+        {t('From {{from}} to {{to}}', { from: plan.from, to: plan.to })}
+      </Descriptions.Item>
       {rows
         .filter(([, items]) => items.length)
         .map(([label, items, color]) => (
@@ -160,7 +185,9 @@ export const ImportPreviewView = ({ preview, upgrade = false }: { preview: Impor
           message={t('Back up the database before the upgrade.')}
           description={
             plan.localChanges
-              ? t('The module was changed after it was installed. The upgrade replaces its pages, menu, workflows and roles with those of the file, so those changes are lost.')
+              ? t(
+                  'The module was changed after it was installed. The upgrade replaces its pages, menu, workflows and roles with those of the file, so those changes are lost.',
+                )
               : undefined
           }
         />
@@ -196,6 +223,7 @@ export interface RemovalPlan {
   pages: { title: string; type: string }[];
   workflows: { key: string; title: string; versions: number }[];
   roles: { name: string; title: string; users: number }[];
+  dependents?: { key: string; title: string }[];
 }
 
 /** Deletes a module after showing what goes and asking for its key, which the server checks again. */
@@ -231,7 +259,11 @@ export const DeleteModule = ({
   const remove = async () => {
     setDeleting(true);
     try {
-      await api.request({ url: 'erpModules:remove', method: 'post', params: { filterByTk: moduleKey, confirm: typed } });
+      await api.request({
+        url: 'erpModules:remove',
+        method: 'post',
+        params: { filterByTk: moduleKey, confirm: typed },
+      });
       onClose(true);
     } catch (error) {
       message.error(errorMessage(error));
@@ -248,7 +280,7 @@ export const DeleteModule = ({
       width={640}
       okText={t('Delete')}
       cancelText={t('Cancel')}
-      okButtonProps={{ danger: true, disabled: !plan || typed !== moduleKey }}
+      okButtonProps={{ danger: true, disabled: !plan || !!plan.dependents?.length || typed !== moduleKey }}
       confirmLoading={deleting}
       onOk={remove}
       onCancel={() => onClose(false)}
@@ -265,28 +297,59 @@ export const DeleteModule = ({
           <Descriptions column={1} size="small" bordered>
             <Descriptions.Item label={t('Title')}>{`${plan.title} (${plan.key})`}</Descriptions.Item>
             <Descriptions.Item label={t('Collections')}>
-              {lines(plan.collections.map((c) => `${title(c.title) || c.name}: ${t('{{count}} records', { count: c.records })}`))}
+              {lines(
+                plan.collections.map(
+                  (c) => `${title(c.title) || c.name}: ${t('{{count}} records', { count: c.records })}`,
+                ),
+              )}
             </Descriptions.Item>
             <Descriptions.Item label={t('Pages')}>{lines(plan.pages.map((p) => title(p.title)))}</Descriptions.Item>
             <Descriptions.Item label={t('Workflows')}>
-              {lines(plan.workflows.map((w) => `${w.title || w.key}: ${t('{{count}} versions', { count: w.versions })}`))}
+              {lines(
+                plan.workflows.map((w) => `${w.title || w.key}: ${t('{{count}} versions', { count: w.versions })}`),
+              )}
             </Descriptions.Item>
             <Descriptions.Item label={t('Roles')}>
               {lines(plan.roles.map((r) => `${title(r.title) || r.name}: ${t('{{count}} users', { count: r.users })}`))}
             </Descriptions.Item>
           </Descriptions>
-          <Form layout="vertical">
-            <Form.Item label={t('Type {{key}} to confirm', { key: plan.key })} htmlFor="erp-module-delete-confirm">
-              <Input id="erp-module-delete-confirm" value={typed} autoComplete="off" onChange={(e) => setTyped(e.target.value.trim())} />
-            </Form.Item>
-          </Form>
+          {plan.dependents?.length ? (
+            <Alert
+              type="error"
+              showIcon
+              message={t('The module {{modules}} depends on this module; remove it first', {
+                modules: plan.dependents.map((m) => `${title(m.title) || m.key} (${m.key})`).join('، '),
+              })}
+            />
+          ) : (
+            <Form layout="vertical">
+              <Form.Item label={t('Type {{key}} to confirm', { key: plan.key })} htmlFor="erp-module-delete-confirm">
+                <Input
+                  id="erp-module-delete-confirm"
+                  value={typed}
+                  autoComplete="off"
+                  onChange={(e) => setTyped(e.target.value.trim())}
+                />
+              </Form.Item>
+            </Form>
+          )}
         </Space>
       )}
     </Modal>
   );
 };
 
-const DefineModule = ({ api, open, onClose, used }: { api: ModulesApi; open: boolean; onClose: (saved: boolean) => void; used: string[] }) => {
+const DefineModule = ({
+  api,
+  open,
+  onClose,
+  used,
+}: {
+  api: ModulesApi;
+  open: boolean;
+  onClose: (saved: boolean) => void;
+  used: string[];
+}) => {
   const { t } = useTranslation([pkg.name, 'client']);
   const title = useTitle();
   const { message } = App.useApp();
@@ -491,7 +554,12 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
         await previewUpgrade({ file: parsed, upgrade: true });
         return false;
       }
-      const { data } = await api.request({ url: 'erpModules:import', method: 'post', params: { dryRun: true }, data: parsed });
+      const { data } = await api.request({
+        url: 'erpModules:import',
+        method: 'post',
+        params: { dryRun: true },
+        data: parsed,
+      });
       setSource({ file: parsed });
       setPreview(data?.data);
     } catch (error) {
@@ -505,7 +573,12 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
     try {
       if (source.upgrade) {
         const params = 'key' in source ? { filterByTk: source.key } : {};
-        await api.request({ url: 'erpModules:upgrade', method: 'post', params, data: 'file' in source ? source.file : undefined });
+        await api.request({
+          url: 'erpModules:upgrade',
+          method: 'post',
+          params,
+          data: 'file' in source ? source.file : undefined,
+        });
       } else if ('key' in source) {
         await api.request({ url: 'erpModules:install', method: 'post', params: { filterByTk: source.key } });
       } else {
@@ -546,7 +619,9 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
           setSource({ key: item.summary.key });
           setPreview(item);
         }}
-        onUpgrade={(item) => previewUpgrade({ key: item.summary.key, upgrade: true }).catch((e) => message.error(errorMessage(e)))}
+        onUpgrade={(item) =>
+          previewUpgrade({ key: item.summary.key, upgrade: true }).catch((e) => message.error(errorMessage(e)))
+        }
       />
       <Table<InstalledModule>
         rowKey="key"

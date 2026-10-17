@@ -41,7 +41,11 @@ const good = () => ({
   },
   uiSchemas: [],
   flowModels: [
-    { uid: 'crmtable', use: 'TableBlockModel', stepParams: { resourceSettings: { init: { collectionName: 'crm_people', dataSourceKey: 'main' } } } },
+    {
+      uid: 'crmtable',
+      use: 'TableBlockModel',
+      stepParams: { resourceSettings: { init: { collectionName: 'crm_people', dataSourceKey: 'main' } } },
+    },
   ],
   flowModelTemplates: [],
   flowModelTemplateUsages: [],
@@ -56,7 +60,15 @@ const good = () => ({
     },
   ],
   roles: [
-    { name: 'crm_clerk', title: 'کارمند فروش', snippets: ['!pm', '!pm.*', '!ui.*'], strategy: { actions: ['view'] }, resources: [], scopes: [], routes: [] },
+    {
+      name: 'crm_clerk',
+      title: 'کارمند فروش',
+      snippets: ['!pm', '!pm.*', '!ui.*'],
+      strategy: { actions: ['view'] },
+      resources: [],
+      scopes: [],
+      routes: [],
+    },
   ],
 });
 
@@ -156,10 +168,41 @@ test('M007: a notification node names its channel in requires', () => {
   assert.deepStrictEqual(rules(bad), []);
 });
 
+test('M008: a collection of another module comes with that module in requires.modules', () => {
+  const bad = good();
+  bad.collections[0].fields.push({
+    name: 'item',
+    type: 'belongsTo',
+    interface: 'm2o',
+    target: 'inventory_items',
+    uiSchema: { title: 'کالا' },
+  });
+  assert.deepStrictEqual(rules(bad), ['M007 collections[crm_people].fields[item].target']);
+  bad.requires.collections.push('inventory_items');
+  assert.deepStrictEqual(rules(bad), ['M008 requires.collections']);
+  bad.requires.collections = ['users'];
+  bad.requires.modules = { inventory: '1.2.0' };
+  assert.deepStrictEqual(rules(bad), []);
+});
+
+test('M008: each needed module is another module with an x.y.z version', () => {
+  const bad = good();
+  bad.requires.modules = { crm: '1.0.0', Stock: '1.0.0', inventory: '1.2' };
+  assert.deepStrictEqual(rules(bad), [
+    'M008 requires.modules[crm]',
+    'M008 requires.modules[Stock]',
+    'M008 requires.modules[inventory]',
+  ]);
+});
+
 test('M007: a classic page that shows a collection the module does not have', () => {
   const bad = good();
   bad.uiSchemas = [
-    { 'x-uid': 'crmlist', 'x-decorator': 'TableBlockProvider', 'x-decorator-props': { collection: 'crm_peple', action: 'list' } },
+    {
+      'x-uid': 'crmlist',
+      'x-decorator': 'TableBlockProvider',
+      'x-decorator-props': { collection: 'crm_peple', action: 'list' },
+    },
   ];
   assert.deepStrictEqual(rules(bad), ['M007 uiSchemas[crmlist]']);
 });

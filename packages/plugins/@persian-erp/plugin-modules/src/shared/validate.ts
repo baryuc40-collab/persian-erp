@@ -6,6 +6,19 @@ export interface FileProblem {
   values?: Record<string, string | number>;
 }
 
+const VERSION = /^(\d+)\.(\d+)\.(\d+)/;
+/** Compares x.y.z versions; null when one of them is not of that form. */
+export function compareVersions(a: string, b: string): number | null {
+  const x = VERSION.exec(String(a || ''));
+  const y = VERSION.exec(String(b || ''));
+  if (!x || !y) return null;
+  for (let i = 1; i <= 3; i++) {
+    const diff = Number(x[i]) - Number(y[i]);
+    if (diff) return Math.sign(diff);
+  }
+  return 0;
+}
+
 const minorOf = (version: string) => {
   const match = /^(\d+)\.(\d+)\./.exec(String(version || ''));
   return match ? `${match[1]}.${match[2]}` : null;

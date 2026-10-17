@@ -207,6 +207,9 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
     flowModelTemplateUsages,
     workflows,
     roles,
+    otherModules: (
+      await db.getRepository('erpModules').find({ filter: { key: { $ne: moduleRow.key } } })
+    ).map((row) => ({ key: row.get('key') as string, version: row.get('version') as string })),
   };
 }
 

@@ -6,9 +6,20 @@ const fs = require('fs');
 
 const MODULE_FORMAT = 'persian-erp-module';
 const MODULE_KEY_PATTERN = /^[a-z][a-z0-9_]{1,19}$/;
+// Collections of modules are named <key>_<name>; those of NocoBase and its plugins are camelCase.
+const MODULE_COLLECTION_PATTERN = /^[a-z][a-z0-9]*_[a-z0-9_]+$/;
 
 // Fields NocoBase adds to every collection; their titles are translation templates and they are never edited.
-const SYSTEM_FIELDS = new Set(['id', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy', 'createdById', 'updatedById', 'sort']);
+const SYSTEM_FIELDS = new Set([
+  'id',
+  'createdAt',
+  'updatedAt',
+  'createdBy',
+  'updatedBy',
+  'createdById',
+  'updatedById',
+  'sort',
+]);
 const TEXT_INTERFACES = new Set(['input', 'textarea']);
 const RELATION_TYPES = new Set(['belongsTo', 'hasOne', 'hasMany', 'belongsToMany', 'belongsToArray']);
 
@@ -87,7 +98,11 @@ function checkModule(file) {
 
   // M001: the key, and the prefix on the names of collections and roles.
   if (typeof key !== 'string' || !MODULE_KEY_PATTERN.test(key)) {
-    error('M001', 'module.key', 'the key must be 2 to 20 lower-case Latin letters, digits or _, starting with a letter');
+    error(
+      'M001',
+      'module.key',
+      'the key must be 2 to 20 lower-case Latin letters, digits or _, starting with a letter',
+    );
   } else {
     for (const collection of collections) {
       if (!String(collection.name).startsWith(`${key}_`)) {
@@ -107,7 +122,8 @@ function checkModule(file) {
     if (!text) error('M002', path, `the ${what} has no title`);
     else if (isTemplate(text)) return;
     else if (!hasPersian(text)) error('M002', path, `the ${what} title "${text}" is not Persian`);
-    else if (hasArabicLetters(text)) error('M002', path, `the ${what} title "${text}" uses Arabic ي or ك instead of ی or ک`);
+    else if (hasArabicLetters(text))
+      error('M002', path, `the ${what} title "${text}" uses Arabic ي or ك instead of ی or ک`);
   };
   persianTitle('module.title', file.module && file.module.title, 'module');
   const ownFields = [];
@@ -153,7 +169,11 @@ function checkModule(file) {
   };
   if (!roles.length) error('M005', 'roles', 'the module has no role');
   else if (!roles.some(limited)) {
-    error('M005', 'roles', 'every role can configure the system or change every collection; add a role with limited access');
+    error(
+      'M005',
+      'roles',
+      'every role can configure the system or change every collection; add a role with limited access',
+    );
   }
 
   // M006: workflows have a Persian title and a description of what they do.
@@ -183,19 +203,35 @@ function checkModule(file) {
     }
   }
   for (const workflow of workflows) {
-    use(collectionFromConfig(workflow.config && workflow.config.collection), `workflows[${workflow.key}].config.collection`);
+    use(
+      collectionFromConfig(workflow.config && workflow.config.collection),
+      `workflows[${workflow.key}].config.collection`,
+    );
     for (const node of list(workflow.nodes)) {
-      use(collectionFromConfig(node.config && node.config.collection), `workflows[${workflow.key}].nodes[${node.key}].config.collection`);
+      use(
+        collectionFromConfig(node.config && node.config.collection),
+        `workflows[${workflow.key}].nodes[${node.key}].config.collection`,
+      );
     }
   }
-  for (const [section, id] of [['uiSchemas', 'x-uid'], ['flowModels', 'uid']]) {
+  for (const [section, id] of [
+    ['uiSchemas', 'x-uid'],
+    ['flowModels', 'uid'],
+  ]) {
     for (const page of list(file[section])) {
       for (const name of pageCollections(page)) use(name, `${section}[${page[id]}]`);
     }
   }
+  // A collection of another module is covered by that module in requires.modules (M008).
+  const requiredModules = requires.modules && typeof requires.modules === 'object' ? requires.modules : {};
+  const ofRequiredModule = (name) => Object.keys(requiredModules).some((key) => name.startsWith(`${key}_`));
   for (const [name, path] of outside) {
-    if (!declared('collections').includes(name)) {
-      error('M007', path, `uses the collection "${name}" from outside the module without listing it in requires.collections`);
+    if (!declared('collections').includes(name) && !ofRequiredModule(name)) {
+      error(
+        'M007',
+        path,
+        `uses the collection "${name}" from outside the module without listing it in requires.collections`,
+      );
     }
   }
   const declaredOnce = (section, value, path, what) => {
@@ -207,10 +243,38 @@ function checkModule(file) {
   for (const workflow of workflows) {
     declaredOnce('workflowTriggers', workflow.type, `workflows[${workflow.key}].type`, 'workflow trigger');
     for (const node of list(workflow.nodes)) {
-      declaredOnce('workflowInstructions', node.type, `workflows[${workflow.key}].nodes[${node.key}].type`, 'workflow node type');
+      declaredOnce(
+        'workflowInstructions',
+        node.type,
+        `workflows[${workflow.key}].nodes[${node.key}].type`,
+        'workflow node type',
+      );
       if (node.type === 'notification' && node.config && typeof node.config.channelName === 'string') {
-        declaredOnce('notificationChannels', node.config.channelName, `workflows[${workflow.key}].nodes[${node.key}].config.channelName`, 'notification channel');
+        declaredOnce(
+          'notificationChannels',
+          node.config.channelName,
+          `workflows[${workflow.key}].nodes[${node.key}].config.channelName`,
+          'notification channel',
+        );
       }
+    }
+  }
+
+  // M008: another module is named with its lowest version, never by the names of its collections.
+  for (const [key, version] of Object.entries(requiredModules)) {
+    if (!MODULE_KEY_PATTERN.test(key) || key === (file.module && file.module.key)) {
+      error('M008', `requires.modules[${key}]`, `"${key}" is not the key of another module`);
+    } else if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) {
+      error('M008', `requires.modules[${key}]`, `the lowest version of "${key}" is not of the form x.y.z`);
+    }
+  }
+  for (const name of declared('collections')) {
+    if (MODULE_COLLECTION_PATTERN.test(name) && !ofRequiredModule(name)) {
+      error(
+        'M008',
+        'requires.collections',
+        `lists "${name}", a collection of another module; list that module in requires.modules instead`,
+      );
     }
   }
   return findings;
@@ -240,7 +304,11 @@ function run(argv) {
   } else {
     for (const { file, findings } of results) {
       for (const f of findings) {
-        console.log(`${f.severity === 'error' ? 'ERROR  ' : 'WARNING'} ${f.rule} ${file}${f.path ? ` ${f.path}` : ''}: ${f.message}`);
+        console.log(
+          `${f.severity === 'error' ? 'ERROR  ' : 'WARNING'} ${f.rule} ${file}${f.path ? ` ${f.path}` : ''}: ${
+            f.message
+          }`,
+        );
       }
       const count = (severity) => findings.filter((f) => f.severity === severity).length;
       console.log(`${file}: ${count('error')} error(s), ${count('warning')} warning(s)`);
