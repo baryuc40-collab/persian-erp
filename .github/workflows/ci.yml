@@ -232,6 +232,87 @@ jobs:
             storage/playwright/e2e-results
             storage/playwright/e2e-report
 
+  # The task inbox of plugin-bpm with a real BPMN engine (STORY-082). Separate from the job above, so its
+  # screenshots and settings pages stay without the plugin.
+  e2e-bpm:
+    name: E2E (BPMN)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      operaton:
+        image: operaton/operaton:2.1.5
+        env:
+          OPERATON_BPM_RUN_AUTH_ENABLED: 'true'
+          OPERATON_BPM_RUN_EXAMPLE_ENABLED: 'false'
+          OPERATON_BPM_ADMIN_USER_ID: nocobase
+          OPERATON_BPM_ADMIN_USER_PASSWORD: secret
+        ports:
+          - 18080:8080
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nocobase
+          POSTGRES_PASSWORD: nocobase
+          POSTGRES_DB: nocobase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nocobase"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yarn
+          key: yarn-${{ runner.os }}-${{ hashFiles('package.json', 'yarn.lock', 'packages/plugins/**/package.json') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - name: Prepare env file
+        run: |
+          cp .env.example .env
+          sed -i "s#^APP_KEY=.*#APP_KEY=ci-$(openssl rand -hex 32)#" .env
+          sed -i "s#^APPEND_PRESET_BUILT_IN_PLUGINS=.*#&,@persian-erp/plugin-bpm#" .env
+          sed -i "s#^BPM_ENGINE_PASSWORD=.*#BPM_ENGINE_PASSWORD=secret#" .env
+          printf 'BPM_ENGINE_URL=http://localhost:18080\nBPM_WORKER_INTERVAL=1000\n' >> .env
+      - name: Install
+        run: yarn install --ignore-engines --network-timeout 600000
+      - name: Build plugins
+        run: yarn build @persian-erp/plugin-fa @persian-erp/plugin-modules @persian-erp/plugin-bpm --no-dts
+      - name: Wait for the BPMN engine
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf -u nocobase:secret http://localhost:18080/engine-rest/version && exit 0
+            sleep 5
+          done
+          echo "Operaton did not start"; exit 1
+      - name: Install and start NocoBase
+        run: |
+          yarn start --quickstart -d
+          for i in $(seq 1 120); do
+            curl -sf http://localhost:13000/api/__health_check && exit 0
+            sleep 5
+          done
+          echo "NocoBase did not start"; yarn pm2 logs --nostream --lines 200 || true; exit 1
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Run e2e tests
+        run: BPM_E2E=1 npx playwright test -c e2e/playwright.config.ts e2e/bpm
+      - name: Upload screenshots and report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-bpm-results
+          path: |
+            storage/playwright/e2e-results
+            storage/playwright/e2e-report
+
   # Builds the Persian image (docker/build.sh) and smoke-tests a fresh install of it with docker/docker-compose.yml.
   # Nothing is pushed; publishing is the release workflow's job (STORY-062).
   docker-image:

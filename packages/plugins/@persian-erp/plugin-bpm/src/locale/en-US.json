@@ -47,5 +47,20 @@
   "Record ID": "Record ID",
   "Collection": "Collection",
   "Service task": "Service task",
-  "Task ID": "Task ID"
+  "Task ID": "Task ID",
+  "The task is no longer open": "The task is no longer open",
+  "This task is not yours": "This task is not yours",
+  "Fill in {{label}}": "Fill in {{label}}",
+  "The value of {{label}} is not valid": "The value of {{label}} is not valid",
+  "Task inbox": "Task inbox",
+  "Task": "Task",
+  "Record": "Record",
+  "Created at": "Created at",
+  "No tasks for you": "No tasks for you",
+  "The task is done": "The task is done",
+  "Refresh": "Refresh",
+  "Yes": "Yes",
+  "No": "No",
+  "Submit": "Submit",
+  "Cancel": "Cancel"
 }

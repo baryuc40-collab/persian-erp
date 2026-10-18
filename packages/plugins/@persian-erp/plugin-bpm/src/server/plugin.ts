@@ -5,6 +5,7 @@ import { BpmEngine, BpmEngineError } from './engine';
 import { OperatonEngine, OperatonSettings } from './operaton';
 import { SERVICE_TASK_TRIGGER, ServiceTaskTrigger } from './service-task-trigger';
 import { START_INSTRUCTION, StartProcessInstruction } from './start-instruction';
+import { TaskInbox, TASKS_RESOURCE } from './tasks';
 import { ServiceTaskWorker } from './worker';
 
 export const BPM_RESOURCE = 'bpm';
@@ -23,6 +24,8 @@ export class PluginBpmServer extends Plugin {
   async beforeLoad() {
     this.db.collection(bpmSettingsCollection);
     this.app.acl.registerSnippet({ name: BPM_SNIPPET, actions: [`${BPM_RESOURCE}:*`] });
+    // Open to every signed-in user; the actions return and accept only the user's own tasks (STORY-082).
+    this.app.acl.allow(TASKS_RESOURCE, ['list', 'get', 'complete'], 'loggedIn');
   }
 
   async load() {
@@ -54,6 +57,7 @@ export class PluginBpmServer extends Plugin {
         deploy: (ctx: Context, next: Next) => this.deployAction(ctx, next),
       },
     });
+    this.app.resourceManager.define({ name: TASKS_RESOURCE, actions: new TaskInbox(this).actions });
   }
 
   /**
@@ -93,12 +97,12 @@ export class PluginBpmServer extends Plugin {
     return this.app.i18n.t(message, { ns: NAMESPACE, lng, ...values });
   }
 
-  private tr(ctx: Context, message: string, values: Record<string, unknown> = {}) {
+  tr(ctx: Context, message: string, values: Record<string, unknown> = {}) {
     return ctx.t(message, { ns: NAMESPACE, ...values });
   }
 
   // Engine errors become a 400 with the translated message; anything else is a server error.
-  private async withEngine<T>(ctx: Context, run: (engine: BpmEngine) => Promise<T>) {
+  async withEngine<T>(ctx: Context, run: (engine: BpmEngine) => Promise<T>) {
     try {
       return await run(await this.getEngine());
     } catch (error) {
