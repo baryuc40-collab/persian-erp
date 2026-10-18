@@ -9,10 +9,10 @@ const WEIGHTS: [number, string][] = [
   [700, 'Bold'],
 ];
 
-// Files under the plugin's package root are served by NocoBase at /static/plugins/<package>/.
+// The build copies fonts/ to dist/client/fonts; the image's nginx serves only dist/client of a plugin (STORY-072).
 export function fontBaseUrl() {
   const publicPath = (window as any).__nocobase_public_path__ || '/';
-  return `${publicPath.replace(/\/?$/, '/')}static/plugins/@persian-erp/plugin-fa/fonts/`;
+  return `${publicPath.replace(/\/?$/, '/')}static/plugins/@persian-erp/plugin-fa/dist/client/fonts/`;
 }
 
 /** The family the page uses: Vazirmatn FD for Persian digits, Vazirmatn for Latin ones. */
