@@ -89,11 +89,12 @@ describe('erpModules:import', () => {
     expect(res.status).toBe(400);
     const message = errorOf(res);
     expect(message).toContain('The module conflicts with what this install already has');
-    expect(message).toContain('Collection: lab_items');
+    expect(message).toContain('Collection: lab_categories, lab_items');
     expect(message).toContain('Role: lab_clerk');
     expect(message).toContain('Menu group: آزمایشگاه');
-    expect(message).toContain('Workflow: labstatus01');
+    expect(message).toContain('Workflow: labapprove1, labstatus01');
     expect(message).toContain('Module: lab');
+    expect(message).toMatch(/Page element: (\w+, ){4}\w+ and \d+ more/);
     expect(await app.db.getRepository('desktopRoutes').count()).toBe(routes);
   });
 
