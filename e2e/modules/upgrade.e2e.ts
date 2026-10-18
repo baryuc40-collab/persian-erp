@@ -104,8 +104,10 @@ test('a newer file of an installed module upgrades it after a preview, and its r
   await page.getByRole('button', { name: /افزودن/ }).click();
   await expect(page.locator('form').last().locator('label', { hasText: 'رایانامه' })).toBeVisible();
 
-  // The same file again is not a newer version.
+  // The same file again is not a newer version. The installed list decides between import and upgrade, so it is
+  // waited for.
   await openAs(page, 'fa-IR', '/admin/settings/erp-modules');
+  await expect(page.getByRole('row', { name: /parties/ })).toContainText('1.1.0');
   await page.locator('input[type=file]').setInputFiles(file);
   await expect(page.getByRole('dialog')).toContainText('این ماژول ارتقا نمی‌یابد');
   await expect(page.getByRole('dialog').getByRole('button', { name: 'ارتقا', exact: true })).toBeDisabled();
