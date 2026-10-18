@@ -6,7 +6,7 @@ import { removeImportedModule } from './remove-module';
 
 // The «سفارش خرید» reference module (EPIC-020), imported from modules/purchasing after the «اشخاص» and «انبار» modules
 // it needs, and used by its two roles: orders with lines and a rial total, and the manager's approval that locks them
-// (version 1.0, STORY-088).
+// (version 1.0, STORY-088), and the stock receipt issued from an approved order (1.1, STORY-089).
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,6 +16,8 @@ const FILE = fileOf('purchasing');
 const PASSWORD = 'Purchasing-pass-123';
 const BUYER = { email: 'purchasing.buyer@example.com', nickname: 'کارشناس خرید', roles: ['purchasing_buyer'] };
 const MANAGER = { email: 'purchasing.manager@example.com', nickname: 'مدیر خرید', roles: ['purchasing_manager'] };
+const KEEPER = { email: 'purchasing.keeper@example.com', nickname: 'انباردار', roles: ['inventory_keeper'] };
+const USERS = [BUYER, MANAGER, KEEPER];
 
 const query = (filter: object) => `paginate=false&filter=${encodeURIComponent(JSON.stringify(filter))}`;
 // The run id keeps the names of this run apart from earlier runs on a local install.
@@ -37,7 +39,7 @@ test.beforeAll(async ({ playwright, baseURL }) => {
     await api.call('erpModules:import', key === 'purchasing' ? FILE : fileOf(key));
     imported.push(key);
   }
-  for (const user of [BUYER, MANAGER]) {
+  for (const user of USERS) {
     if (!(await api.call(`users:list?${query({ email: user.email })}`)).length) {
       await api.call('users:create', { ...user, password: PASSWORD });
     }
@@ -50,7 +52,7 @@ test.beforeAll(async ({ playwright, baseURL }) => {
 
 test.afterAll(async ({ playwright, baseURL }) => {
   const api = await apiAs(playwright, baseURL as string);
-  for (const user of await api.call(`users:list?${query({ email: { $in: [BUYER.email, MANAGER.email] } })}`)) {
+  for (const user of await api.call(`users:list?${query({ email: { $in: USERS.map((user) => user.email) } })}`)) {
     await api.call(`users:destroy?filterByTk=${user.id}`);
   }
   for (const key of imported.reverse()) {
@@ -222,5 +224,86 @@ test('the manager approves the order, which then neither role can change, and an
   await api.request.post(`/api/purchasing_orders:destroy?filterByTk=${approved.id}`, { headers });
   const after = await orderOf(api, order.number);
   expect([after.status, after.description, after.lines[0].quantity]).toEqual(['approved', null, 10]);
+  await api.request.dispose();
+});
+
+test('the buyer issues the stock receipt of the approved order once, and its approval moves the stock', async ({
+  page,
+  playwright,
+  baseURL,
+}) => {
+  expect(order.number).not.toBe('');
+  await signIn(page, BUYER.email);
+  await openPage(page, 'سفارش‌های خرید');
+  const issue = async () => {
+    const done = page.waitForResponse((res) => res.url().includes('purchasing_orders:trigger'));
+    await rowOf(page, order.number).getByText('صدور رسید انبار', { exact: true }).click();
+    const confirm = page.locator(
+      '.ant-modal-confirm:visible .ant-btn-primary, .ant-popconfirm:visible .ant-btn-primary',
+    );
+    if (await confirm.count()) await confirm.first().click();
+    return done;
+  };
+  const res = await issue();
+  expect(res.ok(), await res.text()).toBeTruthy();
+  await page.reload();
+  await expect(rowOf(page, order.number)).toContainText('رسید صادر شد');
+
+  // A draft receipt in «رسید و حواله», with the warehouse and the line of the order and a number of its own.
+  const api = await apiAs(playwright, baseURL as string);
+  const issued = await orderOf(api, order.number);
+  const [receipt] = await api.call(
+    `inventory_documents:list?${query({ id: issued.receiptId })}&appends[]=lines&appends[]=warehouse`,
+  );
+  expect([receipt.kind, receipt.status, receipt.warehouse.name]).toEqual(['receipt', 'draft', names.warehouse]);
+  expect(receipt.number).toMatch(/^\d{5}$/);
+  expect(receipt.description).toBe(`از سفارش خرید ${order.number}`);
+  expect(receipt.lines.map((line) => line.quantity)).toEqual([10]);
+
+  // A second receipt is refused, in Persian.
+  expect((await issue()).status()).toBe(400);
+  await expect(page.getByText('برای این سفارش رسید صادر شده است')).toBeVisible();
+  expect(
+    await api.call(`inventory_documents:list?${query({ description: `از سفارش خرید ${order.number}` })}`),
+  ).toHaveLength(1);
+
+  // The keeper approves it like any other receipt: the stock of the item goes up by 10, with a kardex row for it.
+  const keeper = await api.request.post('/api/auth:signIn', {
+    headers: { 'X-Authenticator': 'basic' },
+    data: { account: KEEPER.email, password: PASSWORD },
+  });
+  const token = (await keeper.json()).data.token;
+  const approved = await api.request.post(`/api/inventory_documents:update?filterByTk=${receipt.id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { status: 'approved' },
+  });
+  expect(approved.ok(), await approved.text()).toBeTruthy();
+  const [item] = await api.call(`inventory_items:list?${query({ name: names.item })}`);
+  const [stock] = await api.call(`inventory_stock:list?${query({ itemId: item.id })}`);
+  expect(stock.quantity).toBe(10);
+  const movements = await api.call(`inventory_movements:list?${query({ itemId: item.id })}&appends[]=document`);
+  expect(movements.map((m) => [m.document.number, m.quantityIn, m.balance])).toEqual([[receipt.number, 10, 10]]);
+  await api.request.dispose();
+});
+
+test('a draft order gets no receipt', async ({ playwright, baseURL }) => {
+  const api = await apiAs(playwright, baseURL as string);
+  const [supplier] = await api.call(`parties_companies:list?${query({ name: names.supplier })}`);
+  const [warehouse] = await api.call(`inventory_warehouses:list?${query({ name: names.warehouse })}`);
+  const draft = await api.call('purchasing_orders:create', {
+    date: new Date().toISOString().slice(0, 10),
+    supplier: supplier.id,
+    warehouse: warehouse.id,
+  });
+  const [workflow] = await api.call(
+    `workflows:list?${query({ type: 'custom-action', current: true, title: 'صدور رسید انبار' })}`,
+  );
+  const res = await api.request.post(
+    `/api/purchasing_orders:trigger?filterByTk=${draft.id}&triggerWorkflows=${workflow.key}`,
+    { headers: { ...api.headers, 'X-Locale': 'fa-IR' } },
+  );
+  expect(res.status()).toBe(400);
+  expect((await res.json()).errors[0].message).toBe('سفارش هنوز تأیید نشده است');
+  expect((await orderOf(api, draft.number)).receiptId).toBeNull();
   await api.request.dispose();
 });
