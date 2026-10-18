@@ -7,6 +7,22 @@ import { DIGITS_STORAGE_KEY } from '../digits';
 import { FaProvider, isRtlLanguage } from '../FaProvider';
 import { RTL_STYLE_ID, rtlStyles } from '../rtl-styles';
 
+// The global theme of @nocobase/client-v2 (theme/index.tsx), reduced to what FaProvider uses: a theme state whose
+// ConfigProvider wraps the whole app, the flow engine's antd config among it. The real module does not load in jsdom.
+vi.mock('@nocobase/client-v2', async () => {
+  const { createContext, createElement, useContext: use, useState } = await import('react');
+  const { ConfigProvider: Provider } = await import('antd');
+  const Context = createContext<any>(null);
+  return {
+    useGlobalTheme: () => use(Context) || { theme: {} },
+    GlobalThemeProvider: ({ children }) => {
+      const [value, setTheme] = useState<any>({});
+      return createElement(Context.Provider, { value: { theme: value, setTheme } }, createElement(Provider, { theme: value }, children));
+    },
+  };
+});
+const { GlobalThemeProvider } = await import('@nocobase/client-v2');
+
 const Direction = () => (
   <>
     <span data-testid="dir">{useContext(ConfigProvider.ConfigContext).direction || 'ltr'}</span>
@@ -54,13 +70,33 @@ describe('FaProvider', () => {
     const { unmount } = await renderIn('fa-IR');
     expect(screen.getByTestId('font').textContent).toMatch(/^'Vazirmatn FD', /);
     const css = fontStyle()?.textContent || '';
-    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/fonts/Vazirmatn-Regular.woff2')");
-    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/fonts/Vazirmatn-FD-Bold.woff2')");
+    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/dist/client/fonts/Vazirmatn-Regular.woff2')");
+    expect(css).toContain("url('/static/plugins/@persian-erp/plugin-fa/dist/client/fonts/Vazirmatn-FD-Bold.woff2')");
     expect(css).toContain('font-weight:700');
     expect(css).toContain("body{font-family:'Vazirmatn FD',");
     expect(css).not.toMatch(/https?:/);
     unmount();
     expect(fontStyle()).toBeNull();
+  });
+
+  it('puts the font in the global theme, which the blocks of modern pages render with', async () => {
+    const i18n = i18next.createInstance();
+    await i18n.use(initReactI18next).init({ lng: 'fa-IR', resources: {} });
+    // A sibling of FaProvider under the global theme, like the flow engine's antd config.
+    const Outside = () => <span data-testid="outside">{theme.useToken().token.fontFamily}</span>;
+    render(
+      <GlobalThemeProvider>
+        <Outside />
+        <I18nextProvider i18n={i18n}>
+          <FaProvider>
+            <Direction />
+          </FaProvider>
+        </I18nextProvider>
+      </GlobalThemeProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('outside').textContent).toMatch(/^'Vazirmatn FD', /));
+    // Not twice: the provider builds the stack from the one it started from.
+    expect(screen.getByTestId('font').textContent).not.toMatch(/Vazirmatn.*Vazirmatn/);
   });
 
   it('shows Latin digits with plain Vazirmatn when the user chose them', async () => {

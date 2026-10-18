@@ -2,7 +2,7 @@
 id: EPIC-014
 title: ایمیج Docker فارسی، راهنمای نصب و فرایند ارتقا
 phase: 4
-status: draft
+status: in-progress
 owner: mmsh
 ---
 
@@ -57,7 +57,8 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-059](STORY-059-docker-image.md) | ایمیج Docker فارسی | in-review |
-| [STORY-060](STORY-060-install-guide.md) | راهنمای نصب فارسی | in-review |
-| [STORY-061](STORY-061-upgrade-process.md) | فرایند و ابزار ارتقای وصله‌ی NocoBase | in-review |
-| [STORY-062](STORY-062-release.md) | نسخه‌گذاری و انتشار در GitHub Release | todo |
+| [STORY-059](STORY-059-docker-image.md) | ایمیج Docker فارسی | done |
+| [STORY-060](STORY-060-install-guide.md) | راهنمای نصب فارسی | done |
+| [STORY-061](STORY-061-upgrade-process.md) | فرایند و ابزار ارتقای وصله‌ی NocoBase | done |
+| [STORY-062](STORY-062-release.md) | نسخه‌گذاری و انتشار در GitHub Release | done |
+| [STORY-072](STORY-072-font-in-image.md) | فونت وزیرمتن در ایمیج Docker | done |
