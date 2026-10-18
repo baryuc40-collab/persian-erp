@@ -38,3 +38,11 @@ test('signed in, the admin pages are Persian and use the Jalali calendar', async
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByText('کاربران و دسترسی‌ها').first()).toBeVisible();
 });
+
+test('the Vazirmatn font is served by the image', async ({ request }) => {
+  // The image's nginx serves only dist/client of a plugin package (STORY-072).
+  for (const file of ['Vazirmatn-Regular.woff2', 'Vazirmatn-FD-Bold.woff2']) {
+    const res = await request.get(`/static/plugins/@persian-erp/plugin-fa/dist/client/fonts/${file}`);
+    expect(res.status(), file).toBe(200);
+  }
+});

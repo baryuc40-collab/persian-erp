@@ -1,3 +1,4 @@
+import { useGlobalTheme } from '@nocobase/client-v2';
 import { ConfigProvider, theme } from 'antd';
 import React, { useContext, useLayoutEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,9 @@ import { installRtlStyles } from './rtl-styles';
 
 // Languages written right to left. Persian is the one this plugin ships; the others only switch direction.
 export const RTL_LANGUAGES = ['fa', 'ar', 'he', 'ur', 'ckb'];
+
+// The families this provider puts in front of the stack; removed again to find the stack it started from.
+const OWN_FAMILIES = /^(\s*'Vazirmatn( FD)?',\s*)+/;
 
 const baseLanguage = (lang?: string) => (lang || '').split(/[-_]/)[0].toLowerCase();
 
@@ -26,7 +30,9 @@ export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
   const persian = baseLanguage(lang) === 'fa';
   const persianDigits = persian && usesPersianDigits();
   // Vazirmatn has Latin letters and digits too; the default stack stays as the fallback for anything it lacks.
-  const fontFamily = `'${pageFontFamily(persianDigits)}', ${token.fontFamily}`;
+  const fallback = token.fontFamily.replace(OWN_FAMILIES, '');
+  const fontFamily = `'${pageFontFamily(persianDigits)}', ${fallback}`;
+  const { theme: globalTheme, setTheme } = useGlobalTheme();
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -40,11 +46,15 @@ export const FaProvider = ({ children }: { children?: React.ReactNode }) => {
     }
   }, [rtl, lang]);
 
-  useLayoutEffect(() => (persian ? installFont(token.fontFamily, persianDigits) : undefined), [
-    persian,
-    persianDigits,
-    token.fontFamily,
-  ]);
+  useLayoutEffect(() => (persian ? installFont(fallback, persianDigits) : undefined), [persian, persianDigits, fallback]);
+
+  // Blocks of modern pages render with the antd config the flow engine took above this provider (STORY-073), so
+  // the font goes into the app's global theme too. A theme the user picks later gets it again.
+  const globalFontFamily = globalTheme?.token?.fontFamily;
+  useLayoutEffect(() => {
+    if (!persian || !setTheme || globalFontFamily === fontFamily) return;
+    setTheme((current) => ({ ...current, token: { ...current?.token, fontFamily } }));
+  }, [persian, setTheme, globalFontFamily, fontFamily]);
 
   useLayoutEffect(() => (rtl ? installRtlStyles() : undefined), [rtl]);
 
