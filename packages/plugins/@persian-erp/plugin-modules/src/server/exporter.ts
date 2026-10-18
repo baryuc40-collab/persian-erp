@@ -159,9 +159,15 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
 
   // Workflows: current versions triggered on a module collection, run from a module page, or with a node that works on
   // a module collection, like a workflow of the BPMN service task event (STORY-083), which has no collection itself.
+  // A workflow triggered on a collection of another module is that module's, even when its nodes write here, like the
+  // purchase order workflow that issues a stock receipt.
   const workflows: Row[] = [];
   if (has('workflows')) {
     const inModule = (config?: Row) => collectionNames.has(collectionFromConfig(config?.collection));
+    const inOtherModule = (config?: Row) => {
+      const name = collectionFromConfig(config?.collection);
+      return !!name && !!ownerOf(name, otherModules);
+    };
     for (const workflow of await db
       .getRepository('workflows')
       .find({ filter: { current: true }, appends: ['nodes'] })) {
@@ -169,7 +175,7 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
       if (
         inModule(row.config) ||
         refs.workflowKeys.has(row.key) ||
-        (row.nodes || []).some((n: Row) => inModule(n.config))
+        (!inOtherModule(row.config) && (row.nodes || []).some((n: Row) => inModule(n.config)))
       ) {
         workflows.push(row);
       }
