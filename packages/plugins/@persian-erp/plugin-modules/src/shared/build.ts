@@ -217,7 +217,6 @@ export function buildModuleFile(records: ModuleRecords): ModuleFile {
   const collectionNames = new Set(records.collections.map((c) => c.name));
   const { tree, refById } = buildRoutes(records.routes, records.groupId);
   const workflows = buildWorkflows(records.workflows);
-  const roles = buildRoles(records.roles, collectionNames, refById);
 
   // References that point outside the module.
   const refs = emptyRefs();
@@ -253,6 +252,12 @@ export function buildModuleFile(records: ModuleRecords): ModuleFile {
     const owner = ownerOf(name, others);
     if (owner) modules[owner.key] = owner.version;
   }
+  // A role keeps its permissions on the collections of the modules it needs, such as reading their items.
+  const roles = buildRoles(
+    records.roles,
+    new Set([...collectionNames, ...external.filter((name) => ownerOf(name, others))]),
+    refById,
+  );
   const file: ModuleFile = {
     format: MODULE_FORMAT,
     formatVersion: MODULE_FORMAT_VERSION,

@@ -239,10 +239,13 @@ async function upgradeRoles(
     if (plan.roles.added.includes(name)) {
       await db.getRepository('roles').create({ values: { name, ...values }, transaction });
     } else if (plan.roles.updated.includes(name)) {
-      // Its permissions on module collections are written again from the file; others are not the module's.
+      // Its permissions on module collections, and on the collections of needed modules that either version lists, are
+      // written again from the file; others are not the module's.
+      const before = current.roles.find((r) => r.name === name)?.resources || [];
+      const names = [...new Set([...collections, ...[...before, ...resources].map((r) => r.name)])];
       await db.getRepository('roles').update({ filterByTk: name, values, transaction });
       await db.getRepository('dataSourcesRolesResources').destroy({
-        filter: { roleName: name, dataSourceKey: 'main', name: { $in: collections } },
+        filter: { roleName: name, dataSourceKey: 'main', name: { $in: names } },
         transaction,
       });
     } else {

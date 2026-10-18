@@ -31,6 +31,17 @@ async function buildShopModule(app: MockServer) {
   await db.getRepository('desktopRoutes').create({
     values: { type: 'group', title: 'فروشگاه', schemaUid: 'shopgroup01' },
   });
+  // The clerk reads the items of the lab module and nothing else of NocoBase.
+  await db.getRepository('roles').create({ values: { name: 'shop_clerk', title: 'فروشنده' } });
+  for (const [name, actions] of [
+    ['shop_orders', [{ name: 'view', fields: ['note', 'item'] }]],
+    ['lab_items', [{ name: 'view', fields: ['title'] }]],
+    ['users', [{ name: 'view', fields: ['nickname'] }]],
+  ] as const) {
+    await db.getRepository('dataSourcesRolesResources').create({
+      values: { roleName: 'shop_clerk', dataSourceKey: 'main', name, usingActionsConfig: true, actions },
+    });
+  }
   await db.getRepository('erpModules').create({
     values: { key: 'shop', title: 'فروشگاه', version: '1.0.0', groupSchemaUid: 'shopgroup01' },
   });
@@ -69,6 +80,31 @@ describe('module dependencies', () => {
     // A collection of NocoBase itself is still listed by name, and a module without dependencies has no entry.
     expect(labFile.requires.collections).toContain('users');
     expect(labFile.requires.modules).toBeUndefined();
+  });
+
+  it("keeps a role's permissions on the needed module's collections, not on NocoBase's own", () => {
+    const [clerk] = shopFile.roles;
+    expect(clerk.resources.map((r) => r.name)).toEqual(['lab_items', 'shop_orders']);
+  });
+
+  it("gives the role its permissions on the needed module's collections on import, and again on upgrade", async () => {
+    await importFile(labFile);
+    await importFile(shopFile);
+    const clerkResources = () =>
+      app.db
+        .getRepository('dataSourcesRolesResources')
+        .find({ filter: { roleName: 'shop_clerk' }, appends: ['actions'] });
+    expect((await clerkResources()).map((r) => r.get('name')).sort()).toEqual(['lab_items', 'shop_orders']);
+
+    const next = JSON.parse(JSON.stringify(shopFile));
+    next.module.version = '1.1.0';
+    next.roles[0].resources[0].actions[0].fields = ['amount', 'title'];
+    const res = await (await rootAgent(app)).resource('erpModules').upgrade({ values: next });
+    expect(res.status).toBe(200);
+    const resources = await clerkResources();
+    expect(resources.map((r) => r.get('name')).sort()).toEqual(['lab_items', 'shop_orders']);
+    const items = resources.find((r) => r.get('name') === 'lab_items');
+    expect(items.get('actions').map((a) => a.get('fields'))).toEqual([['amount', 'title']]);
   });
 
   it('refuses the import while the needed module is missing or older, and writes nothing', async () => {
