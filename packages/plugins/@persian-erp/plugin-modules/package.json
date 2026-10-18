@@ -1,0 +1,21 @@
+{
+  "name": "@persian-erp/plugin-modules",
+  "displayName": "ERP modules",
+  "displayName.fa-IR": "ماژول‌های ERP",
+  "description": "Export and import ERP modules (collections, menus, pages, workflows and roles) as a single file.",
+  "description.fa-IR": "خروجی و ورود ماژول‌های ERP (جدول‌ها، منو، صفحه‌ها، گردش‌کارها و نقش‌ها) در یک فایل.",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "keywords": [
+    "System management"
+  ],
+  "main": "dist/server/index.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "@nocobase/client": "2.x",
+    "@nocobase/client-v2": "2.x",
+    "@nocobase/database": "2.x",
+    "@nocobase/server": "2.x",
+    "@nocobase/test": "2.x"
+  }
+}

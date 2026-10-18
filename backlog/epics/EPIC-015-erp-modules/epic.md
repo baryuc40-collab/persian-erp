@@ -2,7 +2,7 @@
 id: EPIC-015
 title: قالب ماژول ERP: خروجی و ورودی ماژول و استاندارد کیفیت
 phase: 5
-status: draft
+status: in-progress
 owner: mmsh
 ---
 
@@ -57,14 +57,16 @@ owner: mmsh
 
 ## پرسش‌های باز
 - **مرز ماژول:** پیش‌فرض این است که ماژول = یک گروه منوی سطح اول + جدول‌هایی که نامشان پیشوند ماژول را دارند + گردش‌کارهایی که روی این جدول‌ها کار می‌کنند + نقش‌هایی که نامشان پیشوند ماژول را دارند. STORY-063 این را با کد می‌سنجد.
+  - **پاسخ ([ADR 0005](../../../docs/decisions/0005-erp-module-format.md)):** پذیرفته شد، با دو اصلاح. صفحه‌های مدرن پنجره‌ها و قالب‌هایی بیرون از درخت صفحه دارند که با پیمایش ارجاع پیدا می‌شوند. گردش‌کاری هم که `key` آن در صفحه‌ی ماژول آمده، جزو ماژول است.
 - **شکل فایل:** پیش‌فرض یک فایل JSON واحد (`<key>.erp-module.json`) است، نه بسته‌ی npm. بسته‌ی npm برای ماژول کاربر بدون‌کد زیادی است.
+  - **پاسخ (ADR 0005):** پذیرفته شد. فایل `formatVersion` و نسخه‌ی NocoBase سازنده را دارد و ورود نسخه‌ی میانی متفاوت را رد می‌کند.
 
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-063](STORY-063-module-format.md) | تصمیم قالب ماژول و نقشه‌ی ارجاع‌ها | todo |
-| [STORY-064](STORY-064-module-export.md) | خروجی ماژول (سرور) | todo |
-| [STORY-065](STORY-065-module-import.md) | ورودی ماژول (سرور) | todo |
-| [STORY-066](STORY-066-modules-settings-page.md) | صفحه‌ی «ماژول‌ها» در تنظیمات | todo |
-| [STORY-067](STORY-067-module-standard.md) | استاندارد کیفیت ماژول و `yarn check:module` | todo |
-| [STORY-068](STORY-068-reference-module-parties.md) | ماژول مرجع «اشخاص» | todo |
+| [STORY-063](STORY-063-module-format.md) | تصمیم قالب ماژول و نقشه‌ی ارجاع‌ها | in-review |
+| [STORY-064](STORY-064-module-export.md) | خروجی ماژول (سرور) | in-review |
+| [STORY-065](STORY-065-module-import.md) | ورودی ماژول (سرور) | in-review |
+| [STORY-066](STORY-066-modules-settings-page.md) | صفحه‌ی «ماژول‌ها» در تنظیمات | in-review |
+| [STORY-067](STORY-067-module-standard.md) | استاندارد کیفیت ماژول و `yarn check:module` | in-review |
+| [STORY-068](STORY-068-reference-module-parties.md) | ماژول مرجع «اشخاص» | in-review |
