@@ -21,6 +21,6 @@
 | [EPIC-013](epics/EPIC-013-iranian-fields/epic.md) | فیلدهای ایرانی (کد ملی، شبا، کد پستی، تلفن همراه، تقسیمات کشوری) | 3 | in-progress |
 | [EPIC-014](epics/EPIC-014-distribution/epic.md) | ایمیج Docker فارسی، راهنمای نصب و فرایند ارتقا | 4 | draft |
 | [EPIC-015](epics/EPIC-015-erp-modules/epic.md) | قالب ماژول ERP: خروجی و ورودی ماژول و استاندارد کیفیت | 5 | in-progress |
-| [EPIC-016](epics/EPIC-016-bpmn-engine/epic.md) | اتصال موتور BPMN (اثبات مفهوم) | 6 | draft |
+| [EPIC-016](epics/EPIC-016-bpmn-engine/epic.md) | اتصال موتور BPMN (اثبات مفهوم) | 6 | in-progress |
 | [EPIC-017](epics/EPIC-017-module-catalog/epic.md) | کاتالوگ ماژول‌ها، راهنمای ساخت و بازبینی ماژول کاربران | 5 | in-progress |
 | [EPIC-018](epics/EPIC-018-module-upgrade/epic.md) | ارتقا و حذف ماژول نصب‌شده | 5 | in-progress |
