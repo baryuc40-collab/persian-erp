@@ -12,5 +12,7 @@ export default defineCollection({
     { type: 'string', name: 'version', defaultValue: '1.0.0' },
     { type: 'text', name: 'description' },
     { type: 'string', name: 'groupSchemaUid' },
+    // SHA-256 of the module export right after its import or upgrade (decision 0006, section 3).
+    { type: 'string', name: 'installedHash' },
   ],
 });

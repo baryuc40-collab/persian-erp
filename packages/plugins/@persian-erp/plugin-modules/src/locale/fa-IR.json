@@ -61,5 +61,9 @@
   "{{count}} versions": "{{count}} نسخه",
   "Type {{key}} to confirm": "برای تأیید، {{key}} را بنویسید",
   "The module was deleted": "ماژول حذف شد",
-  "Reload the page to update the menu.": "صفحه را دوباره بارگذاری کنید تا منو به‌روز شود."
+  "Reload the page to update the menu.": "صفحه را دوباره بارگذاری کنید تا منو به‌روز شود.",
+  "The file is module {{name}}, not this module": "این فایل ماژول {{name}} است، نه این ماژول",
+  "The module version {{version}} is not of the form 1.2.3": "نسخه‌ی ماژول، {{version}}، به شکل 1.2.3 نیست",
+  "Version {{version}} of the module is installed; the file has version {{fileVersion}}": "نسخه‌ی {{version}} ماژول نصب است و فایل نسخه‌ی {{fileVersion}} را دارد",
+  "The field {{name}} changes its type from {{from}} to {{to}}": "نوع فیلد {{name}} از {{from}} به {{to}} عوض می‌شود"
 }

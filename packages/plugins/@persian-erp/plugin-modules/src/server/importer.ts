@@ -2,6 +2,7 @@ import type Application from '@nocobase/server';
 import type { BelongsToManyRepository, Transaction } from '@nocobase/database';
 import { ModuleFile, ModuleRoute } from '../shared/format';
 import { checkModuleFile, FileProblem } from '../shared/validate';
+import { saveInstalledHash } from './installed-hash';
 
 type Row = Record<string, any>;
 
@@ -37,9 +38,9 @@ export interface ImportOptions {
   beforeCommit?: (transaction: Transaction) => Promise<void>;
 }
 
-const RELATION_TYPES = new Set(['belongsTo', 'hasOne', 'hasMany', 'belongsToMany', 'belongsToArray']);
+export const RELATION_TYPES = new Set(['belongsTo', 'hasOne', 'hasMany', 'belongsToMany', 'belongsToArray']);
 
-const routesOf = (route: ModuleRoute): ModuleRoute[] => [route, ...(route.children || []).flatMap(routesOf)];
+export const routesOf = (route: ModuleRoute): ModuleRoute[] => [route, ...(route.children || []).flatMap(routesOf)];
 
 const schemaUids = (schema: Row, into: string[] = []) => {
   if (schema?.['x-uid']) into.push(schema['x-uid']);
@@ -77,8 +78,37 @@ function collectionOrder(collections: Row[]) {
   return ordered;
 }
 
-/** Checks the file and the install before anything is written. Throws ModuleImportError with every problem found. */
-export async function checkImport(app: Application, file: ModuleFile) {
+/** What an installed module already has; an upgrade of it may reuse these names and uids (decision 0006). */
+export interface OwnedNames {
+  collections: Set<string>;
+  roles: Set<string>;
+  workflows: Set<string>;
+  uids: Set<string>;
+}
+
+/** The names and uids a module file takes on an install. */
+export function namesOf(file: ModuleFile): OwnedNames {
+  const routeUids = routesOf(file.routes)
+    .flatMap((r) => [r.schemaUid, r.menuSchemaUid])
+    .filter(Boolean) as string[];
+  return {
+    collections: new Set(file.collections.map((c) => c.name as string)),
+    roles: new Set(file.roles.map((r) => r.name)),
+    workflows: new Set(file.workflows.map((w) => w.key)),
+    uids: new Set([
+      ...routeUids,
+      ...file.uiSchemas.flatMap((s) => schemaUids(s)),
+      ...file.flowModels.flatMap((m) => modelUids(m)),
+      ...file.flowModelTemplates.map((t) => t.uid as string),
+    ]),
+  };
+}
+
+/**
+ * Checks the file and the install before anything is written. Throws ModuleImportError with every problem found.
+ * For an upgrade, `owned` holds what the installed module has, which is not a conflict.
+ */
+export async function checkImport(app: Application, file: ModuleFile, owned?: OwnedNames) {
   const db = app.db;
   const { errors, warnings } = checkModuleFile(file, app.getVersion());
   if (errors.length) throw new ModuleImportError(errors);
@@ -94,7 +124,7 @@ export async function checkImport(app: Application, file: ModuleFile) {
       problems.push({ message: 'This install has no field type {{name}}', values: { name: type } });
     }
   }
-  const workflow = app.pm.get('workflow') as unknown as WorkflowPlugin;
+  const workflow = (app.pm.get('workflow') as unknown) as WorkflowPlugin;
   if (file.workflows.length && !workflow) {
     problems.push({ message: 'The workflow plugin is not enabled' });
   }
@@ -125,43 +155,57 @@ export async function checkImport(app: Application, file: ModuleFile) {
   if (problems.length) throw new ModuleImportError(problems);
 
   const conflicts: { kind: ConflictKind; name: string }[] = [];
+  const mine = (set: keyof OwnedNames, name: string) => !!owned?.[set].has(name);
   const existing = async (collection: string, field: string, values: string[]) => {
     if (!values.length || !db.getCollection(collection)) return [];
     const rows = await db.getRepository(collection).find({ filter: { [field]: { $in: values } }, fields: [field] });
     return [...new Set(rows.map((row) => String(row.get(field))))].sort();
   };
-  if (await db.getRepository('erpModules').findOne({ filterByTk: file.module.key })) {
+  if (!owned && (await db.getRepository('erpModules').findOne({ filterByTk: file.module.key }))) {
     conflicts.push({ kind: 'module', name: file.module.key });
   }
-  const collectionNames = file.collections.map((c) => c.name as string);
+  const collectionNames = file.collections.map((c) => c.name as string).filter((name) => !mine('collections', name));
   for (const name of collectionNames.filter((name) => db.getCollection(name)).sort()) {
     conflicts.push({ kind: 'collection', name });
   }
   for (const name of await existing('collections', 'name', collectionNames)) {
-    if (!conflicts.some((c) => c.kind === 'collection' && c.name === name)) conflicts.push({ kind: 'collection', name });
+    if (!conflicts.some((c) => c.kind === 'collection' && c.name === name))
+      conflicts.push({ kind: 'collection', name });
   }
   for (const name of await existing(
     'roles',
     'name',
-    file.roles.map((r) => r.name),
+    file.roles.map((r) => r.name).filter((name) => !mine('roles', name)),
   )) {
     conflicts.push({ kind: 'role', name });
   }
-  const sameGroup = await db
-    .getRepository('desktopRoutes')
-    .findOne({ filter: { parentId: null, type: 'group', title: file.routes.title } });
+  // A group with the same title, other than the module's own group when it is upgraded.
+  const sameGroup = await db.getRepository('desktopRoutes').findOne({
+    filter: {
+      parentId: null,
+      type: 'group',
+      title: file.routes.title,
+      ...(owned ? { schemaUid: { $notIn: [...owned.uids] } } : {}),
+    },
+  });
   if (sameGroup) conflicts.push({ kind: 'menu', name: String(file.routes.title) });
   for (const key of await existing(
     'workflows',
     'key',
-    file.workflows.map((w) => w.key),
+    file.workflows.map((w) => w.key).filter((key) => !mine('workflows', key)),
   )) {
     conflicts.push({ kind: 'workflow', name: key });
   }
-  const routeUids = routesOf(file.routes).flatMap((r) => [r.schemaUid, r.menuSchemaUid]).filter(Boolean) as string[];
+  const routeUids = routesOf(file.routes)
+    .flatMap((r) => [r.schemaUid, r.menuSchemaUid])
+    .filter(Boolean) as string[];
   const uids = [
     ...(await existing('desktopRoutes', 'schemaUid', routeUids)),
-    ...(await existing('uiSchemas', 'x-uid', file.uiSchemas.flatMap((s) => schemaUids(s)))),
+    ...(await existing(
+      'uiSchemas',
+      'x-uid',
+      file.uiSchemas.flatMap((s) => schemaUids(s)),
+    )),
     // A route makes a flowModels row with its schemaUid, so those uids must be free there too.
     ...(await existing('flowModels', 'uid', [...file.flowModels.flatMap((m) => modelUids(m)), ...routeUids])),
     ...(await existing(
@@ -170,14 +214,15 @@ export async function checkImport(app: Application, file: ModuleFile) {
       file.flowModelTemplates.map((t) => t.uid as string),
     )),
   ];
-  for (const uid of [...new Set(uids)].sort()) conflicts.push({ kind: 'uid', name: uid });
+  for (const uid of [...new Set(uids)].filter((uid) => !mine('uids', uid)).sort())
+    conflicts.push({ kind: 'uid', name: uid });
   if (conflicts.length) {
     throw new ModuleImportError([{ message: 'The module conflicts with what this install already has' }], conflicts);
   }
   return { warnings };
 }
 
-async function importCollections(app: Application, file: ModuleFile, transaction: Transaction) {
+export async function importCollections(app: Application, file: ModuleFile, transaction: Transaction) {
   const db = app.db;
   const fieldsOf = new Map(file.collections.map((c) => [c.name as string, (c.fields as Row[]) || []]));
   const ordered = collectionOrder(file.collections);
@@ -209,55 +254,76 @@ async function importCollections(app: Application, file: ModuleFile, transaction
   }
 }
 
-const fieldValues = (field: Row) => {
+export const fieldValues = (field: Row) => {
   const { reverseFieldName, ...values } = field;
   return values;
 };
 
 async function importRoles(app: Application, file: ModuleFile, transaction: Transaction) {
-  const db = app.db;
   for (const role of file.roles) {
     const { resources, scopes, routes, ...values } = role;
-    await db.getRepository('roles').create({ values, transaction });
-    const scopeIds = new Map<string, unknown>();
-    for (const scope of scopes) {
-      const found = await db
-        .getRepository('dataSourcesRolesResourcesScopes')
-        .findOne({ filter: { key: scope.key }, transaction });
-      const record =
-        found ||
-        (await db.getRepository('dataSourcesRolesResourcesScopes').create({
-          values: { ...scope, dataSourceKey: 'main' },
-          transaction,
-        }));
-      scopeIds.set(scope.key, record.get('id'));
-    }
-    for (const resource of resources) {
-      await db.getRepository('dataSourcesRolesResources').create({
-        values: {
-          roleName: role.name,
-          dataSourceKey: 'main',
-          name: resource.name,
-          usingActionsConfig: resource.usingActionsConfig,
-          actions: resource.actions.map((action) => ({
-            name: action.name,
-            fields: action.fields,
-            scopeId: action.scope ? scopeIds.get(action.scope) ?? null : null,
-          })),
-        },
-        transaction,
-      });
-    }
+    await app.db.getRepository('roles').create({ values, transaction });
+    await createRoleResources(app, role, transaction);
   }
 }
 
-async function importWorkflows(app: Application, file: ModuleFile, transaction: Transaction) {
+/** The permissions of a module role on module collections, with the data scopes they use. */
+export async function createRoleResources(
+  app: Application,
+  role: ModuleFile['roles'][number],
+  transaction: Transaction,
+) {
+  const db = app.db;
+  const { resources, scopes } = role;
+  const scopeIds = new Map<string, unknown>();
+  for (const scope of scopes) {
+    const found = await db
+      .getRepository('dataSourcesRolesResourcesScopes')
+      .findOne({ filter: { key: scope.key }, transaction });
+    const record =
+      found ||
+      (await db.getRepository('dataSourcesRolesResourcesScopes').create({
+        values: { ...scope, dataSourceKey: 'main' },
+        transaction,
+      }));
+    scopeIds.set(scope.key, record.get('id'));
+  }
+  for (const resource of resources) {
+    await db.getRepository('dataSourcesRolesResources').create({
+      values: {
+        roleName: role.name,
+        dataSourceKey: 'main',
+        name: resource.name,
+        usingActionsConfig: resource.usingActionsConfig,
+        actions: resource.actions.map((action) => ({
+          name: action.name,
+          fields: action.fields,
+          scopeId: action.scope ? scopeIds.get(action.scope) ?? null : null,
+        })),
+      },
+      transaction,
+    });
+  }
+}
+
+/**
+ * Creates the workflows of a file, disabled. With `current`, each becomes the current version of its key and the
+ * previous current version is turned off, as plugin-workflow does for a revision (decision 0006).
+ */
+export async function importWorkflows(
+  app: Application,
+  file: Pick<ModuleFile, 'workflows'>,
+  transaction: Transaction,
+  extra: { current?: boolean } = {},
+) {
   const db = app.db;
   const created: { id: unknown; enabled: boolean }[] = [];
   for (const workflow of file.workflows) {
     const { nodes, enabled, ...values } = workflow;
     // Enabled after commit: a trigger registers itself in memory at once and would survive a rollback.
-    const record = await db.getRepository('workflows').create({ values: { ...values, enabled: false }, transaction });
+    const record = await db
+      .getRepository('workflows')
+      .create({ values: { ...values, ...extra, enabled: false }, transaction });
     created.push({ id: record.get('id'), enabled });
     const ids = new Map<string, unknown>();
     for (const node of nodes) {
@@ -283,8 +349,8 @@ async function importWorkflows(app: Application, file: ModuleFile, transaction: 
 
 // plugin-ui-layout lists a route only in the layouts it is linked to; routes from a file without layouts go to the
 // admin layout, where a route made in the UI lands too.
-const DEFAULT_LAYOUT = 'admin-layout-model';
-const hasLayouts = (app: Application) => !!app.db.getCollection('desktopRoutes')?.getField('uiLayouts');
+export const DEFAULT_LAYOUT = 'admin-layout-model';
+export const hasLayouts = (app: Application) => !!app.db.getCollection('desktopRoutes')?.getField('uiLayouts');
 
 async function importRoutes(app: Application, file: ModuleFile, transaction: Transaction) {
   const ids = new Map<string, unknown>();
@@ -306,19 +372,24 @@ async function importRoutes(app: Application, file: ModuleFile, transaction: Tra
   return ids;
 }
 
-async function importPages(app: Application, file: ModuleFile, routeIds: Map<string, unknown>, transaction: Transaction) {
+export async function importPages(
+  app: Application,
+  file: ModuleFile,
+  routeIds: Map<string, unknown>,
+  transaction: Transaction,
+) {
   const db = app.db;
   const routeIdByUid = new Map<string, unknown>();
   for (const route of routesOf(file.routes)) {
     if (route.schemaUid) routeIdByUid.set(route.schemaUid as string, routeIds.get(route.ref));
   }
   for (const schema of file.uiSchemas) {
-    await (db.getRepository('uiSchemas') as unknown as UiSchemaRepository).insert(schema, { transaction });
+    await ((db.getRepository('uiSchemas') as unknown) as UiSchemaRepository).insert(schema, { transaction });
   }
   for (const template of file.flowModelTemplates) {
     await db.getRepository('flowModelTemplates').create({ values: template, transaction });
   }
-  const models = db.getRepository('flowModels') as unknown as FlowModelRepository;
+  const models = (db.getRepository('flowModels') as unknown) as FlowModelRepository;
   for (const model of file.flowModels) {
     const routeId = model.parentId ? routeIdByUid.get(model.parentId as string) : undefined;
     // The page stores the id of its route, which is new on this install.
@@ -390,6 +461,7 @@ export async function importModule(app: Application, file: ModuleFile, options: 
   for (const workflow of workflows.filter((w) => w.enabled)) {
     await db.getRepository('workflows').update({ filterByTk: workflow.id as string, values: { enabled: true } });
   }
+  await saveInstalledHash(app, file.module.key);
   return {
     key: file.module.key,
     title: file.module.title,

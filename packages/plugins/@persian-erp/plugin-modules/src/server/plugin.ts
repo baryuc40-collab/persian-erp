@@ -8,6 +8,7 @@ import erpModulesCollection from './erp-modules-collection';
 import { exportModule, ModuleRow } from './exporter';
 import { checkImport, ConflictKind, importModule, ModuleImportError } from './importer';
 import { ModuleRemoveError, planRemoval, removeModule } from './remover';
+import { planUpgrade, upgradeModule } from './upgrader';
 import type { FileProblem } from '../shared/validate';
 
 export const MODULES_RESOURCE = 'erpModules';
@@ -30,6 +31,7 @@ export class PluginModulesServer extends Plugin {
       [`${MODULES_RESOURCE}:catalog`]: (ctx: Context, next: Next) => this.catalogAction(ctx, next),
       [`${MODULES_RESOURCE}:install`]: (ctx: Context, next: Next) => this.installAction(ctx, next),
       [`${MODULES_RESOURCE}:remove`]: (ctx: Context, next: Next) => this.removeAction(ctx, next),
+      [`${MODULES_RESOURCE}:upgrade`]: (ctx: Context, next: Next) => this.upgradeAction(ctx, next),
     });
   }
 
@@ -68,7 +70,8 @@ export class PluginModulesServer extends Plugin {
     const group = await this.db
       .getRepository('desktopRoutes')
       .findOne({ filter: { schemaUid: values.groupSchemaUid, type: 'group', parentId: null } });
-    if (!values.groupSchemaUid || !group) ctx.throw(400, t('The menu group of the module must be a top-level menu group'));
+    if (!values.groupSchemaUid || !group)
+      ctx.throw(400, t('The menu group of the module must be a top-level menu group'));
     if (await repository.findOne({ filter: { groupSchemaUid: values.groupSchemaUid } })) {
       ctx.throw(400, t('This menu group already belongs to another module'));
     }
@@ -96,7 +99,11 @@ export class PluginModulesServer extends Plugin {
       } catch (error) {
         if (!(error instanceof ModuleExportError)) throw error;
         // The module is still listed, so that the administrator sees what is wrong with it.
-        items.push({ ...summarizeModule({ module: row }), groupSchemaUid: row.groupSchemaUid, error: t(error.message) });
+        items.push({
+          ...summarizeModule({ module: row }),
+          groupSchemaUid: row.groupSchemaUid,
+          error: t(error.message),
+        });
       }
     }
     ctx.body = items;
@@ -175,12 +182,26 @@ export class PluginModulesServer extends Plugin {
     const items = [];
     for (const entry of readCatalog()) {
       if (!entry.module) {
-        items.push({ file: entry.file, installed: false, summary: summarizeModule({}), warnings: [], problems: [t('This is not an ERP module file')], conflicts: [] });
+        items.push({
+          file: entry.file,
+          installed: false,
+          summary: summarizeModule({}),
+          warnings: [],
+          problems: [t('This is not an ERP module file')],
+          conflicts: [],
+        });
         continue;
       }
       const key = entry.module.module?.key;
       if (installed.has(key)) {
-        items.push({ file: entry.file, installed: true, summary: summarizeModule(entry.module), warnings: [], problems: [], conflicts: [] });
+        items.push({
+          file: entry.file,
+          installed: true,
+          summary: summarizeModule(entry.module),
+          warnings: [],
+          problems: [],
+          conflicts: [],
+        });
       } else {
         items.push({ file: entry.file, installed: false, ...(await this.preview(ctx, entry.module)) });
       }
@@ -196,6 +217,39 @@ export class PluginModulesServer extends Plugin {
     const entry = readCatalog().find((e) => e.module?.module?.key === key);
     if (!entry) ctx.throw(404, t('Module not found'));
     ctx.body = await this.runImport(ctx, entry.module);
+    await next();
+  }
+
+  /**
+   * Upgrades the installed module with the key of the file to the file's version (decision 0006). With dryRun, the
+   * changes it would make and what would stop it; nothing changes.
+   */
+  async upgradeAction(ctx: Context, next: Next) {
+    const { t, translate, conflictLines } = this.messages(ctx);
+    const file = ctx.action.params.values as ModuleFile;
+    const key = file?.module?.key;
+    const row = key ? await this.db.getRepository(MODULES_RESOURCE).findOne({ filterByTk: key }) : null;
+    if (!row) ctx.throw(404, t('Module not found'));
+    const summary = summarizeModule(file);
+    try {
+      if (isTrue(ctx.action.params.dryRun)) {
+        const { plan, warnings } = await planUpgrade(this.app, row.toJSON() as ModuleRow, file);
+        ctx.body = { summary, plan, warnings: warnings.map(translate), problems: [], conflicts: [] };
+      } else {
+        const { plan, warnings } = await upgradeModule(this.app, row.toJSON() as ModuleRow, file);
+        ctx.body = { key, plan, warnings: warnings.map(translate) };
+      }
+    } catch (error) {
+      if (error instanceof ModuleExportError) ctx.throw(400, t(error.message));
+      if (!(error instanceof ModuleImportError)) throw error;
+      const problems = error.problems.map(translate);
+      const conflicts = conflictLines(error.conflicts);
+      if (isTrue(ctx.action.params.dryRun)) {
+        ctx.body = { summary, plan: null, warnings: [], problems, conflicts };
+      } else {
+        ctx.throw(400, [...problems, ...conflicts].join('\n'), { conflicts: error.conflicts });
+      }
+    }
     await next();
   }
 
