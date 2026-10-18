@@ -1,0 +1,6 @@
+{
+  "Module not found": "ماژول پیدا نشد",
+  "The menu group of the module does not exist": "گروه منوی ماژول وجود ندارد",
+  "The menu group of the module must be a top-level menu group": "گروه منوی ماژول باید یک گروه منوی سطح اول باشد",
+  "A page of the module opens a popup that belongs to a page outside the module": "یکی از صفحه‌های ماژول پاپ‌آپی را باز می‌کند که متعلق به صفحه‌ای بیرون از ماژول است"
+}
