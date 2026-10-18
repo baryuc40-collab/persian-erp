@@ -51,5 +51,15 @@
   "and {{count}} more": "and {{count}} more",
   "Catalog": "Catalog",
   "Installed": "Installed",
-  "Install": "Install"
+  "Install": "Install",
+  "Type the module key to confirm the deletion": "Type the module key to confirm the deletion",
+  "Delete": "Delete",
+  "Delete the module": "Delete the module",
+  "Deleting the module deletes its collections with all their records, its pages, workflows and roles. Back up the database first.": "Deleting the module deletes its collections with all their records, its pages, workflows and roles. Back up the database first.",
+  "{{count}} records": "{{count}} records",
+  "{{count}} users": "{{count}} users",
+  "{{count}} versions": "{{count}} versions",
+  "Type {{key}} to confirm": "Type {{key}} to confirm",
+  "The module was deleted": "The module was deleted",
+  "Reload the page to update the menu.": "Reload the page to update the menu."
 }
