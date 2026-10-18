@@ -123,6 +123,7 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 ابزار این ارجاع‌ها را بررسی می‌کند:
 - **مجموعه‌های بیرونی:** هدف فیلدهای رابطه، `inherits`، مجموعه‌ی رویداد شروع و نودهای گردش‌کار، و مجموعه‌هایی که صفحه‌های کلاسیک و مدرن نشان می‌دهند. همه باید در `requires.collections` باشند.
 - **نوع‌ها:** رابط فیلدها در `requires.fieldInterfaces`، نوع رویداد شروع در `requires.workflowTriggers` و نوع نودها در `requires.workflowInstructions`.
+- **کانال اعلان:** کانالی که نود «اعلان» از آن می‌فرستد، در `requires.notificationChannels`. ماژول‌ها کانال `erp_in_app` را به کار می‌برند که `plugin-modules` در هر نصب می‌سازد.
 
 خروجی گرفتن از صفحه‌ی «ماژول‌های ERP» این بخش را خودش پر می‌کند. این قاعده فایلی را می‌گیرد که دستی ویرایش شده است.
 
