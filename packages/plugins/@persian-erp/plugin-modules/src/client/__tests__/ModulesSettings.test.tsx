@@ -1,8 +1,8 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from 'antd';
 import React from 'react';
 import type { ModuleSummary } from '../../shared/summary';
-import { ImportPreviewView, InstalledModule, ModulesApi, ModulesSettings } from '../ModulesSettings';
+import { CatalogItem, ImportPreviewView, InstalledModule, ModulesApi, ModulesCatalog, ModulesSettings } from '../ModulesSettings';
 
 const summary: ModuleSummary = {
   key: 'lab',
@@ -27,7 +27,9 @@ describe('Settings > ERP modules', () => {
       { ...summary, groupSchemaUid: 'labgroup001' },
       { ...summary, key: 'old', title: 'قدیمی', collections: [], pages: [], workflows: [], roles: [], groupSchemaUid: 'x', error: 'The menu group is gone' },
     ];
-    const api: ModulesApi = { request: vi.fn(async () => ({ data: { data: modules } })) };
+    const api: ModulesApi = {
+      request: vi.fn(async ({ url }) => ({ data: { data: url === 'erpModules:overview' ? modules : [] } })),
+    };
     render(
       <App>
         <ModulesSettings api={api} />
@@ -68,5 +70,37 @@ describe('Settings > ERP modules', () => {
     await waitFor(() => expect(screen.getByText('The module cannot be imported')).toBeTruthy());
     expect(screen.getByText('Collection: lab_items')).toBeTruthy();
     expect(screen.getByText('Made with another patch version')).toBeTruthy();
+  });
+
+  it('lists the catalog with an install button for what can be installed', () => {
+    const item = (key: string, extra: Partial<CatalogItem> = {}): CatalogItem => ({
+      file: `${key}.erp-module.json`,
+      installed: false,
+      summary: { ...summary, key, title: key, description: `${key} description` },
+      warnings: [],
+      problems: [],
+      conflicts: [],
+      ...extra,
+    });
+    const onInstall = vi.fn();
+    render(
+      <ModulesCatalog
+        items={[item('people'), item('stock', { installed: true }), item('old', { problems: ['Made with NocoBase 1.0.0'] })]}
+        onInstall={onInstall}
+      />,
+    );
+    const row = (title: string) => screen.getByText(title).closest('li') as HTMLElement;
+    expect(within(row('people')).getByText('people description')).toBeTruthy();
+    fireEvent.click(within(row('people')).getByRole('button', { name: 'Install' }));
+    expect(onInstall).toHaveBeenCalledWith(expect.objectContaining({ file: 'people.erp-module.json' }));
+    expect(within(row('stock')).getByText('Installed')).toBeTruthy();
+    expect(within(row('stock')).queryByRole('button')).toBeNull();
+    expect(within(row('old')).getByRole('button', { name: 'Install' })).toHaveProperty('disabled', true);
+    expect(within(row('old')).getByText('Made with NocoBase 1.0.0')).toBeTruthy();
+  });
+
+  it('shows nothing when the plugin has no catalog', () => {
+    const { container } = render(<ModulesCatalog items={[]} onInstall={vi.fn()} />);
+    expect(container.textContent).toBe('');
   });
 });
