@@ -43,7 +43,7 @@ Operaton و CIB seven هر دو فورک Camunda 7 با همان API هستند.
 | `SPRING_DATASOURCE_*` | `jdbc:postgresql://postgres:5432/<db>?currentSchema=operaton` | پایگاه داده‌ی مشترک، schema جدا |
 | درگاه | بدون `ports` در Compose | موتور فقط در شبکه‌ی داخلی است. Cockpit و Tasklist (`/operaton/app`) هم بیرون نمی‌آیند. |
 
-پیکربندی `production.yml` خود ایمیج (authorization، سیاست رمز، اعتبارسنجی deserialization) در STORY-083 بررسی می‌شود.
+ایمیج موتور با `default.yml` بالا می‌آید که authorization و بررسی deserialization را خاموش دارد. `docker-compose.yml` گزینه‌های `production.yml` را با `SPRING_APPLICATION_JSON` روشن می‌کند ([گزارش PoC](../research/bpmn-poc.md#پیکربندی-پیشفرض-ایمیج-موتور)).
 
 ### ۳. رابط `BpmEngine`
 

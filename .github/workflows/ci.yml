@@ -303,7 +303,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Run e2e tests
-        run: BPM_E2E=1 npx playwright test -c e2e/playwright.config.ts e2e/bpm
+        run: BPM_E2E=1 npx playwright test -c e2e/playwright.config.ts e2e/bpm e2e/modules/all-modules.e2e.ts
       - name: Upload screenshots and report
         if: failure()
         uses: actions/upload-artifact@v4
