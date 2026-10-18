@@ -14,7 +14,7 @@ if (!baseURL || !account || !password) {
 }
 
 const KEY = 'inventory';
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 let token;
 
 async function call(action, body, { text = false } = {}) {
@@ -303,8 +303,7 @@ async function setFieldModels(file) {
     WHERE COALESCE(s.quantity, 0) + need.delta < 0
   ),
   problems AS (
-    SELECT 'سند را یکی‌یکی تأیید کنید' AS message WHERE :status = 'approved' AND :id IS NULL
-    UNION ALL SELECT 'سند ردیف کالا ندارد' WHERE EXISTS (SELECT 1 FROM doc) AND NOT EXISTS (SELECT 1 FROM need)
+    SELECT 'سند ردیف کالا ندارد' AS message WHERE EXISTS (SELECT 1 FROM doc) AND NOT EXISTS (SELECT 1 FROM need)
     UNION ALL SELECT message FROM short
   )
   SELECT COUNT(*)::int AS problems, string_agg(message, '، ') AS message FROM problems`;
@@ -349,7 +348,21 @@ async function setFieldModels(file) {
     config: { collection: docs, global: true, actions: ['update'] },
   });
   const node = (values) => call(`workflows/${approval.id}/nodes:create`, values);
-  const check = await node({ type: 'sql', title: 'بررسی موجودی', config: { dataSource: 'main', sql: CHECK, variables: params } });
+  // The SQL nodes run only for a request that approves one document: a variable the request does not carry, like the
+  // status of an edit that only changes the description, fails the node and with it the edit (STORY-090).
+  const when = (title, upstream, branchIndex, calculator, operands) =>
+    node({
+      type: 'condition',
+      title,
+      ...(upstream ? { upstreamId: upstream.id, ...(branchIndex === null ? {} : { branchIndex }) } : {}),
+      config: { rejectOnFalse: false, engine: 'basic', calculation: { group: { type: 'and', calculations: [{ calculator, operands }] } } },
+    });
+  const approving = await when('تأیید سند است؟', null, null, 'equal', ['{{$context.params.values.status}}', 'approved']);
+  // A request for one document names it; a bulk update does not.
+  const single = await when('یک سند است؟', approving, 1, 'gt', ['{{$context.params.filterByTk}}', 0]);
+  const bulk = await node({ type: 'response-message', title: 'پیام چند سند', upstreamId: single.id, branchIndex: 0, config: { message: 'سند را یکی‌یکی تأیید کنید' } });
+  await node({ type: 'end', title: 'رد تأیید', upstreamId: bulk.id, config: { endStatus: -1 } });
+  const check = await node({ type: 'sql', title: 'بررسی موجودی', upstreamId: single.id, branchIndex: 1, config: { dataSource: 'main', sql: CHECK, variables: params } });
   const condition = await node({
     type: 'condition',
     title: 'کمبود دارد؟',

@@ -57,6 +57,7 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-084](STORY-084-inventory-items.md) | ماژول انبار ۱.۰: کالا، گروه کالا و انبار | in-review |
-| [STORY-085](STORY-085-inventory-documents.md) | ماژول انبار ۱.۱: رسید، حواله و موجودی | in-review |
-| [STORY-086](STORY-086-inventory-kardex.md) | ماژول انبار ۱.۲: کاردکس و اعلان حداقل موجودی | in-review |
+| [STORY-084](STORY-084-inventory-items.md) | ماژول انبار ۱.۰: کالا، گروه کالا و انبار | done |
+| [STORY-085](STORY-085-inventory-documents.md) | ماژول انبار ۱.۱: رسید، حواله و موجودی | done |
+| [STORY-086](STORY-086-inventory-kardex.md) | ماژول انبار ۱.۲: کاردکس و اعلان حداقل موجودی | done |
+| [STORY-090](STORY-090-inventory-edit-fix.md) | ماژول انبار ۱.۲.۱: ویرایش سند بدون تغییر وضعیت | in-review |
