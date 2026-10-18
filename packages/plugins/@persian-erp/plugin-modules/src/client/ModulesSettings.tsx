@@ -20,21 +20,41 @@ export interface InstalledModule extends ModuleSummary {
   error?: string;
 }
 
+/** What an upgrade changes (erpModules:upgrade with dryRun, STORY-076). */
+export interface UpgradePlan {
+  key: string;
+  title: string;
+  from: string;
+  to: string;
+  localChanges: boolean;
+  collections: { added: string[]; updated: string[]; kept: string[] };
+  fields: { added: string[]; updated: string[]; kept: string[] };
+  routes: { added: string[]; updated: string[]; removed: string[] };
+  workflows: { added: string[]; revised: string[]; disabled: string[] };
+  roles: { added: string[]; updated: string[]; kept: string[] };
+}
+
 export interface ImportPreview {
   summary: ModuleSummary;
   warnings: string[];
   problems: string[];
   conflicts: string[];
+  /** Only in the preview of an upgrade; null when the upgrade is refused. */
+  plan?: UpgradePlan | null;
 }
 
 /** A module file that comes with the plugin (STORY-070), with what an import of it would say. */
 export interface CatalogItem extends ImportPreview {
   file: string;
   installed: boolean;
+  installedVersion?: string;
+  /** The catalog has a higher version than the installed one. */
+  upgrade?: boolean;
 }
 
-// Where an import comes from: a file the administrator chose, or a module of the catalog.
-type ImportSource = { file: unknown } | { key: string };
+// Where an import comes from: a file the administrator chose, or a module of the catalog. An upgrade replaces an
+// installed module of the same key.
+type ImportSource = ({ file: unknown } | { key: string }) & { upgrade?: boolean };
 
 const isBlocked = (preview: ImportPreview) => preview.problems.length + preview.conflicts.length > 0;
 
@@ -78,17 +98,78 @@ export const ModuleContents = ({ summary }: { summary: ModuleSummary }) => {
   );
 };
 
-/** What an import would do: the module's contents, then the problems that stop it or the warnings it carries. */
-export const ImportPreviewView = ({ preview }: { preview: ImportPreview }) => {
+const changeTags = (items: string[], color?: string) =>
+  items.length
+    ? items.map((item) => (
+        <Tag key={item} color={color}>
+          {item}
+        </Tag>
+      ))
+    : '-';
+
+/** The changes of an upgrade, one row per part of the module; what is kept or goes is marked. */
+export const UpgradePlanView = ({ plan }: { plan: UpgradePlan }) => {
+  const { t } = useTranslation([pkg.name, 'client']);
+  const rows: [string, string[], string?][] = [
+    [t('New collections'), plan.collections.added, 'green'],
+    [t('Updated collections'), plan.collections.updated],
+    [t('New fields'), plan.fields.added, 'green'],
+    [t('Updated fields'), plan.fields.updated],
+    [t('New menu items'), plan.routes.added, 'green'],
+    [t('Updated menu items'), plan.routes.updated],
+    [t('Deleted menu items'), plan.routes.removed, 'red'],
+    [t('New workflows'), plan.workflows.added, 'green'],
+    [t('Workflows with a new version'), plan.workflows.revised],
+    [t('Disabled workflows'), plan.workflows.disabled, 'red'],
+    [t('New roles'), plan.roles.added, 'green'],
+    [t('Updated roles'), plan.roles.updated],
+    [
+      t('Kept, not in the new version'),
+      [...plan.collections.kept, ...plan.fields.kept, ...plan.roles.kept],
+      'orange',
+    ],
+  ];
+  return (
+    <Descriptions column={1} size="small" bordered>
+      <Descriptions.Item label={t('Version')}>{t('From {{from}} to {{to}}', { from: plan.from, to: plan.to })}</Descriptions.Item>
+      {rows
+        .filter(([, items]) => items.length)
+        .map(([label, items, color]) => (
+          <Descriptions.Item key={label} label={label}>
+            {changeTags(items, color)}
+          </Descriptions.Item>
+        ))}
+    </Descriptions>
+  );
+};
+
+/**
+ * What an import or an upgrade would do: the problems that stop it, the warnings it carries, then the module's
+ * contents, or for an upgrade the changes it makes.
+ */
+export const ImportPreviewView = ({ preview, upgrade = false }: { preview: ImportPreview; upgrade?: boolean }) => {
   const { t } = useTranslation([pkg.name, 'client']);
   const blocking = [...preview.problems, ...preview.conflicts];
+  const plan = preview.plan;
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
+      {upgrade && plan && (
+        <Alert
+          type="warning"
+          showIcon
+          message={t('Back up the database before the upgrade.')}
+          description={
+            plan.localChanges
+              ? t('The module was changed after it was installed. The upgrade replaces its pages, menu, workflows and roles with those of the file, so those changes are lost.')
+              : undefined
+          }
+        />
+      )}
       {blocking.length > 0 && (
         <Alert
           type="error"
           showIcon
-          message={t('The module cannot be imported')}
+          message={upgrade ? t('The module cannot be upgraded') : t('The module cannot be imported')}
           description={
             <ul style={{ margin: 0, paddingInlineStart: 20 }}>
               {blocking.map((line) => (
@@ -101,7 +182,7 @@ export const ImportPreviewView = ({ preview }: { preview: ImportPreview }) => {
       {preview.warnings.map((line) => (
         <Alert key={line} type="warning" showIcon message={line} />
       ))}
-      <ModuleContents summary={preview.summary} />
+      {upgrade && plan ? <UpgradePlanView plan={plan} /> : <ModuleContents summary={preview.summary} />}
     </Space>
   );
 };
@@ -286,7 +367,15 @@ const DefineModule = ({ api, open, onClose, used }: { api: ModulesApi; open: boo
   );
 };
 
-export const ModulesCatalog = ({ items, onInstall }: { items: CatalogItem[]; onInstall: (item: CatalogItem) => void }) => {
+export const ModulesCatalog = ({
+  items,
+  onInstall,
+  onUpgrade,
+}: {
+  items: CatalogItem[];
+  onInstall: (item: CatalogItem) => void;
+  onUpgrade: (item: CatalogItem) => void;
+}) => {
   const { t } = useTranslation([pkg.name, 'client']);
   if (!items.length) return null;
   return (
@@ -297,7 +386,11 @@ export const ModulesCatalog = ({ items, onInstall }: { items: CatalogItem[]; onI
         renderItem={(item) => (
           <List.Item
             actions={[
-              item.installed ? (
+              item.upgrade ? (
+                <Button key="upgrade" type="link" onClick={() => onUpgrade(item)}>
+                  {t('Upgrade to version {{version}}', { version: item.summary.version })}
+                </Button>
+              ) : item.installed ? (
                 <Tag key="state" color="green">
                   {t('Installed')}
                 </Tag>
@@ -375,8 +468,17 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
     }
   };
 
+  // A preview of an upgrade, of a chosen file or of a catalog module.
+  const previewUpgrade = async (next: ImportSource & { upgrade: true }) => {
+    const params = 'key' in next ? { dryRun: true, filterByTk: next.key } : { dryRun: true };
+    const data = 'file' in next ? next.file : undefined;
+    const response = await api.request({ url: 'erpModules:upgrade', method: 'post', params, data });
+    setSource(next);
+    setPreview(response.data?.data);
+  };
+
   const choose = async (picked: File) => {
-    let parsed: unknown;
+    let parsed: any;
     try {
       parsed = JSON.parse(await picked.text());
     } catch {
@@ -384,6 +486,11 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
       return false;
     }
     try {
+      // The file of a module that is installed is an upgrade of it (STORY-077).
+      if (modules.some((m) => m.key === parsed?.module?.key)) {
+        await previewUpgrade({ file: parsed, upgrade: true });
+        return false;
+      }
       const { data } = await api.request({ url: 'erpModules:import', method: 'post', params: { dryRun: true }, data: parsed });
       setSource({ file: parsed });
       setPreview(data?.data);
@@ -396,18 +503,22 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
   const runImport = async () => {
     setImporting(true);
     try {
-      if ('key' in source) {
+      if (source.upgrade) {
+        const params = 'key' in source ? { filterByTk: source.key } : {};
+        await api.request({ url: 'erpModules:upgrade', method: 'post', params, data: 'file' in source ? source.file : undefined });
+      } else if ('key' in source) {
         await api.request({ url: 'erpModules:install', method: 'post', params: { filterByTk: source.key } });
       } else {
         await api.request({ url: 'erpModules:import', method: 'post', data: source.file });
       }
+      const upgraded = !!source.upgrade;
       setPreview(null);
       setSource(null);
       await load();
       // The menu is read when the app starts, so the new menu shows after a reload.
       modal.success({
-        title: t('The module was imported'),
-        content: t('Reload the page to see its menu.'),
+        title: upgraded ? t('The module was upgraded') : t('The module was imported'),
+        content: upgraded ? t('Reload the page to update the menu.') : t('Reload the page to see its menu.'),
         okText: t('Reload'),
         onOk: () => window.location.reload(),
       });
@@ -419,6 +530,7 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
   };
 
   const blocked = !!preview && isBlocked(preview);
+  const upgrading = !!source?.upgrade;
 
   return (
     <Card bordered={false}>
@@ -434,6 +546,7 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
           setSource({ key: item.summary.key });
           setPreview(item);
         }}
+        onUpgrade={(item) => previewUpgrade({ key: item.summary.key, upgrade: true }).catch((e) => message.error(errorMessage(e)))}
       />
       <Table<InstalledModule>
         rowKey="key"
@@ -493,9 +606,9 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
       />
       <Modal
         open={!!preview}
-        title={t('Import a module')}
+        title={upgrading ? t('Upgrade the module') : t('Import a module')}
         width={720}
-        okText={t('Import a module')}
+        okText={upgrading ? t('Upgrade') : t('Import a module')}
         cancelText={t('Cancel')}
         okButtonProps={{ disabled: blocked }}
         confirmLoading={importing}
@@ -505,7 +618,7 @@ export const ModulesSettings = ({ api }: { api: ModulesApi }) => {
           setSource(null);
         }}
       >
-        {preview && <ImportPreviewView preview={preview} />}
+        {preview && <ImportPreviewView preview={preview} upgrade={upgrading} />}
       </Modal>
     </Card>
   );

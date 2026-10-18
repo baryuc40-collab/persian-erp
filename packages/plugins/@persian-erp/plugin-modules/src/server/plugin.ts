@@ -8,7 +8,7 @@ import erpModulesCollection from './erp-modules-collection';
 import { exportModule, ModuleRow } from './exporter';
 import { checkImport, ConflictKind, importModule, ModuleImportError } from './importer';
 import { ModuleRemoveError, planRemoval, removeModule } from './remover';
-import { planUpgrade, upgradeModule } from './upgrader';
+import { compareVersions, planUpgrade, upgradeModule } from './upgrader';
 import type { FileProblem } from '../shared/validate';
 
 export const MODULES_RESOURCE = 'erpModules';
@@ -176,8 +176,11 @@ export class PluginModulesServer extends Plugin {
   /** The module files that come with the plugin, each with whether it is installed and what an import would say. */
   async catalogAction(ctx: Context, next: Next) {
     const { t } = this.messages(ctx);
-    const installed = new Set(
-      (await this.db.getRepository(MODULES_RESOURCE).find({ fields: ['key'] })).map((row) => row.get('key') as string),
+    const installed = new Map<string, string>(
+      (await this.db.getRepository(MODULES_RESOURCE).find({ fields: ['key', 'version'] })).map((row) => [
+        row.get('key') as string,
+        row.get('version') as string,
+      ]),
     );
     const items = [];
     for (const entry of readCatalog()) {
@@ -194,9 +197,13 @@ export class PluginModulesServer extends Plugin {
       }
       const key = entry.module.module?.key;
       if (installed.has(key)) {
+        const installedVersion = installed.get(key);
         items.push({
           file: entry.file,
           installed: true,
+          installedVersion,
+          // A newer version of the module comes with the plugin (STORY-077).
+          upgrade: (compareVersions(entry.module.module.version, installedVersion) ?? 0) > 0,
           summary: summarizeModule(entry.module),
           warnings: [],
           problems: [],
@@ -222,11 +229,15 @@ export class PluginModulesServer extends Plugin {
 
   /**
    * Upgrades the installed module with the key of the file to the file's version (decision 0006). With dryRun, the
-   * changes it would make and what would stop it; nothing changes.
+   * changes it would make and what would stop it; nothing changes. filterByTk takes the file from the catalog.
    */
   async upgradeAction(ctx: Context, next: Next) {
     const { t, translate, conflictLines } = this.messages(ctx);
-    const file = ctx.action.params.values as ModuleFile;
+    // The file the administrator chose, or the file of a catalog module given by its key.
+    const catalogKey = ctx.action.params.filterByTk;
+    const file = (catalogKey
+      ? readCatalog().find((e) => e.module?.module?.key === catalogKey)?.module
+      : ctx.action.params.values) as ModuleFile;
     const key = file?.module?.key;
     const row = key ? await this.db.getRepository(MODULES_RESOURCE).findOne({ filterByTk: key }) : null;
     if (!row) ctx.throw(404, t('Module not found'));
