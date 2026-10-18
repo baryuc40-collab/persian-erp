@@ -66,6 +66,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     services:
+      # The BPMN engine of decision 0007, for the OperatonEngine tests of plugin-bpm (H2 is enough here).
+      operaton:
+        image: operaton/operaton:2.1.5
+        env:
+          OPERATON_BPM_RUN_AUTH_ENABLED: 'true'
+          OPERATON_BPM_RUN_EXAMPLE_ENABLED: 'false'
+          OPERATON_BPM_ADMIN_USER_ID: nocobase
+          OPERATON_BPM_ADMIN_USER_PASSWORD: secret
+        ports:
+          - 18080:8080
       postgres:
         image: postgres:16
         env:
@@ -117,8 +127,17 @@ jobs:
       - name: Lint
         run: yarn eslint packages/plugins/@persian-erp tools
       - name: Build plugins
-        run: yarn build @persian-erp/plugin-fa @persian-erp/plugin-modules --no-dts
+        run: yarn build @persian-erp/plugin-fa @persian-erp/plugin-modules @persian-erp/plugin-bpm --no-dts
+      - name: Wait for the BPMN engine
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf -u nocobase:secret http://localhost:18080/engine-rest/version && exit 0
+            sleep 3
+          done
+          echo "Operaton did not start"; exit 1
       - name: Test
+        env:
+          OPERATON_URL: http://localhost:18080
         run: yarn test --server packages/plugins/@persian-erp --run
       - name: Client tests
         run: yarn test --client packages/plugins/@persian-erp --run
