@@ -15,7 +15,7 @@ if (!baseURL || !account || !password) {
 }
 
 const KEY = 'purchasing';
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 let token;
 
 async function call(action, body, { text = false } = {}) {
@@ -54,6 +54,8 @@ const money = (name, title) => ({ name, interface: 'currencyIRR', type: 'bigInt'
 const STATUSES = [
   { value: 'draft', label: 'پیش‌نویس', color: 'default' },
   { value: 'approved', label: 'تأییدشده', color: 'green' },
+  // Version 1.1: the order has its stock receipt.
+  { value: 'received', label: 'رسید صادر شد', color: 'blue' },
 ];
 
 const COLLECTIONS = [
@@ -70,6 +72,8 @@ const COLLECTIONS = [
       money('total', 'جمع'),
       hasMany('lines', 'ردیف‌ها', `${KEY}_order_lines`, 'orderId'),
       textarea('description', 'توضیح'),
+      // Version 1.1: the receipt issued from the order in the «انبار» module.
+      belongsTo('receipt', 'رسید انبار', 'inventory_documents', 'number'),
     ],
   },
   {
@@ -87,8 +91,9 @@ const COLLECTIONS = [
 ];
 
 const fieldNames = (collection) => [...SYSTEM_FIELDS, ...collection.fields].map((field) => field.name);
-// What a person may write; the status changes only by approval, and the amounts only by the totals workflow.
-const COMPUTED = new Set(['status', 'total', 'amount']);
+// What a person may write; the status changes only by approval and receipt, the amounts only by the totals workflow,
+// and the receipt only by issuing it.
+const COMPUTED = new Set(['status', 'total', 'amount', 'receipt']);
 const writable = (collection) => fieldNames(collection).filter((name) => !COMPUTED.has(name));
 
 const GROUP = { title: 'خرید', icon: 'ShoppingCartOutlined' };
@@ -99,12 +104,13 @@ const LINES = { key: 'lines', field: 'lines', fieldType: 'subTable', titleField:
 const LINES_DETAIL = { ...LINES, fields: ['item', 'quantity', 'unitPrice', 'amount'] };
 const TABLE_FIELDS = ['number', 'date', 'supplier', 'warehouse', 'status', 'total'];
 const FORM_FIELDS = ['date', 'supplier', 'warehouse', LINES, 'description'];
-const DETAIL_FIELDS = ['number', 'date', 'supplier', 'warehouse', 'status', 'total', LINES_DETAIL, 'description'];
+const DETAIL_FIELDS = ['number', 'date', 'supplier', 'warehouse', 'status', 'total', 'receipt', LINES_DETAIL, 'description'];
 const FORM_LAYOUT = { rows: [[{ key: 'date', span: 8 }, { key: 'supplier', span: 8 }, { key: 'warehouse', span: 8 }], ['lines'], ['description']] };
 const DETAIL_LAYOUT = {
   rows: [
     [{ key: 'number', span: 8 }, { key: 'date', span: 8 }, { key: 'status', span: 8 }],
     [{ key: 'supplier', span: 8 }, { key: 'warehouse', span: 8 }, { key: 'total', span: 8 }],
+    ['receipt'],
     ['lines'],
     ['description'],
   ],
@@ -121,11 +127,17 @@ const surface = (title, icon, block) => ({
   tabs: [{ key: 'main', title, blocks: [{ key: 'table', type: 'table', collection: ORDERS, fields: TABLE_FIELDS, ...block }] }],
 });
 
-// Every order, written by both roles while it is a draft.
-const ORDERS_PAGE = surface('سفارش‌های خرید', 'FileTextOutlined', {
+const RECEIPT_BUTTON = 'صدور رسید انبار';
+// Every order, written by both roles while it is a draft; an approved one gets its stock receipt from here.
+const ordersPage = () => surface('سفارش‌های خرید', 'FileTextOutlined', {
   settings: { sorting: [{ field: 'createdAt', direction: 'desc' }] },
   actions: ['filter', 'refresh', { type: 'addNew', popup: { blocks: [form('createForm', 'currentCollection')] } }],
-  recordActions: [view, { type: 'edit', popup: { blocks: [form('editForm', 'currentRecord')] } }, 'delete'],
+  recordActions: [
+    view,
+    { type: 'edit', popup: { blocks: [form('editForm', 'currentRecord')] } },
+    'delete',
+    { type: 'triggerWorkflow', title: RECEIPT_BUTTON },
+  ],
 });
 // The drafts waiting for the purchase manager, with the approval button. Only the manager's menu has this page.
 const APPROVAL_PAGE = surface('تأیید سفارش‌ها', 'CheckCircleOutlined', {
@@ -168,6 +180,107 @@ async function setFieldModels(file) {
   return changes.length;
 }
 
+// Version 1.1: «صدور رسید انبار». A button on an approved order runs this workflow, which writes a draft receipt in
+// the «انبار» module with the warehouse and the lines of the order, and then links the order to it. The receipt is made
+// through «ایجاد رکورد» nodes, not SQL, so that it gets the next document number of the inventory module. The order
+// changes last: if something fails on the way, the order is still approved, and the keeper deletes the draft.
+async function createReceiptWorkflow() {
+  const CHECK = `SELECT COUNT(*)::int AS problems, string_agg(message, '، ') AS message FROM (
+    SELECT CASE
+      WHEN o."receiptId" IS NOT NULL OR o.status = 'received' THEN 'برای این سفارش رسید صادر شده است'
+      WHEN o.status <> 'approved' THEN 'سفارش هنوز تأیید نشده است'
+    END AS message
+    FROM ${ORDERS} o WHERE o.id = :id
+  ) problems WHERE message IS NOT NULL`;
+  const LINK = `UPDATE ${ORDERS} SET status = 'received', "receiptId" = :receipt, "updatedAt" = now()
+    WHERE id = :id AND status = 'approved' AND "receiptId" IS NULL RETURNING id`;
+  const workflow = await call('workflows:create', {
+    title: 'صدور رسید انبار',
+    description: 'وقتی «صدور رسید انبار» روی سفارش تأییدشده زده شود، یک رسید پیش‌نویس با انبار و ردیف‌های سفارش در «رسید و حواله» می‌سازد و سفارش را به آن پیوند می‌دهد و وضعیتش را «رسید صادر شد» می‌کند. سفارش تأییدنشده یا سفارشی که رسیدش صادر شده، با پیام فارسی رد می‌شود.',
+    type: 'custom-action',
+    sync: true,
+    enabled: true,
+    config: { type: 1, collection: ORDERS, appends: ['lines'] },
+  });
+  const node = (values) => call(`workflows/${workflow.id}/nodes:create`, values);
+  const id = { name: 'id', value: '{{$context.data.id}}' };
+  const check = await node({ type: 'sql', title: 'بررسی سفارش', config: { dataSource: 'main', sql: CHECK, variables: [id] } });
+  const problems = await node({
+    type: 'condition',
+    title: 'ایراد دارد؟',
+    upstreamId: check.id,
+    config: { rejectOnFalse: false, engine: 'basic', calculation: { group: { type: 'and', calculations: [{ calculator: 'gt', operands: [`{{$jobsMapByNodeKey.${check.key}.0.problems}}`, 0] }] } } },
+  });
+  const message = await node({ type: 'response-message', title: 'پیام ایراد', upstreamId: problems.id, branchIndex: 1, config: { message: `{{$jobsMapByNodeKey.${check.key}.0.message}}` } });
+  await node({ type: 'end', title: 'رد صدور', upstreamId: message.id, config: { endStatus: -1 } });
+  const receipt = await node({
+    type: 'create',
+    title: 'ساخت رسید',
+    upstreamId: problems.id,
+    branchIndex: 0,
+    config: {
+      collection: 'inventory_documents',
+      params: {
+        values: {
+          kind: 'receipt',
+          date: '{{$system.now}}',
+          warehouseId: '{{$context.data.warehouseId}}',
+          status: 'draft',
+          description: 'از سفارش خرید {{$context.data.number}}',
+        },
+      },
+    },
+  });
+  const loop = await node({ type: 'loop', title: 'هر ردیف سفارش', upstreamId: receipt.id, config: { target: '{{$context.data.lines}}' } });
+  await node({
+    type: 'create',
+    title: 'ساخت ردیف رسید',
+    upstreamId: loop.id,
+    branchIndex: 0,
+    config: {
+      collection: 'inventory_document_lines',
+      params: {
+        values: {
+          documentId: `{{$jobsMapByNodeKey.${receipt.key}.id}}`,
+          itemId: `{{$scopes.${loop.key}.item.itemId}}`,
+          quantity: `{{$scopes.${loop.key}.item.quantity}}`,
+        },
+      },
+    },
+  });
+  await node({
+    type: 'sql',
+    title: 'پیوند سفارش به رسید',
+    upstreamId: loop.id,
+    config: { dataSource: 'main', sql: LINK, variables: [id, { name: 'receipt', value: `{{$jobsMapByNodeKey.${receipt.key}.id}}` }] },
+  });
+  return workflow;
+}
+
+// The page builder makes the «صدور رسید انبار» button but does not take the workflow it runs, so the workflow is set on
+// the button as the button's settings in the UI would.
+async function bindReceiptButton(file, workflowKey) {
+  let bound = 0;
+  const walk = async (model) => {
+    for (const [subKey, value] of Object.entries(model.subModels || {})) {
+      const children = Array.isArray(value) ? value : [value];
+      for (const child of children) {
+        if (!child || typeof child !== 'object') continue;
+        const title = child.stepParams && child.stepParams.buttonSettings && child.stepParams.buttonSettings.general && child.stepParams.buttonSettings.general.title;
+        if (child.use === 'RecordTriggerWorkflowActionModel' && title === RECEIPT_BUTTON) {
+          const stepParams = { ...child.stepParams, customRecordTriggerWorkflowsActionSettings: { triggerWorkflows: { group: [{ workflowKey }] } } };
+          await call('flowModels:save', { ...child, stepParams, parentId: model.uid, subKey, subType: Array.isArray(value) ? 'array' : 'object' });
+          bound += 1;
+        }
+        await walk(child);
+      }
+    }
+  };
+  for (const model of file.flowModels) await walk(model);
+  if (!bound) throw new Error('the receipt button was not found');
+  return bound;
+}
+
 (async () => {
   token = (await call('auth:signIn', { account, password })).token;
 
@@ -175,7 +288,8 @@ async function setFieldModels(file) {
     await call('collections:create', { ...collection, template: 'general', autoGenId: false, logging: true, fields: [...SYSTEM_FIELDS, ...fields] });
   }
 
-  await call('flowSurfaces:applyBlueprint', ORDERS_PAGE);
+  const receiptWorkflow = await createReceiptWorkflow();
+  await call('flowSurfaces:applyBlueprint', ordersPage());
   await call('flowSurfaces:applyBlueprint', APPROVAL_PAGE);
   const [group] = await list('desktopRoutes', { title: GROUP.title, parentId: { $empty: true } });
   if (!group) throw new Error('the menu group was not created');
@@ -247,7 +361,10 @@ async function setFieldModels(file) {
     const message = await node({ type: 'response-message', title, upstreamId: upstream.id, branchIndex, config: { message: text } });
     await node({ type: 'end', title: 'رد تأیید', upstreamId: message.id, config: { endStatus: -1 } });
   };
-  const approving = await when('تأیید سفارش است؟', null, null, 'equal', ['{{$context.params.values.status}}', 'approved']);
+  // «رسید صادر شد» is written by «صدور رسید انبار» only.
+  const receiving = await when('وضعیت رسید است؟', null, null, 'equal', ['{{$context.params.values.status}}', 'received']);
+  await refuse('پیام وضعیت رسید', receiving, 1, 'این وضعیت را فقط «صدور رسید انبار» می‌نویسد');
+  const approving = await when('تأیید سفارش است؟', receiving, 0, 'equal', ['{{$context.params.values.status}}', 'approved']);
   // A request for one order names it; a bulk update does not.
   const single = await when('یک سفارش است؟', approving, 1, 'gt', ['{{$context.params.filterByTk}}', 0]);
   await refuse('پیام چند سفارش', single, 0, 'سفارش‌ها را یکی‌یکی تأیید کنید');
@@ -279,7 +396,7 @@ async function setFieldModels(file) {
     scopeIds[scope.resourceName] = (await call('dataSourcesRolesResourcesScopes:create', { ...scope, dataSourceKey: 'main' })).id;
   }
   // The other modules' collections an order points at, read only.
-  const LOOKUPS = { parties_companies: 'name', inventory_items: 'name', inventory_warehouses: 'name' };
+  const LOOKUPS = { parties_companies: 'name', inventory_items: 'name', inventory_warehouses: 'name', inventory_documents: 'number' };
   const ROLES = [
     { role: 'manager', name: `${KEY}_manager`, title: 'مدیر خرید' },
     { role: 'buyer', name: `${KEY}_buyer`, title: 'کارشناس خرید' },
@@ -297,6 +414,8 @@ async function setFieldModels(file) {
           // The manager's update may also set the status: that is the approval.
           { name: 'update', fields: role === 'manager' && collection.name === ORDERS ? [...own, 'status'] : own, scopeId: scopeIds[collection.name] },
           { name: 'destroy', scopeId: scopeIds[collection.name] },
+          // «صدور رسید انبار»; its workflow checks the order.
+          ...(collection.name === ORDERS ? [{ name: 'trigger' }] : []),
         ],
       };
     });
@@ -322,11 +441,12 @@ async function setFieldModels(file) {
     title: 'سفارش خرید',
     version: VERSION,
     description:
-      'سفارش خرید از تأمین‌کننده‌های ماژول «اشخاص» برای کالا و انبار ماژول «انبار»، با ردیف‌هایی که قیمت واحدشان از قیمت خرید کالا می‌آید، جمع ریالی خودکار و تأیید «مدیر خرید» که سفارش را قفل می‌کند. نقش‌ها: «کارشناس خرید» و «مدیر خرید». به ماژول‌های «اشخاص» و «انبار» نیاز دارد.',
+      'سفارش خرید از تأمین‌کننده‌های ماژول «اشخاص» برای کالا و انبار ماژول «انبار»، با ردیف‌هایی که قیمت واحدشان از قیمت خرید کالا می‌آید، جمع ریالی خودکار و تأیید «مدیر خرید» که سفارش را قفل می‌کند. از سفارش تأییدشده با «صدور رسید انبار» رسید پیش‌نویس با همان ردیف‌ها در «رسید و حواله» ساخته می‌شود. نقش‌ها: «کارشناس خرید» و «مدیر خرید». به ماژول‌های «اشخاص» و «انبار» نیاز دارد.',
     groupSchemaUid: group.schemaUid,
   });
   const exported = JSON.parse(await call(`erpModules:export?filterByTk=${KEY}`, undefined, { text: true }));
   console.log(`set ${await setFieldModels(exported)} field components`);
+  console.log(`bound ${await bindReceiptButton(exported, receiptWorkflow.key)} receipt buttons`);
   const file = await call(`erpModules:export?filterByTk=${KEY}`, undefined, { text: true });
   fs.writeFileSync(output, file);
   console.log(`wrote ${output}`);
