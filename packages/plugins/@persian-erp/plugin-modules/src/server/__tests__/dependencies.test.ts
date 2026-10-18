@@ -70,6 +70,23 @@ async function buildShopModule(app: MockServer) {
       actions: [opens('shopopenord', 'shopordhost', 'shop_orders'), opens('shopopenitm', 'labitemhost', 'lab_items')],
     },
   });
+  // A shop workflow that writes an item of the lab module.
+  const workflow = await db.getRepository('workflows').create({
+    values: {
+      key: 'shopwrites1',
+      title: 'ثبت قلم',
+      type: 'collection',
+      config: { mode: 1, collection: 'shop_orders' },
+    },
+  });
+  await db.getRepository('flow_nodes').create({
+    values: {
+      key: 'shopnodecr1',
+      workflowId: workflow.get('id'),
+      type: 'create',
+      config: { collection: 'lab_items', params: { values: { title: 'از سفارش' } } },
+    },
+  });
   // The clerk reads the items of the lab module and nothing else of NocoBase.
   await db.getRepository('roles').create({ values: { name: 'shop_clerk', title: 'فروشنده' } });
   for (const [name, actions] of [
@@ -118,6 +135,12 @@ describe('module dependencies', () => {
     expect(shopFile.requires.collections).not.toContain('lab_items');
     // A collection of NocoBase itself is still listed by name, and a module without dependencies has no entry.
     expect(labFile.requires.collections).toContain('users');
+    expect(labFile.requires.modules).toBeUndefined();
+  });
+
+  it('keeps a workflow with the module whose collection triggers it, not the one whose collection it writes', () => {
+    expect(shopFile.workflows.map((w) => w.key)).toContain('shopwrites1');
+    expect(labFile.workflows.map((w) => w.key)).not.toContain('shopwrites1');
     expect(labFile.requires.modules).toBeUndefined();
   });
 
