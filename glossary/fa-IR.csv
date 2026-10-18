@@ -355,3 +355,5 @@ Upgrade,ارتقا,system,
 Deploy,استقرار,workflow,برای مدل فرایند BPMN؛ «انتشار» به کار نرود
 Business key,کلید کسب‌وکار,workflow,اصطلاح BPMN برای شناسه‌ی رکوردی که فرایند برای آن اجرا می‌شود
 Process instance,نمونه‌ی فرایند,workflow,اصطلاح BPMN
+Topic,موضوع,workflow,اصطلاح BPMN: موضوع کار سرویس بیرونی (external task)
+Service task,کار سرویس,workflow,اصطلاح BPMN

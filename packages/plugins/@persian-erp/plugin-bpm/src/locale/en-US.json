@@ -39,5 +39,13 @@
   "Variable name": "Variable name",
   "Delete": "Delete",
   "Add a variable": "Add a variable",
-  "Choose a process and a business key": "Choose a process and a business key"
+  "Choose a process and a business key": "Choose a process and a business key",
+  "Topic": "Topic",
+  "The topic of the external service task in the BPMN model (operaton:topic), such as place-order": "The topic of the external service task in the BPMN model (operaton:topic), such as place-order",
+  "BPMN service task": "BPMN service task",
+  "Runs when the BPMN engine reaches a service task of this topic. The task is completed when the workflow succeeds, and retried when it fails.": "Runs when the BPMN engine reaches a service task of this topic. The task is completed when the workflow succeeds, and retried when it fails.",
+  "Record ID": "Record ID",
+  "Collection": "Collection",
+  "Service task": "Service task",
+  "Task ID": "Task ID"
 }

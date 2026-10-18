@@ -1,6 +1,7 @@
 import { Plugin } from '@nocobase/client-v2';
 import React from 'react';
 import { BPM_SETTINGS_KEY, BpmSettings } from '../client/BpmSettings';
+import ServiceTaskTrigger, { SERVICE_TASK_TRIGGER } from './ServiceTaskTrigger';
 import StartProcessInstruction, { START_INSTRUCTION } from './StartProcessInstruction';
 
 export class PluginBpmClientV2 extends Plugin {
@@ -20,9 +21,13 @@ export class PluginBpmClientV2 extends Plugin {
     });
 
     const workflow = (this.app.pm.get('workflow') || this.app.pm.get('@nocobase/plugin-workflow')) as
-      | { registerInstruction?: (type: string, instruction: unknown) => void }
+      | {
+          registerInstruction?: (type: string, instruction: unknown) => void;
+          registerTrigger?: (type: string, trigger: unknown) => void;
+        }
       | undefined;
     workflow?.registerInstruction?.(START_INSTRUCTION, StartProcessInstruction);
+    workflow?.registerTrigger?.(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
   }
 }
 
