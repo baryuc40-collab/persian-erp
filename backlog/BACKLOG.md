@@ -20,5 +20,5 @@
 | [EPIC-012](epics/EPIC-012-persian-digits-and-text/epic.md) | ارقام فارسی، یکسان‌سازی ی و ک، و پول ریال و تومان | 3 | in-progress |
 | [EPIC-013](epics/EPIC-013-iranian-fields/epic.md) | فیلدهای ایرانی (کد ملی، شبا، کد پستی، تلفن همراه، تقسیمات کشوری) | 3 | in-progress |
 | [EPIC-014](epics/EPIC-014-distribution/epic.md) | ایمیج Docker فارسی، راهنمای نصب و فرایند ارتقا | 4 | draft |
-| [EPIC-015](epics/EPIC-015-erp-modules/epic.md) | قالب ماژول ERP: خروجی و ورودی ماژول و استاندارد کیفیت | 5 | draft |
+| [EPIC-015](epics/EPIC-015-erp-modules/epic.md) | قالب ماژول ERP: خروجی و ورودی ماژول و استاندارد کیفیت | 5 | in-progress |
 | EPIC-016 | اتصال موتور BPMN (اثبات مفهوم) | 6 | draft |
