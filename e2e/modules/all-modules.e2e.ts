@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import { apiAs, enablePersian, openAs } from '../helpers';
 import { removeImportedModule } from './remove-module';
 
-// Every module file in modules/ (STORY-071): it is imported on the install, each page of its menu opens without a
+// Every module file in modules/ (STORY-071): it is imported on the install, after the modules it needs, each page of its menu opens without a
 // console error or a failed API request, and everything it made is removed again.
 
 const MODULES = path.resolve(__dirname, '../../modules');
@@ -24,8 +24,13 @@ const pagesOf = (route): { title: string; schemaUid: string }[] => [
   ...(route.children || []).flatMap(pagesOf),
 ];
 
-for (const file of files) {
-  const module = JSON.parse(fs.readFileSync(file, 'utf8'));
+const modules = files.map((file) => JSON.parse(fs.readFileSync(file, 'utf8')));
+const byKey = new Map(modules.map((module) => [module.module.key, module]));
+
+for (const [index, file] of files.entries()) {
+  const module = modules[index];
+  // The modules it needs (STORY-087) are imported first and removed after it, unless the install already had them.
+  const needed: string[] = [];
 
   test.describe(path.relative(MODULES, file), () => {
     test.describe.configure({ mode: 'serial' });
@@ -39,6 +44,12 @@ for (const file of files) {
     test.beforeAll(async ({ playwright, baseURL }) => {
       const api = await apiAs(playwright, baseURL!);
       await enablePersian(api);
+      for (const key of Object.keys(module.requires?.modules || {})) {
+        const query = encodeURIComponent(JSON.stringify({ key }));
+        if ((await api.call(`erpModules:list?filter=${query}`)).length) continue;
+        await api.call('erpModules:import', byKey.get(key));
+        needed.push(key);
+      }
       await api.call('erpModules:import', module);
       await api.request.dispose();
     });
@@ -46,6 +57,7 @@ for (const file of files) {
     test.afterAll(async ({ playwright, baseURL }) => {
       const api = await apiAs(playwright, baseURL!);
       await removeImportedModule(api, module);
+      for (const key of needed.reverse()) await removeImportedModule(api, byKey.get(key));
       await api.request.dispose();
     });
 
