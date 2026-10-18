@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import { apiAs, enablePersian, openAs } from '../helpers';
 import { removeImportedModule } from './remove-module';
 
@@ -22,10 +22,16 @@ test.afterAll(async ({ playwright, baseURL }) => {
   await api.request.dispose();
 });
 
+// Found by its title: other modules name «اشخاص» in their descriptions.
+const partiesItem = (page: Page) =>
+  page
+    .locator('.ant-card', { has: page.getByText('کاتالوگ', { exact: true }) })
+    .locator('.ant-list-item')
+    .filter({ has: page.locator('.ant-list-item-meta-title').getByText('اشخاص', { exact: true }) });
+
 test('a module of the catalog is installed with one button after a preview', async ({ page }) => {
   await openAs(page, 'fa-IR', '/admin/settings/erp-modules');
-  const catalog = page.locator('.ant-card', { has: page.getByText('کاتالوگ', { exact: true }) });
-  const item = catalog.locator('.ant-list-item', { hasText: 'اشخاص' });
+  const item = partiesItem(page);
   await expect(item).toContainText('اشخاص حقیقی و حقوقی');
   await item.getByRole('button', { name: 'نصب' }).click();
 
@@ -61,8 +67,7 @@ test('the module is deleted from the settings page after a preview and its key, 
   await page.getByRole('button', { name: 'بارگذاری دوباره' }).click();
 
   await expect(page.getByRole('row', { name: /parties/ })).toHaveCount(0);
-  const catalog = page.locator('.ant-card', { has: page.getByText('کاتالوگ', { exact: true }) });
-  await expect(catalog.locator('.ant-list-item', { hasText: 'اشخاص' }).getByRole('button', { name: 'نصب' })).toBeEnabled();
+  await expect(partiesItem(page).getByRole('button', { name: 'نصب' })).toBeEnabled();
   await expect(page.locator('.ant-layout-header').getByText('اشخاص', { exact: true })).toHaveCount(0);
 
   // Nothing is left that would stop the same module from installing again.
