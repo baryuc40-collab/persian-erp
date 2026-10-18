@@ -29,7 +29,46 @@ async function buildShopModule(app: MockServer) {
     context: {},
   });
   await db.getRepository('desktopRoutes').create({
-    values: { type: 'group', title: 'فروشگاه', schemaUid: 'shopgroup01' },
+    values: {
+      type: 'group',
+      title: 'فروشگاه',
+      schemaUid: 'shopgroup01',
+      children: [
+        {
+          type: 'flowPage',
+          title: 'سفارش‌ها',
+          schemaUid: 'shopflowpg1',
+          menuSchemaUid: 'shopflowmn1',
+          children: [{ type: 'tabs', schemaUid: 'shopflowtb1', tabSchemaName: 'tab1', hidden: true }],
+        },
+      ],
+    },
+  });
+  // The orders page opens an order in a popup of its own, and the item of an order in the item popup of the lab module.
+  const models = db.getRepository('flowModels') as any;
+  const host = (uid: string, collectionName: string) =>
+    models.insertModel({
+      uid,
+      use: 'ViewActionModel',
+      stepParams: { popupSettings: { openView: { dataSourceKey: 'main', collectionName } } },
+      subModels: { page: { uid: `${uid}pg`, use: 'ChildPageModel' } },
+    });
+  await host('labitemhost', 'lab_items');
+  await host('shopordhost', 'shop_orders');
+  const opens = (uid: string, target: string, collectionName: string) => ({
+    uid,
+    use: 'ViewActionModel',
+    stepParams: { popupSettings: { openView: { uid: target, dataSourceKey: 'main', collectionName } } },
+  });
+  await models.upsertModel({
+    uid: 'shoproot001',
+    parentId: 'shopflowpg1',
+    subKey: 'page',
+    subType: 'object',
+    use: 'RootPageModel',
+    subModels: {
+      actions: [opens('shopopenord', 'shopordhost', 'shop_orders'), opens('shopopenitm', 'labitemhost', 'lab_items')],
+    },
   });
   // The clerk reads the items of the lab module and nothing else of NocoBase.
   await db.getRepository('roles').create({ values: { name: 'shop_clerk', title: 'فروشنده' } });
@@ -80,6 +119,12 @@ describe('module dependencies', () => {
     // A collection of NocoBase itself is still listed by name, and a module without dependencies has no entry.
     expect(labFile.requires.collections).toContain('users');
     expect(labFile.requires.modules).toBeUndefined();
+  });
+
+  it("leaves out the popup of the needed module's records, and keeps its own", () => {
+    const uids = shopFile.flowModels.map((model) => model.uid);
+    expect(uids).toContain('shopordhost');
+    expect(uids).not.toContain('labitemhost');
   });
 
   it("keeps a role's permissions on the needed module's collections, not on NocoBase's own", () => {

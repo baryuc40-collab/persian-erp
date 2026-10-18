@@ -95,7 +95,7 @@ EPIC-015 می‌خواهد ماژولی که در رابط بدون‌کد سا�
 - **`collections`:** هر جدول با فیلدهایش، بدون `key`. `reverseKey` به نام فیلد معکوس تبدیل می‌شود.
 - **`routes`:** درخت گروه با `children` تودرتو، بدون `id` و `parentId`. `schemaUid`، `menuSchemaUid` و `tabSchemaName` می‌مانند. `uiLayouts` فهرست uid چیدمان‌های هر مسیر است؛ ورود هر چیدمانی را که در مقصد نیست گزارش می‌کند. هر مسیر یک `ref` دارد: همان `schemaUid`، و برای پیوندی که `schemaUid` ندارد، `ref` والد و جایگاهش (مثل `<ref والد>/3`). نقش‌ها با همین `ref` به مسیر اشاره می‌کنند.
 - **`uiSchemas`:** هر ریشه یک درخت کامل از `getJsonSchema(uid, { includeAsyncNode: true })`.
-- **`flowModels`:** هر ریشه یک درخت کامل از `findModelById(uid, { includeAsyncNode: true })`، همراه با `parentId` و `subKey` ریشه. ریشه‌ها `RootPageModel` زیر مسیر، `BlockGridModel` زیر برگه و میزبان‌های پنجره‌اند.
+- **`flowModels`:** هر ریشه یک درخت کامل از `findModelById(uid, { includeAsyncNode: true })`، همراه با `parentId` و `subKey` ریشه. ریشه‌ها `RootPageModel` زیر مسیر، `BlockGridModel` زیر برگه و میزبان‌های پنجره‌اند. پنجره‌ای که رکورد ماژول لازم دیگری را باز می‌کند، مثل تأمین‌کننده‌ای که از سفارش خرید باز می‌شود، مال همان ماژول است و در فایل نمی‌آید.
 - **`workflows`:** بدون `id`. `key` می‌ماند. گره‌ها با `key` به هم اشاره می‌کنند: `upstream`، `downstream` و `branchIndex`. `enabled` جدا ذخیره می‌شود و پس از ورود اعمال می‌شود.
 - **`roles`:** هر نقش با `resources` و `actions`. هر عمل با `key` به محدوده اشاره می‌کند. هر نقش فهرست `ref` مسیرهای ماژول را دارد. `resources` مجوزهای نقش روی جدول‌های ماژول را دارد، و روی جدول‌های ماژول‌هایی که در `requires.modules` آمده‌اند، مثل دیدن کالاهای «انبار». مجوز روی جدول‌های خود NocoBase در فایل نمی‌آید.
 - **`data`:** داده‌ی نمونه‌ی اختیاری، به شکل `{ "<جدول>": [رکوردها] }`.
