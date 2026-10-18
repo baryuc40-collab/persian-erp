@@ -19,6 +19,7 @@ ERP بدون‌کد فارسی بر پایه‌ی NocoBase. گام فعلی: ف�
 - build پلاگین: `yarn build @persian-erp/plugin-fa --no-dts`
 - آزمون: `yarn test --server packages/plugins/@persian-erp --run` و `yarn test:tools`
 - بررسی‌های سبک پیش از PR: `yarn check:version`، `yarn check:glossary`، `yarn check:i18n`
+- بررسی فایل ماژول: `yarn check:module <key>.erp-module.json` (قاعده‌ها در `docs/modules/standard.md`)
 
 ## مدل‌ها
 راهنمای انتخاب مدل در `docs/plan/02-ai-models.md`.
