@@ -1,0 +1,91 @@
+name: Release
+
+# Pushing a tag v<NOCOBASE_VERSION>-fa.<n> publishes the image to ghcr.io (as <version> and latest) and a GitHub
+# Release with the plugin tarball and Persian release notes (STORY-062). Run it by hand to try a tag without
+# publishing anything: the image, tarball and notes are kept as workflow artifacts instead.
+on:
+  push:
+    tags: ['v*-fa.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build, e.g. v2.2.24-fa.1 (it need not exist yet; HEAD of the chosen branch is built)'
+        required: true
+      dry_run:
+        description: 'Build and check only; publish nothing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  PUBLISH: ${{ github.event_name == 'push' || github.event.inputs.dry_run == 'false' }}
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check the tag against NOCOBASE_VERSION
+        run: |
+          version="$(node tools/release check "$TAG")"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "RELEASE=${version##*-fa.}" >> "$GITHUB_ENV"
+      - name: Tag HEAD for the notes (dry run of a new tag)
+        if: github.event_name == 'workflow_dispatch'
+        run: git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || git tag "$TAG"
+      - name: Release notes
+        run: node tools/release notes "$TAG" > release-notes.md && cat release-notes.md
+      - name: Install
+        run: |
+          cp .env.example .env
+          yarn install --ignore-engines --network-timeout 600000
+      # The plugin carries the release version, so the plugin manager shows which release is installed.
+      - name: Set the plugin version
+        working-directory: packages/plugins/@persian-erp/plugin-fa
+        run: node -e "const p = require('./package.json'); p.version = process.env.VERSION; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\\n')"
+      - name: Build image and plugin tarball
+        run: |
+          docker/build.sh "$IMAGE:$VERSION"
+          docker tag "$IMAGE:$VERSION" "$IMAGE:latest"
+          cp "storage/tar/@persian-erp/plugin-fa-$VERSION.tgz" .
+      - name: Image labels
+        run: |
+          test "$(docker image inspect "$IMAGE:$VERSION" --format '{{ index .Config.Labels "org.opencontainers.image.version" }}')" = "$VERSION"
+          test "$(docker image inspect "$IMAGE:$VERSION" --format '{{ index .Config.Labels "com.nocobase.version" }}')" = "$(cat NOCOBASE_VERSION)"
+      - name: Publish image
+        if: env.PUBLISH == 'true'
+        run: |
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "$IMAGE:$VERSION"
+          docker push "$IMAGE:latest"
+      - name: Publish GitHub Release
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" "plugin-fa-$VERSION.tgz" --title "$VERSION" --notes-file release-notes.md --verify-tag
+      - name: Keep the build (dry run)
+        if: env.PUBLISH != 'true'
+        run: docker save "$IMAGE:$VERSION" | gzip > image.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: env.PUBLISH != 'true'
+        with:
+          name: release-${{ env.VERSION }}
+          path: |
+            release-notes.md
+            plugin-fa-${{ env.VERSION }}.tgz
+            image.tar.gz
+          retention-days: 7
