@@ -25,5 +25,19 @@
   "The BPMN engine answered {{status}}: {{message}}": "موتور BPMN با خطای {{status}} پاسخ داد: {{message}}",
   "The engine address must start with http:// or https://": "نشانی موتور باید با http:// یا https:// شروع شود",
   "This is not a BPMN file": "این فایل BPMN نیست",
-  "The BPMN file is too large": "فایل BPMN بیش از حد بزرگ است"
+  "The BPMN file is too large": "فایل BPMN بیش از حد بزرگ است",
+  "Start a BPMN process": "شروع فرایند BPMN",
+  "Starts a process of the BPMN engine for a business key, or finds the one already running for it.": "فرایندی از موتور BPMN را برای یک کلید کسب‌وکار شروع می‌کند، یا نمونه‌ای را که برای آن در حال اجراست پیدا می‌کند.",
+  "Process instance ID": "شناسه‌ی نمونه‌ی فرایند",
+  "Business key": "کلید کسب‌وکار",
+  "Started now": "اکنون شروع شد",
+  "Process": "فرایند",
+  "Choose a deployed process": "یکی از فرایندهای مستقر را انتخاب کنید",
+  "Usually the collection and the record ID, such as purchase_requests:{{id}}": "معمولاً نام مجموعه و شناسه‌ی رکورد، مثل purchase_requests:{{id}}",
+  "Process variables": "متغیرهای فرایند",
+  "Only IDs and decisions; the record itself stays in NocoBase.": "فقط شناسه‌ها و تصمیم‌ها؛ خود رکورد در NocoBase می‌ماند.",
+  "Variable name": "نام متغیر",
+  "Delete": "حذف",
+  "Add a variable": "افزودن متغیر",
+  "Choose a process and a business key": "فرایند و کلید کسب‌وکار را مشخص کنید"
 }

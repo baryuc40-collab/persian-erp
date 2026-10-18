@@ -3,6 +3,7 @@ import { Plugin } from '@nocobase/server';
 import bpmSettingsCollection from './bpm-settings-collection';
 import { BpmEngine, BpmEngineError } from './engine';
 import { OperatonEngine, OperatonSettings } from './operaton';
+import { START_INSTRUCTION, StartProcessInstruction } from './start-instruction';
 
 export const BPM_RESOURCE = 'bpm';
 export const BPM_SNIPPET = 'pm.bpm';
@@ -20,6 +21,12 @@ export class PluginBpmServer extends Plugin {
   }
 
   async load() {
+    // The workflow node of STORY-080, when the workflow plugin is on.
+    const workflow = (this.app.pm.get('workflow') as unknown) as
+      | { registerInstruction(type: string, instruction: unknown): void }
+      | undefined;
+    workflow?.registerInstruction(START_INSTRUCTION, new StartProcessInstruction(workflow as never, this));
+
     // Not a collection, so the resource is defined here with its actions.
     this.app.resourceManager.define({
       name: BPM_RESOURCE,
@@ -61,6 +68,13 @@ export class PluginBpmServer extends Plugin {
     const settings = await this.settings();
     if (!settings.url) throw new BpmEngineError('The BPMN engine is not set up');
     return this.createEngine(settings);
+  }
+
+  /** A message in the language of the install (system settings), for results that are stored, not answered. */
+  async translate(message: string, values: Record<string, unknown> = {}) {
+    const settings = await this.db.getRepository('systemSettings')?.findOne();
+    const lng = (settings?.get('appLang') as string) || (settings?.get('enabledLanguages') as string[])?.[0] || 'en-US';
+    return this.app.i18n.t(message, { ns: NAMESPACE, lng, ...values });
   }
 
   private tr(ctx: Context, message: string, values: Record<string, unknown> = {}) {

@@ -353,3 +353,5 @@ Endpoint,Endpoint,system,ترجمه نشود؛ همان برچسبی که در �
 Storage type,نوع فضای ذخیره‌سازی,system,هم‌سو با Storage = فضای ذخیره‌سازی؛ «نوع ذخیره‌سازی» به کار نرود
 Upgrade,ارتقا,system,
 Deploy,استقرار,workflow,برای مدل فرایند BPMN؛ «انتشار» به کار نرود
+Business key,کلید کسب‌وکار,workflow,اصطلاح BPMN برای شناسه‌ی رکوردی که فرایند برای آن اجرا می‌شود
+Process instance,نمونه‌ی فرایند,workflow,اصطلاح BPMN
