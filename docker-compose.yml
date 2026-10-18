@@ -27,6 +27,10 @@ services:
       # داخل شبکه‌ی Docker نام سرویس جای localhost را می‌گیرد
       DB_HOST: postgres
       DB_PORT: 5432
+      # پلاگین plugin-bpm تا وقتی اتصال در تنظیمات ذخیره نشده، این‌ها را به کار می‌برد.
+      BPM_ENGINE_URL: ${BPM_ENGINE_URL:-http://operaton:8080}
+      BPM_ENGINE_USERNAME: ${BPM_ENGINE_USERNAME:-nocobase}
+      BPM_ENGINE_PASSWORD: ${BPM_ENGINE_PASSWORD:-change-me}
     # بار اول نصب می‌کند، بارهای بعد فقط ارتقای پایگاه داده در صورت نیاز
     command: sh -c "yarn install --ignore-engines && yarn check:version && yarn dev --quickstart"
     ports:
@@ -38,6 +42,38 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  # موتور BPMN (EPIC-016، تصمیم ۰۰۰۷). اختیاری: docker compose --profile bpm up -d
+  # در schema جدای operaton همان PostgreSQL؛ درگاهش بیرون نمی‌آید و فقط app به آن وصل می‌شود.
+  operaton-schema:
+    image: postgres:16
+    profiles: [bpm]
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-nocobase}
+    command: psql -h postgres -U ${DB_USER:-nocobase} -d ${DB_DATABASE:-nocobase} -c 'create schema if not exists operaton'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  operaton:
+    image: operaton/operaton:2.1.5
+    profiles: [bpm]
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_DATABASE:-nocobase}?currentSchema=operaton
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-nocobase}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-nocobase}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      OPERATON_BPM_RUN_AUTH_ENABLED: 'true'
+      OPERATON_BPM_RUN_EXAMPLE_ENABLED: 'false'
+      OPERATON_BPM_ADMIN_USER_ID: ${BPM_ENGINE_USERNAME:-nocobase}
+      OPERATON_BPM_ADMIN_USER_PASSWORD: ${BPM_ENGINE_PASSWORD:-change-me}
+      # از production.yml خود موتور (بازبینی STORY-083): authorization روشن، تنها کاربر مدیر سرویس همه را می‌بیند؛
+      # بررسی نوع در deserialization متغیرها؛ بدون CORS باز و WADL.
+      SPRING_APPLICATION_JSON: '{"operaton":{"bpm":{"authorization":{"enabled":true},"generic-properties":{"properties":{"deserialization-type-validation-enabled":true}},"run":{"cors":{"enabled":false},"rest":{"disable-wadl":true}}}}}'
+    depends_on:
+      operaton-schema:
+        condition: service_completed_successfully
 
 volumes:
   postgres-data:

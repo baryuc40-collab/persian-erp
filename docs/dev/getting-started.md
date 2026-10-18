@@ -47,6 +47,7 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 | ترجمه‌ی کلیدهای جاافتاده‌ی یک پکیج | `yarn i18n:translate <namespace>` (جزئیات پایین) |
 | آزمون ابزارها | `yarn test:tools` |
 | ارتقا به وصله‌ی تازه‌ی NocoBase | `yarn upgrade:nocobase <نسخه>` ([فهرست کار](upgrade.md)) |
+| انتشار نسخه | برچسب `v<نسخه>-fa.<شماره>` ([راهنمای انتشار](release.md)) |
 
 ### آزمون تصویری
 
@@ -61,7 +62,7 @@ yarn dev --quickstart           # بار اول نصب، بعد از آن فقط
 
 ### زبان فارسی
 
-plugin-fa با `APPEND_PRESET_BUILT_IN_PLUGINS` در `.env` هنگام نصب فعال می‌شود. برای اینکه فارسی از همان نصب اول زبان پیش‌فرض باشد، پیش از نصب در `.env` بگذارید `INIT_APP_LANG=fa-IR`.
+plugin-fa و plugin-modules با `APPEND_PRESET_BUILT_IN_PLUGINS` در `.env` هنگام نصب فعال می‌شوند. برای اینکه فارسی از همان نصب اول زبان پیش‌فرض باشد، پیش از نصب در `.env` بگذارید `INIT_APP_LANG=fa-IR`.
 
 روی برنامه‌ای که پیش‌تر نصب شده:
 
@@ -94,6 +95,21 @@ yarn i18n:translate client --export todo.json   # کلیدهای ترجمه‌ن
 # مقدارهای todo.json را فارسی کنید
 yarn i18n:translate client --import todo.json   # ادغام، با همان بررسی‌ها
 ```
+
+## موتور BPMN (اختیاری)
+
+پلاگین `@persian-erp/plugin-bpm` به موتور Operaton وصل می‌شود ([تصمیم ۰۰۰۷](../decisions/0007-bpmn-engine.md)). موتور پشت profile `bpm` است:
+
+```bash
+docker compose --profile bpm up -d
+```
+
+- موتور در schema جدای `operaton` همان PostgreSQL نصب می‌شود و درگاهش بیرون نمی‌آید.
+- کاربر سرویس از `BPM_ENGINE_USERNAME` و `BPM_ENGINE_PASSWORD` در `.env` می‌آید. پیش از استفاده‌ی واقعی رمز `change-me` را عوض کنید.
+- پلاگین را در «مدیر پلاگین» فعال کنید. «تنظیمات ← موتور BPMN» اتصال را نشان می‌دهد، «آزمون اتصال» دارد و فایل `.bpmn` را مستقر می‌کند.
+- Worker کارهای سرویس در هر نمونه‌ی برنامه اجرا می‌شود و کار هر موضوع را به گردش‌کار با رویداد «کار سرویس BPMN» می‌دهد. `BPM_WORKER=off` آن را خاموش می‌کند و `BPM_WORKER_INTERVAL` فاصله‌ی پرسش از موتور را به میلی‌ثانیه تعیین می‌کند (پیش‌فرض ۲۰۰۰).
+- کارهای انسانی فرایند در بلوک «صندوق کار» صفحه‌ی مدرن دیده و کامل می‌شوند (افزودن بلوک ← بلوک‌های دیگر ← صندوق کار). candidate group کار باید نام فنی نقش NocoBase باشد و فرم کار با `operaton:formField` در مدل تعریف می‌شود. آزمون e2e آن (`e2e/bpm/`) فقط با `BPM_E2E=1` و موتور بالا اجرا می‌شود.
+- آزمون‌های `OperatonEngine` فقط با `OPERATON_URL` اجرا می‌شوند. دستور اجرای یک موتور آزمایشی در بالای `plugin-bpm/src/server/__tests__/operaton.test.ts` آمده است.
 
 ## پلاگین جدید
 

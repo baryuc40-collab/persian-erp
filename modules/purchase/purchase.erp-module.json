@@ -1,0 +1,3834 @@
+{
+  "collections": [
+    {
+      "autoGenId": false,
+      "description": null,
+      "fields": [
+        {
+          "description": null,
+          "interface": "currencyIRR",
+          "name": "amount",
+          "type": "bigInt",
+          "uiSchema": {
+            "title": "مبلغ",
+            "type": "number",
+            "x-component": "IranianCurrency",
+            "x-component-props": {
+              "unit": "toman"
+            }
+          }
+        },
+        {
+          "description": null,
+          "field": "createdAt",
+          "interface": "createdAt",
+          "name": "createdAt",
+          "type": "date",
+          "uiSchema": {
+            "title": "{{t(\"Created at\")}}",
+            "type": "datetime",
+            "x-component": "DatePicker",
+            "x-component-props": {},
+            "x-read-pretty": true
+          }
+        },
+        {
+          "description": null,
+          "foreignKey": "createdById",
+          "interface": "createdBy",
+          "name": "createdBy",
+          "target": "users",
+          "targetKey": "id",
+          "type": "belongsTo",
+          "uiSchema": {
+            "title": "{{t(\"Created by\")}}",
+            "type": "object",
+            "x-component": "AssociationField",
+            "x-component-props": {
+              "fieldNames": {
+                "label": "nickname",
+                "value": "id"
+              }
+            },
+            "x-read-pretty": true
+          }
+        },
+        {
+          "description": null,
+          "interface": "textarea",
+          "name": "description",
+          "type": "text",
+          "uiSchema": {
+            "title": "توضیح",
+            "type": "string",
+            "x-component": "Input.TextArea"
+          }
+        },
+        {
+          "allowNull": false,
+          "autoIncrement": false,
+          "description": null,
+          "interface": "snowflakeId",
+          "name": "id",
+          "primaryKey": true,
+          "type": "snowflakeId",
+          "uiSchema": {
+            "title": "{{t(\"ID\")}}",
+            "type": "number",
+            "x-component": "InputNumber",
+            "x-component-props": {
+              "separator": "0.00",
+              "step": "1",
+              "stringMode": true
+            },
+            "x-validator": "integer"
+          }
+        },
+        {
+          "defaultValue": "pending",
+          "description": null,
+          "interface": "select",
+          "name": "status",
+          "type": "string",
+          "uiSchema": {
+            "enum": [
+              {
+                "color": "orange",
+                "label": "در انتظار تأیید",
+                "value": "pending"
+              },
+              {
+                "color": "green",
+                "label": "سفارش داده شد",
+                "value": "ordered"
+              },
+              {
+                "color": "red",
+                "label": "ردشده",
+                "value": "rejected"
+              }
+            ],
+            "title": "وضعیت",
+            "type": "string",
+            "x-component": "Select"
+          }
+        },
+        {
+          "description": null,
+          "interface": "input",
+          "name": "title",
+          "type": "string",
+          "uiSchema": {
+            "required": true,
+            "title": "شرح کالا",
+            "type": "string",
+            "x-component": "Input"
+          }
+        },
+        {
+          "description": null,
+          "field": "updatedAt",
+          "interface": "updatedAt",
+          "name": "updatedAt",
+          "type": "date",
+          "uiSchema": {
+            "title": "{{t(\"Last updated at\")}}",
+            "type": "datetime",
+            "x-component": "DatePicker",
+            "x-component-props": {},
+            "x-read-pretty": true
+          }
+        },
+        {
+          "description": null,
+          "foreignKey": "updatedById",
+          "interface": "updatedBy",
+          "name": "updatedBy",
+          "target": "users",
+          "targetKey": "id",
+          "type": "belongsTo",
+          "uiSchema": {
+            "title": "{{t(\"Last updated by\")}}",
+            "type": "object",
+            "x-component": "AssociationField",
+            "x-component-props": {
+              "fieldNames": {
+                "label": "nickname",
+                "value": "id"
+              }
+            },
+            "x-read-pretty": true
+          }
+        }
+      ],
+      "filterTargetKey": "id",
+      "hidden": false,
+      "inherit": false,
+      "logging": true,
+      "name": "purchase_requests",
+      "template": "general",
+      "title": "درخواست خرید",
+      "titleField": "title",
+      "unavailableActions": []
+    }
+  ],
+  "flowModelTemplateUsages": [
+    {
+      "modelUid": "13t0vgv5mth",
+      "templateUid": "0islpnz5r81"
+    },
+    {
+      "modelUid": "5jnngmuvyac",
+      "templateUid": "8g94wzut8a0"
+    },
+    {
+      "modelUid": "fgnezzcicdi",
+      "templateUid": "8g94wzut8a0"
+    },
+    {
+      "modelUid": "94fdxzspg66",
+      "templateUid": "a6u5ei9e4ee"
+    },
+    {
+      "modelUid": "vvgjhc5el86",
+      "templateUid": "a6u5ei9e4ee"
+    },
+    {
+      "modelUid": "4rfyfa9mvmm",
+      "templateUid": "gv8gxk2m0b0"
+    },
+    {
+      "modelUid": "5nks9tbfrex",
+      "templateUid": "n2gd93ff22v"
+    }
+  ],
+  "flowModelTemplates": [
+    {
+      "associationName": null,
+      "collectionName": "purchase_requests",
+      "dataSourceKey": "main",
+      "description": "Reusable popup template. Scene: addNew; collection: purchase_requests; host: purchase_requests; trigger: action \"addNew\"; context: direct/current record; content: createForm.",
+      "filterByTk": null,
+      "name": "purchase_requests action \"addNew\" popup template",
+      "sourceId": null,
+      "targetUid": "s0crc8j9ec1",
+      "type": "popup",
+      "uid": "0islpnz5r81",
+      "useModel": "CreateFormModel"
+    },
+    {
+      "associationName": "purchase_requests.createdBy",
+      "collectionName": "users",
+      "dataSourceKey": "main",
+      "description": "Automatically generated popup template for relation field \"Created by\" in collection \"درخواست خرید\", targeting \"Users\" (Popup for Details). Scene: view; source collection: \"درخواست خرید\"; association field: \"Created by\"; target collection: \"Users\".",
+      "filterByTk": "{{ctx.view.inputArgs.filterByTk}}",
+      "name": "درخواست خرید -> Created by Popup for Details (Auto generated)",
+      "sourceId": null,
+      "targetUid": "mwhh20ls44e",
+      "type": "popup",
+      "uid": "8g94wzut8a0",
+      "useModel": "DetailsBlockModel"
+    },
+    {
+      "associationName": null,
+      "collectionName": "purchase_requests",
+      "dataSourceKey": "main",
+      "description": "Automatically generated popup template for collection \"درخواست خرید\" (Popup for Edit). Scene: edit; collection: \"درخواست خرید\".",
+      "filterByTk": "{{ctx.record.id}}",
+      "name": "درخواست خرید Popup for Edit (Auto generated)",
+      "sourceId": null,
+      "targetUid": "bfdp4fyifkh",
+      "type": "popup",
+      "uid": "a6u5ei9e4ee",
+      "useModel": "EditFormModel"
+    },
+    {
+      "associationName": null,
+      "collectionName": "purchase_requests",
+      "dataSourceKey": "main",
+      "description": "Reusable popup template. Scene: view; collection: purchase_requests; host: purchase_requests; trigger: record action \"view\"; context: direct/current record; content: details.",
+      "filterByTk": "{{ctx.record.id}}",
+      "name": "purchase_requests record action \"view\" popup template",
+      "sourceId": null,
+      "targetUid": "sjakitw63dj",
+      "type": "popup",
+      "uid": "gv8gxk2m0b0",
+      "useModel": "DetailsBlockModel"
+    },
+    {
+      "associationName": "purchase_requests.createdBy",
+      "collectionName": "users",
+      "dataSourceKey": "main",
+      "description": "Automatically generated popup template for collection \"Users\" (Popup for Edit). Scene: edit; collection: \"Users\".",
+      "filterByTk": "{{ctx.record.id}}",
+      "name": "Users Popup for Edit (Auto generated)",
+      "sourceId": "{{ctx.view.inputArgs.sourceId}}",
+      "targetUid": "4q9l6ejtwv2",
+      "type": "popup",
+      "uid": "n2gd93ff22v",
+      "useModel": "EditFormModel"
+    }
+  ],
+  "flowModels": [
+    {
+      "parentId": "jmdqftzc2xx",
+      "props": {
+        "rowOrder": [
+          "row1"
+        ],
+        "rows": {
+          "row1": [
+            [
+              "iu7z7bkc0lh"
+            ]
+          ]
+        },
+        "sizes": {
+          "row1": [
+            24
+          ]
+        }
+      },
+      "stepParams": {
+        "gridSettings": {
+          "grid": {
+            "rowOrder": [
+              "row1"
+            ],
+            "rows": {
+              "row1": [
+                [
+                  "iu7z7bkc0lh"
+                ]
+              ]
+            },
+            "sizes": {
+              "row1": [
+                24
+              ]
+            }
+          }
+        }
+      },
+      "subKey": "grid",
+      "subModels": {
+        "items": [
+          {
+            "decoratorProps": {},
+            "parentId": "2oqvzp4f6eu",
+            "props": {},
+            "sortIndex": 1,
+            "stepParams": {
+              "__flowSurfaceMeta": {
+                "declaredKey": "main.table"
+              },
+              "resourceSettings": {
+                "init": {
+                  "collectionName": "purchase_requests",
+                  "dataSourceKey": "main"
+                }
+              },
+              "tableSettings": {
+                "defaultSorting": {
+                  "sort": [
+                    {
+                      "direction": "desc",
+                      "field": "createdAt"
+                    }
+                  ]
+                }
+              }
+            },
+            "subKey": "items",
+            "subModels": {
+              "actions": [
+                {
+                  "decoratorProps": {},
+                  "flowRegistry": {},
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {
+                    "defaultFilterValue": {
+                      "items": [
+                        {
+                          "operator": "$includes",
+                          "path": "title"
+                        },
+                        {
+                          "operator": "$eq",
+                          "path": "status"
+                        },
+                        {
+                          "operator": "$includes",
+                          "path": "description"
+                        }
+                      ],
+                      "logic": "$and"
+                    },
+                    "filterValue": {
+                      "items": [
+                        {
+                          "operator": "$includes",
+                          "path": "title"
+                        },
+                        {
+                          "operator": "$eq",
+                          "path": "status"
+                        },
+                        {
+                          "operator": "$includes",
+                          "path": "description"
+                        }
+                      ],
+                      "logic": "$and"
+                    },
+                    "icon": "FilterOutlined",
+                    "title": "{{t(\"Filter\")}}"
+                  },
+                  "sortIndex": 1,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.filter_1"
+                    },
+                    "buttonSettings": {
+                      "general": {
+                        "icon": "FilterOutlined",
+                        "title": "{{t(\"Filter\")}}"
+                      }
+                    },
+                    "filterSettings": {
+                      "defaultFilter": {
+                        "defaultFilter": {
+                          "items": [
+                            {
+                              "operator": "$includes",
+                              "path": "title"
+                            },
+                            {
+                              "operator": "$eq",
+                              "path": "status"
+                            },
+                            {
+                              "operator": "$includes",
+                              "path": "description"
+                            }
+                          ],
+                          "logic": "$and"
+                        }
+                      }
+                    }
+                  },
+                  "subKey": "actions",
+                  "subType": "array",
+                  "uid": "lv6w7zuovkr",
+                  "use": "FilterActionModel"
+                },
+                {
+                  "decoratorProps": {},
+                  "flowRegistry": {},
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {
+                    "icon": "ReloadOutlined",
+                    "title": "{{t(\"Refresh\")}}"
+                  },
+                  "sortIndex": 2,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.refresh_2"
+                    },
+                    "buttonSettings": {
+                      "general": {
+                        "icon": "ReloadOutlined",
+                        "title": "{{t(\"Refresh\")}}"
+                      }
+                    }
+                  },
+                  "subKey": "actions",
+                  "subType": "array",
+                  "uid": "8ghw8a5cwyz",
+                  "use": "RefreshActionModel"
+                },
+                {
+                  "decoratorProps": {},
+                  "flowRegistry": {},
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {
+                    "icon": "DeleteOutlined",
+                    "iconOnly": true,
+                    "position": "right",
+                    "title": "",
+                    "tooltip": "{{t(\"Delete\")}}"
+                  },
+                  "sortIndex": 3,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.bulkDelete_default_4"
+                    },
+                    "buttonSettings": {
+                      "general": {
+                        "icon": "DeleteOutlined",
+                        "iconOnly": true,
+                        "title": "",
+                        "tooltip": "{{t(\"Delete\")}}"
+                      }
+                    },
+                    "deleteSettings": {
+                      "confirm": {
+                        "content": "{{t(\"Are you sure you want to delete it?\")}}",
+                        "enable": true,
+                        "title": "{{t(\"Delete record\")}}"
+                      }
+                    }
+                  },
+                  "subKey": "actions",
+                  "subType": "array",
+                  "uid": "4pqat6qfaob",
+                  "use": "BulkDeleteActionModel"
+                },
+                {
+                  "decoratorProps": {},
+                  "flowRegistry": {},
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {
+                    "icon": "PlusOutlined",
+                    "title": "{{t(\"Add new\")}}",
+                    "type": "primary"
+                  },
+                  "sortIndex": 4,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.addNew_3"
+                    },
+                    "buttonSettings": {
+                      "general": {
+                        "icon": "PlusOutlined",
+                        "title": "{{t(\"Add new\")}}",
+                        "type": "primary"
+                      }
+                    },
+                    "popupSettings": {
+                      "openView": {
+                        "collectionName": "purchase_requests",
+                        "dataSourceKey": "main",
+                        "mode": "drawer",
+                        "pageModelClass": "ChildPageModel",
+                        "popupTemplateHasFilterByTk": false,
+                        "popupTemplateHasSourceId": false,
+                        "popupTemplateMode": "reference",
+                        "popupTemplateUid": "0islpnz5r81",
+                        "size": "medium",
+                        "uid": "s0crc8j9ec1"
+                      }
+                    }
+                  },
+                  "subKey": "actions",
+                  "subType": "array",
+                  "uid": "13t0vgv5mth",
+                  "use": "AddNewActionModel"
+                }
+              ],
+              "columns": [
+                {
+                  "decoratorProps": {},
+                  "flowRegistry": {},
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {},
+                  "sortIndex": 1,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.actionsColumn"
+                    },
+                    "tableColumnSettings": {
+                      "title": {
+                        "title": "{{t(\"Actions\")}}"
+                      }
+                    }
+                  },
+                  "subKey": "columns",
+                  "subModels": {
+                    "actions": [
+                      {
+                        "decoratorProps": {},
+                        "flowRegistry": {},
+                        "parentId": "1w3y93j97ub",
+                        "props": {
+                          "icon": null,
+                          "title": "{{t(\"View\")}}",
+                          "type": "link"
+                        },
+                        "sortIndex": 1,
+                        "stepParams": {
+                          "__flowSurfaceMeta": {
+                            "declaredKey": "main.table.view_1"
+                          },
+                          "buttonSettings": {
+                            "general": {
+                              "icon": null,
+                              "iconOnly": false,
+                              "title": "{{t(\"View\")}}",
+                              "type": "link"
+                            }
+                          },
+                          "popupSettings": {
+                            "openView": {
+                              "collectionName": "purchase_requests",
+                              "dataSourceKey": "main",
+                              "mode": "drawer",
+                              "pageModelClass": "ChildPageModel",
+                              "popupTemplateHasFilterByTk": true,
+                              "popupTemplateHasSourceId": false,
+                              "popupTemplateMode": "reference",
+                              "popupTemplateUid": "gv8gxk2m0b0",
+                              "size": "medium",
+                              "uid": "sjakitw63dj"
+                            }
+                          }
+                        },
+                        "subKey": "actions",
+                        "subType": "array",
+                        "uid": "4rfyfa9mvmm",
+                        "use": "ViewActionModel"
+                      },
+                      {
+                        "decoratorProps": {},
+                        "flowRegistry": {},
+                        "parentId": "1w3y93j97ub",
+                        "props": {
+                          "icon": null,
+                          "title": "{{t(\"Edit\")}}",
+                          "type": "link"
+                        },
+                        "sortIndex": 2,
+                        "stepParams": {
+                          "__flowSurfaceMeta": {
+                            "declaredKey": "main.table.edit_default_2"
+                          },
+                          "buttonSettings": {
+                            "general": {
+                              "icon": null,
+                              "iconOnly": false,
+                              "title": "{{t(\"Edit\")}}",
+                              "type": "link"
+                            }
+                          },
+                          "popupSettings": {
+                            "openView": {
+                              "collectionName": "purchase_requests",
+                              "dataSourceKey": "main",
+                              "mode": "drawer",
+                              "pageModelClass": "ChildPageModel",
+                              "popupTemplateHasFilterByTk": true,
+                              "popupTemplateHasSourceId": false,
+                              "popupTemplateMode": "reference",
+                              "popupTemplateUid": "a6u5ei9e4ee",
+                              "size": "medium",
+                              "title": "{{t(\"Edit\")}}",
+                              "uid": "bfdp4fyifkh"
+                            }
+                          }
+                        },
+                        "subKey": "actions",
+                        "subType": "array",
+                        "uid": "vvgjhc5el86",
+                        "use": "EditActionModel"
+                      },
+                      {
+                        "decoratorProps": {},
+                        "flowRegistry": {},
+                        "parentId": "1w3y93j97ub",
+                        "props": {
+                          "icon": null,
+                          "title": "{{t(\"Delete\")}}",
+                          "type": "link"
+                        },
+                        "sortIndex": 3,
+                        "stepParams": {
+                          "__flowSurfaceMeta": {
+                            "declaredKey": "main.table.delete_default_3"
+                          },
+                          "buttonSettings": {
+                            "general": {
+                              "icon": null,
+                              "iconOnly": false,
+                              "title": "{{t(\"Delete\")}}",
+                              "type": "link"
+                            }
+                          },
+                          "deleteSettings": {
+                            "confirm": {
+                              "content": "{{t(\"Are you sure you want to delete it?\")}}",
+                              "enable": true,
+                              "title": "{{t(\"Delete record\")}}"
+                            }
+                          }
+                        },
+                        "subKey": "actions",
+                        "subType": "array",
+                        "uid": "csas7puj2zq",
+                        "use": "DeleteActionModel"
+                      }
+                    ]
+                  },
+                  "subType": "array",
+                  "uid": "1w3y93j97ub",
+                  "use": "TableActionsColumnModel"
+                },
+                {
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {},
+                  "sortIndex": 2,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.title"
+                    },
+                    "fieldSettings": {
+                      "init": {
+                        "collectionName": "purchase_requests",
+                        "dataSourceKey": "main",
+                        "fieldPath": "title"
+                      }
+                    }
+                  },
+                  "subKey": "columns",
+                  "subModels": {
+                    "field": {
+                      "parentId": "24les3era8u",
+                      "props": {},
+                      "sortIndex": 1,
+                      "stepParams": {
+                        "__flowSurfaceMeta": {
+                          "declaredKey": "main.table.title.field"
+                        },
+                        "fieldSettings": {
+                          "init": {
+                            "collectionName": "purchase_requests",
+                            "dataSourceKey": "main",
+                            "fieldPath": "title"
+                          }
+                        }
+                      },
+                      "subKey": "field",
+                      "subType": "object",
+                      "uid": "y7p7cqbx2ar",
+                      "use": "DisplayTextFieldModel"
+                    }
+                  },
+                  "subType": "array",
+                  "uid": "24les3era8u",
+                  "use": "TableColumnModel"
+                },
+                {
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {},
+                  "sortIndex": 3,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.amount"
+                    },
+                    "fieldSettings": {
+                      "init": {
+                        "collectionName": "purchase_requests",
+                        "dataSourceKey": "main",
+                        "fieldPath": "amount"
+                      }
+                    }
+                  },
+                  "subKey": "columns",
+                  "subModels": {
+                    "field": {
+                      "parentId": "ha49swj7ivw",
+                      "props": {},
+                      "sortIndex": 1,
+                      "stepParams": {
+                        "__flowSurfaceMeta": {
+                          "declaredKey": "main.table.amount.field"
+                        },
+                        "fieldSettings": {
+                          "init": {
+                            "collectionName": "purchase_requests",
+                            "dataSourceKey": "main",
+                            "fieldPath": "amount"
+                          }
+                        }
+                      },
+                      "subKey": "field",
+                      "subType": "object",
+                      "uid": "s8y1uteycgv",
+                      "use": "DisplayIranianCurrencyFieldModel"
+                    }
+                  },
+                  "subType": "array",
+                  "uid": "ha49swj7ivw",
+                  "use": "TableColumnModel"
+                },
+                {
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {},
+                  "sortIndex": 4,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.status"
+                    },
+                    "fieldSettings": {
+                      "init": {
+                        "collectionName": "purchase_requests",
+                        "dataSourceKey": "main",
+                        "fieldPath": "status"
+                      }
+                    }
+                  },
+                  "subKey": "columns",
+                  "subModels": {
+                    "field": {
+                      "parentId": "yoijrb9s4bq",
+                      "props": {},
+                      "sortIndex": 1,
+                      "stepParams": {
+                        "__flowSurfaceMeta": {
+                          "declaredKey": "main.table.status.field"
+                        },
+                        "fieldSettings": {
+                          "init": {
+                            "collectionName": "purchase_requests",
+                            "dataSourceKey": "main",
+                            "fieldPath": "status"
+                          }
+                        }
+                      },
+                      "subKey": "field",
+                      "subType": "object",
+                      "uid": "1jbuex2m8ty",
+                      "use": "DisplayEnumFieldModel"
+                    }
+                  },
+                  "subType": "array",
+                  "uid": "yoijrb9s4bq",
+                  "use": "TableColumnModel"
+                },
+                {
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {
+                    "titleField": "nickname"
+                  },
+                  "sortIndex": 5,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.createdBy"
+                    },
+                    "fieldSettings": {
+                      "init": {
+                        "collectionName": "purchase_requests",
+                        "dataSourceKey": "main",
+                        "fieldPath": "createdBy"
+                      }
+                    },
+                    "tableColumnSettings": {
+                      "fieldNames": {
+                        "label": "nickname"
+                      }
+                    }
+                  },
+                  "subKey": "columns",
+                  "subModels": {
+                    "field": {
+                      "parentId": "5z0o3mpz15x",
+                      "props": {
+                        "clickToOpen": true,
+                        "titleField": "nickname"
+                      },
+                      "sortIndex": 1,
+                      "stepParams": {
+                        "__flowSurfaceMeta": {
+                          "declaredKey": "main.table.createdBy.field"
+                        },
+                        "displayFieldSettings": {
+                          "clickToOpen": {
+                            "clickToOpen": true
+                          }
+                        },
+                        "fieldSettings": {
+                          "init": {
+                            "collectionName": "purchase_requests",
+                            "dataSourceKey": "main",
+                            "fieldPath": "createdBy"
+                          }
+                        },
+                        "popupSettings": {
+                          "openView": {
+                            "associationName": "purchase_requests.createdBy",
+                            "collectionName": "users",
+                            "dataSourceKey": "main",
+                            "mode": "drawer",
+                            "pageModelClass": "ChildPageModel",
+                            "popupTemplateHasFilterByTk": true,
+                            "popupTemplateHasSourceId": true,
+                            "popupTemplateMode": "reference",
+                            "popupTemplateUid": "8g94wzut8a0",
+                            "size": "medium",
+                            "uid": "mwhh20ls44e"
+                          }
+                        }
+                      },
+                      "subKey": "field",
+                      "subType": "object",
+                      "uid": "fgnezzcicdi",
+                      "use": "DisplayTextFieldModel"
+                    }
+                  },
+                  "subType": "array",
+                  "uid": "5z0o3mpz15x",
+                  "use": "TableColumnModel"
+                },
+                {
+                  "parentId": "iu7z7bkc0lh",
+                  "props": {},
+                  "sortIndex": 6,
+                  "stepParams": {
+                    "__flowSurfaceMeta": {
+                      "declaredKey": "main.table.createdAt"
+                    },
+                    "fieldSettings": {
+                      "init": {
+                        "collectionName": "purchase_requests",
+                        "dataSourceKey": "main",
+                        "fieldPath": "createdAt"
+                      }
+                    }
+                  },
+                  "subKey": "columns",
+                  "subModels": {
+                    "field": {
+                      "parentId": "pvmfvra0wcm",
+                      "props": {},
+                      "sortIndex": 1,
+                      "stepParams": {
+                        "__flowSurfaceMeta": {
+                          "declaredKey": "main.table.createdAt.field"
+                        },
+                        "fieldSettings": {
+                          "init": {
+                            "collectionName": "purchase_requests",
+                            "dataSourceKey": "main",
+                            "fieldPath": "createdAt"
+                          }
+                        }
+                      },
+                      "subKey": "field",
+                      "subType": "object",
+                      "uid": "jai70zv65mi",
+                      "use": "DisplayDateTimeFieldModel"
+                    }
+                  },
+                  "subType": "array",
+                  "uid": "pvmfvra0wcm",
+                  "use": "TableColumnModel"
+                }
+              ]
+            },
+            "subType": "array",
+            "uid": "iu7z7bkc0lh",
+            "use": "TableBlockModel"
+          }
+        ]
+      },
+      "subType": "object",
+      "uid": "2oqvzp4f6eu",
+      "use": "BlockGridModel"
+    },
+    {
+      "parentId": "770aaq1kh0a",
+      "props": {
+        "displayTitle": true,
+        "enableTabs": false,
+        "title": "درخواست‌های خرید"
+      },
+      "stepParams": {
+        "pageSettings": {
+          "general": {
+            "displayTitle": true,
+            "enableTabs": false,
+            "title": "درخواست‌های خرید"
+          }
+        }
+      },
+      "subKey": "page",
+      "subType": "object",
+      "uid": "2yzfwvvkqw5",
+      "use": "RootPageModel"
+    },
+    {
+      "decoratorProps": {},
+      "flowRegistry": {},
+      "props": {
+        "icon": "EditOutlined",
+        "title": "{{t(\"Edit\")}}",
+        "type": "default"
+      },
+      "stepParams": {
+        "buttonSettings": {
+          "general": {
+            "icon": "EditOutlined",
+            "title": "{{t(\"Edit\")}}",
+            "type": "default"
+          }
+        },
+        "popupSettings": {
+          "openView": {
+            "associationName": "purchase_requests.createdBy",
+            "collectionName": "users",
+            "dataSourceKey": "main",
+            "filterByTk": "{{ctx.record.id}}",
+            "mode": "drawer",
+            "pageModelClass": "ChildPageModel",
+            "size": "medium",
+            "sourceId": "{{ctx.view.inputArgs.sourceId}}",
+            "title": "{{t(\"Edit\")}}"
+          }
+        }
+      },
+      "subModels": {
+        "page": {
+          "parentId": "4q9l6ejtwv2",
+          "props": {
+            "displayTitle": false,
+            "enableTabs": true
+          },
+          "sortIndex": 1,
+          "stepParams": {
+            "pageSettings": {
+              "general": {
+                "displayTitle": false,
+                "enableTabs": true
+              }
+            }
+          },
+          "subKey": "page",
+          "subModels": {
+            "tabs": [
+              {
+                "parentId": "kiz883svn1t",
+                "props": {
+                  "title": "{{t(\"Edit\")}}"
+                },
+                "sortIndex": 1,
+                "stepParams": {
+                  "pageTabSettings": {
+                    "tab": {
+                      "title": "{{t(\"Edit\")}}"
+                    }
+                  }
+                },
+                "subKey": "tabs",
+                "subModels": {
+                  "grid": {
+                    "parentId": "py16jtphwn7",
+                    "props": {
+                      "rowOrder": [
+                        "row1"
+                      ],
+                      "rows": {
+                        "row1": [
+                          [
+                            "9rbmtckmpif"
+                          ]
+                        ]
+                      },
+                      "sizes": {
+                        "row1": [
+                          24
+                        ]
+                      }
+                    },
+                    "sortIndex": 1,
+                    "stepParams": {
+                      "gridSettings": {
+                        "grid": {
+                          "rowOrder": [
+                            "row1"
+                          ],
+                          "rows": {
+                            "row1": [
+                              [
+                                "blsz19cm9k3"
+                              ]
+                            ]
+                          },
+                          "sizes": {
+                            "row1": [
+                              24
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "subKey": "grid",
+                    "subModels": {
+                      "items": [
+                        {
+                          "decoratorProps": {},
+                          "parentId": "km81at1hxxc",
+                          "props": {},
+                          "sortIndex": 1,
+                          "stepParams": {
+                            "formModelSettings": {
+                              "assignRules": {
+                                "value": []
+                              },
+                              "layout": {
+                                "colon": false,
+                                "layout": "vertical"
+                              }
+                            },
+                            "formSettings": {
+                              "dataScope": {
+                                "filter": {
+                                  "items": [],
+                                  "logic": "$and"
+                                }
+                              }
+                            },
+                            "resourceSettings": {
+                              "init": {
+                                "associationName": "purchase_requests.createdBy",
+                                "collectionName": "users",
+                                "dataSourceKey": "main",
+                                "filterByTk": "{{ctx.view.inputArgs.filterByTk}}",
+                                "sourceId": "{{ctx.view.inputArgs.sourceId}}"
+                              }
+                            }
+                          },
+                          "subKey": "items",
+                          "subModels": {
+                            "actions": [
+                              {
+                                "decoratorProps": {},
+                                "flowRegistry": {},
+                                "parentId": "blsz19cm9k3",
+                                "props": {
+                                  "htmlType": "submit",
+                                  "title": "{{t(\"Submit\")}}",
+                                  "type": "primary"
+                                },
+                                "sortIndex": 1,
+                                "stepParams": {
+                                  "buttonSettings": {
+                                    "general": {
+                                      "title": "{{t(\"Submit\")}}",
+                                      "type": "primary"
+                                    }
+                                  },
+                                  "submitSettings": {
+                                    "confirm": {
+                                      "content": "{{t(\"Are you sure you want to save it?\")}}",
+                                      "enable": false,
+                                      "title": "{{t(\"Submit record\")}}"
+                                    }
+                                  }
+                                },
+                                "subKey": "actions",
+                                "subType": "array",
+                                "uid": "gdsmiexxmtl",
+                                "use": "FormSubmitActionModel"
+                              }
+                            ],
+                            "grid": {
+                              "parentId": "blsz19cm9k3",
+                              "props": {
+                                "rowOrder": [
+                                  "row1",
+                                  "row2"
+                                ],
+                                "rows": {
+                                  "row1": [
+                                    [
+                                      "jbdgvbjlcd1"
+                                    ],
+                                    [
+                                      "t62ai97ebbr"
+                                    ]
+                                  ],
+                                  "row2": [
+                                    [
+                                      "hozn7ctidf4"
+                                    ],
+                                    [
+                                      "5akxy97vs33"
+                                    ]
+                                  ]
+                                },
+                                "sizes": {
+                                  "row1": [
+                                    12,
+                                    12
+                                  ],
+                                  "row2": [
+                                    12,
+                                    12
+                                  ]
+                                }
+                              },
+                              "sortIndex": 1,
+                              "stepParams": {
+                                "eventSettings": {
+                                  "linkageRules": {
+                                    "value": []
+                                  }
+                                },
+                                "gridSettings": {
+                                  "grid": {
+                                    "rowOrder": [
+                                      "row1",
+                                      "row2"
+                                    ],
+                                    "rows": {
+                                      "row1": [
+                                        [
+                                          "flknm2tf8h0"
+                                        ],
+                                        [
+                                          "4qr62qs1d6n"
+                                        ]
+                                      ],
+                                      "row2": [
+                                        [
+                                          "iqkfufbwu04"
+                                        ],
+                                        [
+                                          "yqs4n3y4vjw"
+                                        ]
+                                      ]
+                                    },
+                                    "sizes": {
+                                      "row1": [
+                                        12,
+                                        12
+                                      ],
+                                      "row2": [
+                                        12,
+                                        12
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "subKey": "grid",
+                              "subModels": {
+                                "items": [
+                                  {
+                                    "parentId": "uyrlip6cajk",
+                                    "props": {},
+                                    "sortIndex": 1,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "nickname"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "flknm2tf8h0",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "nickname"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "bd0xb82jh1r",
+                                        "use": "InputFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "flknm2tf8h0",
+                                    "use": "FormItemModel"
+                                  },
+                                  {
+                                    "parentId": "uyrlip6cajk",
+                                    "props": {},
+                                    "sortIndex": 2,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "username"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "4qr62qs1d6n",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "username"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "5a0pwoxbckm",
+                                        "use": "InputFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "4qr62qs1d6n",
+                                    "use": "FormItemModel"
+                                  },
+                                  {
+                                    "parentId": "uyrlip6cajk",
+                                    "props": {},
+                                    "sortIndex": 3,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "email"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "iqkfufbwu04",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "email"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "yup6pcg9fmo",
+                                        "use": "InputFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "iqkfufbwu04",
+                                    "use": "FormItemModel"
+                                  },
+                                  {
+                                    "parentId": "uyrlip6cajk",
+                                    "props": {},
+                                    "sortIndex": 4,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "phone"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "yqs4n3y4vjw",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "phone"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "r829a75h6li",
+                                        "use": "InputFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "yqs4n3y4vjw",
+                                    "use": "FormItemModel"
+                                  }
+                                ]
+                              },
+                              "subType": "object",
+                              "uid": "uyrlip6cajk",
+                              "use": "FormGridModel"
+                            }
+                          },
+                          "subType": "array",
+                          "uid": "blsz19cm9k3",
+                          "use": "EditFormModel"
+                        }
+                      ]
+                    },
+                    "subType": "object",
+                    "uid": "km81at1hxxc",
+                    "use": "BlockGridModel"
+                  }
+                },
+                "subType": "array",
+                "uid": "py16jtphwn7",
+                "use": "ChildPageTabModel"
+              }
+            ]
+          },
+          "subType": "object",
+          "uid": "kiz883svn1t",
+          "use": "ChildPageModel"
+        }
+      },
+      "uid": "4q9l6ejtwv2",
+      "use": "EditActionModel"
+    },
+    {
+      "parentId": "p5oa42ydun5",
+      "props": {
+        "rowOrder": [
+          "row1"
+        ],
+        "rows": {
+          "inbox": [
+            [
+              "purchaseinbox01"
+            ]
+          ],
+          "row1": [
+            [
+              "ndlnwfrh4g4"
+            ]
+          ]
+        },
+        "sizes": {
+          "row1": [
+            24
+          ]
+        }
+      },
+      "stepParams": {
+        "gridSettings": {
+          "grid": {
+            "rowOrder": [
+              "row1"
+            ],
+            "rows": {
+              "row1": [
+                [
+                  "ndlnwfrh4g4"
+                ]
+              ]
+            },
+            "sizes": {
+              "row1": [
+                24
+              ]
+            }
+          }
+        }
+      },
+      "subKey": "grid",
+      "subModels": {
+        "items": [
+          {
+            "decoratorProps": {},
+            "parentId": "6lvemuzympq",
+            "props": {
+              "content": "کارهای فرایند خرید که منتظر شماست. هر کار را باز کنید، درخواست را ببینید و تصمیم را ثبت کنید.",
+              "value": "کارهای فرایند خرید که منتظر شماست. هر کار را باز کنید، درخواست را ببینید و تصمیم را ثبت کنید."
+            },
+            "sortIndex": 1,
+            "stepParams": {
+              "__flowSurfaceMeta": {
+                "declaredKey": "main.intro"
+              },
+              "markdownBlockSettings": {
+                "editMarkdown": {
+                  "content": "کارهای فرایند خرید که منتظر شماست. هر کار را باز کنید، درخواست را ببینید و تصمیم را ثبت کنید."
+                }
+              }
+            },
+            "subKey": "items",
+            "subType": "array",
+            "uid": "ndlnwfrh4g4",
+            "use": "MarkdownBlockModel"
+          },
+          {
+            "parentId": "6lvemuzympq",
+            "sortIndex": 2,
+            "stepParams": {
+              "cardSettings": {
+                "titleDescription": {
+                  "title": "صندوق کار"
+                }
+              }
+            },
+            "subKey": "items",
+            "subType": "array",
+            "uid": "purchaseinbox01",
+            "use": "BpmTaskInboxBlockModel"
+          }
+        ]
+      },
+      "subType": "object",
+      "uid": "6lvemuzympq",
+      "use": "BlockGridModel"
+    },
+    {
+      "decoratorProps": {},
+      "flowRegistry": {},
+      "props": {
+        "icon": "EditOutlined",
+        "title": "{{t(\"Edit\")}}",
+        "type": "default"
+      },
+      "stepParams": {
+        "buttonSettings": {
+          "general": {
+            "icon": "EditOutlined",
+            "title": "{{t(\"Edit\")}}",
+            "type": "default"
+          }
+        },
+        "popupSettings": {
+          "openView": {
+            "collectionName": "purchase_requests",
+            "dataSourceKey": "main",
+            "filterByTk": "{{ctx.record.id}}",
+            "mode": "drawer",
+            "pageModelClass": "ChildPageModel",
+            "size": "medium",
+            "title": "{{t(\"Edit\")}}"
+          }
+        }
+      },
+      "subModels": {
+        "page": {
+          "parentId": "bfdp4fyifkh",
+          "props": {
+            "displayTitle": false,
+            "enableTabs": true
+          },
+          "sortIndex": 1,
+          "stepParams": {
+            "pageSettings": {
+              "general": {
+                "displayTitle": false,
+                "enableTabs": true
+              }
+            }
+          },
+          "subKey": "page",
+          "subModels": {
+            "tabs": [
+              {
+                "parentId": "gbffkggwn8m",
+                "props": {
+                  "title": "{{t(\"Edit\")}}"
+                },
+                "sortIndex": 1,
+                "stepParams": {
+                  "pageTabSettings": {
+                    "tab": {
+                      "title": "{{t(\"Edit\")}}"
+                    }
+                  }
+                },
+                "subKey": "tabs",
+                "subModels": {
+                  "grid": {
+                    "parentId": "exvpg0qcb8a",
+                    "props": {
+                      "rowOrder": [
+                        "row1"
+                      ],
+                      "rows": {
+                        "row1": [
+                          [
+                            "cm3sepnp3bb"
+                          ]
+                        ]
+                      },
+                      "sizes": {
+                        "row1": [
+                          24
+                        ]
+                      }
+                    },
+                    "sortIndex": 1,
+                    "stepParams": {
+                      "gridSettings": {
+                        "grid": {
+                          "rowOrder": [
+                            "row1"
+                          ],
+                          "rows": {
+                            "row1": [
+                              [
+                                "dljz322swgs"
+                              ]
+                            ]
+                          },
+                          "sizes": {
+                            "row1": [
+                              24
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "subKey": "grid",
+                    "subModels": {
+                      "items": [
+                        {
+                          "decoratorProps": {},
+                          "parentId": "de7ntl3o7t4",
+                          "props": {},
+                          "sortIndex": 1,
+                          "stepParams": {
+                            "formModelSettings": {
+                              "assignRules": {
+                                "value": []
+                              },
+                              "layout": {
+                                "colon": false,
+                                "layout": "vertical"
+                              }
+                            },
+                            "formSettings": {
+                              "dataScope": {
+                                "filter": {
+                                  "items": [],
+                                  "logic": "$and"
+                                }
+                              }
+                            },
+                            "resourceSettings": {
+                              "init": {
+                                "collectionName": "purchase_requests",
+                                "dataSourceKey": "main",
+                                "filterByTk": "{{ctx.view.inputArgs.filterByTk}}"
+                              }
+                            }
+                          },
+                          "subKey": "items",
+                          "subModels": {
+                            "actions": [
+                              {
+                                "decoratorProps": {},
+                                "flowRegistry": {},
+                                "parentId": "dljz322swgs",
+                                "props": {
+                                  "htmlType": "submit",
+                                  "title": "{{t(\"Submit\")}}",
+                                  "type": "primary"
+                                },
+                                "sortIndex": 1,
+                                "stepParams": {
+                                  "buttonSettings": {
+                                    "general": {
+                                      "title": "{{t(\"Submit\")}}",
+                                      "type": "primary"
+                                    }
+                                  },
+                                  "submitSettings": {
+                                    "confirm": {
+                                      "content": "{{t(\"Are you sure you want to save it?\")}}",
+                                      "enable": false,
+                                      "title": "{{t(\"Submit record\")}}"
+                                    }
+                                  }
+                                },
+                                "subKey": "actions",
+                                "subType": "array",
+                                "uid": "73idbse2clh",
+                                "use": "FormSubmitActionModel"
+                              }
+                            ],
+                            "grid": {
+                              "parentId": "dljz322swgs",
+                              "props": {
+                                "rowOrder": [
+                                  "row1",
+                                  "row2"
+                                ],
+                                "rows": {
+                                  "row1": [
+                                    [
+                                      "h3y2wm88nkz"
+                                    ],
+                                    [
+                                      "inxy75q8fw1"
+                                    ]
+                                  ],
+                                  "row2": [
+                                    [
+                                      "5a7vrxkq464"
+                                    ]
+                                  ]
+                                },
+                                "sizes": {
+                                  "row1": [
+                                    12,
+                                    12
+                                  ],
+                                  "row2": [
+                                    24
+                                  ]
+                                }
+                              },
+                              "sortIndex": 1,
+                              "stepParams": {
+                                "eventSettings": {
+                                  "linkageRules": {
+                                    "value": []
+                                  }
+                                },
+                                "gridSettings": {
+                                  "grid": {
+                                    "rowOrder": [
+                                      "row1",
+                                      "row2"
+                                    ],
+                                    "rows": {
+                                      "row1": [
+                                        [
+                                          "paxijr9ws1k"
+                                        ],
+                                        [
+                                          "xdkmh5pqzxt"
+                                        ]
+                                      ],
+                                      "row2": [
+                                        [
+                                          "708xjvst1rc"
+                                        ]
+                                      ]
+                                    },
+                                    "sizes": {
+                                      "row1": [
+                                        12,
+                                        12
+                                      ],
+                                      "row2": [
+                                        24
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "subKey": "grid",
+                              "subModels": {
+                                "items": [
+                                  {
+                                    "parentId": "scrhgw18o8z",
+                                    "props": {},
+                                    "sortIndex": 1,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "title"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "paxijr9ws1k",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "title"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "k8mumtspvm6",
+                                        "use": "InputFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "paxijr9ws1k",
+                                    "use": "FormItemModel"
+                                  },
+                                  {
+                                    "parentId": "scrhgw18o8z",
+                                    "props": {},
+                                    "sortIndex": 2,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "description"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "xdkmh5pqzxt",
+                                        "props": {
+                                          "autoSize": {
+                                            "maxRows": 10,
+                                            "minRows": 3
+                                          }
+                                        },
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "description"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "1f00a8lnbkf",
+                                        "use": "TextareaFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "xdkmh5pqzxt",
+                                    "use": "FormItemModel"
+                                  },
+                                  {
+                                    "parentId": "scrhgw18o8z",
+                                    "props": {},
+                                    "sortIndex": 3,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "status"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "708xjvst1rc",
+                                        "props": {
+                                          "allowClear": true
+                                        },
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "status"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "4z84ffiojuk",
+                                        "use": "SelectFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "708xjvst1rc",
+                                    "use": "FormItemModel"
+                                  }
+                                ]
+                              },
+                              "subType": "object",
+                              "uid": "scrhgw18o8z",
+                              "use": "FormGridModel"
+                            }
+                          },
+                          "subType": "array",
+                          "uid": "dljz322swgs",
+                          "use": "EditFormModel"
+                        }
+                      ]
+                    },
+                    "subType": "object",
+                    "uid": "de7ntl3o7t4",
+                    "use": "BlockGridModel"
+                  }
+                },
+                "subType": "array",
+                "uid": "exvpg0qcb8a",
+                "use": "ChildPageTabModel"
+              }
+            ]
+          },
+          "subType": "object",
+          "uid": "gbffkggwn8m",
+          "use": "ChildPageModel"
+        }
+      },
+      "uid": "bfdp4fyifkh",
+      "use": "EditActionModel"
+    },
+    {
+      "parentId": "nhkc1yspxwk",
+      "props": {
+        "displayTitle": true,
+        "enableTabs": false,
+        "title": "کارتابل خرید"
+      },
+      "stepParams": {
+        "pageSettings": {
+          "general": {
+            "displayTitle": true,
+            "enableTabs": false,
+            "title": "کارتابل خرید"
+          }
+        }
+      },
+      "subKey": "page",
+      "subType": "object",
+      "uid": "gynvyo3k94q",
+      "use": "RootPageModel"
+    },
+    {
+      "props": {
+        "clickToOpen": true,
+        "titleField": "nickname"
+      },
+      "stepParams": {
+        "displayFieldSettings": {
+          "clickToOpen": {
+            "clickToOpen": true
+          }
+        },
+        "fieldSettings": {
+          "init": {
+            "collectionName": "purchase_requests",
+            "dataSourceKey": "main",
+            "fieldPath": "createdBy"
+          }
+        },
+        "popupSettings": {
+          "openView": {
+            "associationName": "purchase_requests.createdBy",
+            "collectionName": "users",
+            "dataSourceKey": "main",
+            "filterByTk": "{{ctx.view.inputArgs.filterByTk}}",
+            "mode": "drawer",
+            "pageModelClass": "ChildPageModel",
+            "size": "medium"
+          }
+        }
+      },
+      "subModels": {
+        "page": {
+          "parentId": "mwhh20ls44e",
+          "props": {
+            "displayTitle": false,
+            "enableTabs": true
+          },
+          "sortIndex": 1,
+          "stepParams": {
+            "pageSettings": {
+              "general": {
+                "displayTitle": false,
+                "enableTabs": true
+              }
+            }
+          },
+          "subKey": "page",
+          "subModels": {
+            "tabs": [
+              {
+                "parentId": "dc0j592c5pg",
+                "props": {
+                  "title": "{{t(\"Details\")}}"
+                },
+                "sortIndex": 1,
+                "stepParams": {
+                  "pageTabSettings": {
+                    "tab": {
+                      "title": "{{t(\"Details\")}}"
+                    }
+                  }
+                },
+                "subKey": "tabs",
+                "subModels": {
+                  "grid": {
+                    "parentId": "obkh6w17lpl",
+                    "props": {
+                      "rowOrder": [
+                        "row1"
+                      ],
+                      "rows": {
+                        "row1": [
+                          [
+                            "qg14xbdjdmn"
+                          ]
+                        ]
+                      },
+                      "sizes": {
+                        "row1": [
+                          24
+                        ]
+                      }
+                    },
+                    "sortIndex": 1,
+                    "stepParams": {
+                      "gridSettings": {
+                        "grid": {
+                          "rowOrder": [
+                            "row1"
+                          ],
+                          "rows": {
+                            "row1": [
+                              [
+                                "pe9ivfwt6cc"
+                              ]
+                            ]
+                          },
+                          "sizes": {
+                            "row1": [
+                              24
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "subKey": "grid",
+                    "subModels": {
+                      "items": [
+                        {
+                          "decoratorProps": {},
+                          "parentId": "5eozet3998p",
+                          "props": {},
+                          "sortIndex": 1,
+                          "stepParams": {
+                            "detailsSettings": {
+                              "dataScope": {
+                                "filter": {
+                                  "items": [],
+                                  "logic": "$and"
+                                }
+                              },
+                              "defaultSorting": {
+                                "sort": [
+                                  {
+                                    "direction": "desc",
+                                    "field": "createdAt"
+                                  }
+                                ]
+                              },
+                              "layout": {
+                                "colon": true,
+                                "layout": "vertical"
+                              },
+                              "linkageRules": {
+                                "value": []
+                              }
+                            },
+                            "resourceSettings": {
+                              "init": {
+                                "associationName": "purchase_requests.createdBy",
+                                "collectionName": "users",
+                                "dataSourceKey": "main",
+                                "filterByTk": "{{ctx.view.inputArgs.filterByTk}}",
+                                "sourceId": "{{ctx.view.inputArgs.sourceId}}"
+                              }
+                            }
+                          },
+                          "subKey": "items",
+                          "subModels": {
+                            "actions": [
+                              {
+                                "decoratorProps": {},
+                                "flowRegistry": {},
+                                "parentId": "pe9ivfwt6cc",
+                                "props": {
+                                  "icon": "EditOutlined",
+                                  "title": "{{t(\"Edit\")}}",
+                                  "type": "default"
+                                },
+                                "sortIndex": 1,
+                                "stepParams": {
+                                  "buttonSettings": {
+                                    "general": {
+                                      "icon": "EditOutlined",
+                                      "title": "{{t(\"Edit\")}}",
+                                      "type": "default"
+                                    }
+                                  },
+                                  "popupSettings": {
+                                    "openView": {
+                                      "associationName": "purchase_requests.createdBy",
+                                      "collectionName": "users",
+                                      "dataSourceKey": "main",
+                                      "mode": "drawer",
+                                      "pageModelClass": "ChildPageModel",
+                                      "popupTemplateHasFilterByTk": true,
+                                      "popupTemplateHasSourceId": true,
+                                      "popupTemplateMode": "reference",
+                                      "popupTemplateUid": "n2gd93ff22v",
+                                      "size": "medium",
+                                      "sourceId": "{{ctx.view.inputArgs.sourceId}}",
+                                      "title": "{{t(\"Edit\")}}",
+                                      "uid": "4q9l6ejtwv2"
+                                    }
+                                  }
+                                },
+                                "subKey": "actions",
+                                "subType": "array",
+                                "uid": "5nks9tbfrex",
+                                "use": "EditActionModel"
+                              }
+                            ],
+                            "grid": {
+                              "parentId": "pe9ivfwt6cc",
+                              "props": {
+                                "rowOrder": [
+                                  "row1",
+                                  "row2",
+                                  "row3"
+                                ],
+                                "rows": {
+                                  "row1": [
+                                    [
+                                      "5ht23zdl7sn"
+                                    ],
+                                    [
+                                      "epruld1808m"
+                                    ]
+                                  ],
+                                  "row2": [
+                                    [
+                                      "lbrazi1fi52"
+                                    ],
+                                    [
+                                      "2y5x0ty93u6"
+                                    ]
+                                  ],
+                                  "row3": [
+                                    [
+                                      "5x20bfhmmwk"
+                                    ],
+                                    [
+                                      "k3wmg1c60al"
+                                    ]
+                                  ]
+                                },
+                                "sizes": {
+                                  "row1": [
+                                    12,
+                                    12
+                                  ],
+                                  "row2": [
+                                    12,
+                                    12
+                                  ],
+                                  "row3": [
+                                    12,
+                                    12
+                                  ]
+                                }
+                              },
+                              "sortIndex": 1,
+                              "stepParams": {
+                                "gridSettings": {
+                                  "grid": {
+                                    "rowOrder": [
+                                      "row1",
+                                      "row2",
+                                      "row3"
+                                    ],
+                                    "rows": {
+                                      "row1": [
+                                        [
+                                          "6f3amtyzre6"
+                                        ],
+                                        [
+                                          "7svykqdcwa3"
+                                        ]
+                                      ],
+                                      "row2": [
+                                        [
+                                          "xzzsq7tz7ng"
+                                        ],
+                                        [
+                                          "fe88mof1dwk"
+                                        ]
+                                      ],
+                                      "row3": [
+                                        [
+                                          "tq3kbtgcpmb"
+                                        ],
+                                        [
+                                          "2dsce3scujm"
+                                        ]
+                                      ]
+                                    },
+                                    "sizes": {
+                                      "row1": [
+                                        12,
+                                        12
+                                      ],
+                                      "row2": [
+                                        12,
+                                        12
+                                      ],
+                                      "row3": [
+                                        12,
+                                        12
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "subKey": "grid",
+                              "subModels": {
+                                "items": [
+                                  {
+                                    "parentId": "dnywmc5enk6",
+                                    "props": {},
+                                    "sortIndex": 1,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "nickname"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "6f3amtyzre6",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "nickname"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "hmtoaxm41zn",
+                                        "use": "DisplayTextFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "6f3amtyzre6",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "dnywmc5enk6",
+                                    "props": {},
+                                    "sortIndex": 2,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "username"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "7svykqdcwa3",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "username"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "iiurd4t91f8",
+                                        "use": "DisplayTextFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "7svykqdcwa3",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "dnywmc5enk6",
+                                    "props": {},
+                                    "sortIndex": 3,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "email"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "xzzsq7tz7ng",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "email"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "5c8qr3synl7",
+                                        "use": "DisplayTextFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "xzzsq7tz7ng",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "dnywmc5enk6",
+                                    "props": {},
+                                    "sortIndex": 4,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "phone"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "fe88mof1dwk",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "phone"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "kjssf08evcd",
+                                        "use": "DisplayTextFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "fe88mof1dwk",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "dnywmc5enk6",
+                                    "props": {},
+                                    "sortIndex": 5,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "createdAt"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "tq3kbtgcpmb",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "createdAt"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "ukf36k65bqf",
+                                        "use": "DisplayDateTimeFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "tq3kbtgcpmb",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "dnywmc5enk6",
+                                    "props": {},
+                                    "sortIndex": 6,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "users",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "updatedAt"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "2dsce3scujm",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "updatedAt"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "cf8ezbzkk0d",
+                                        "use": "DisplayDateTimeFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "2dsce3scujm",
+                                    "use": "DetailsItemModel"
+                                  }
+                                ]
+                              },
+                              "subType": "object",
+                              "uid": "dnywmc5enk6",
+                              "use": "DetailsGridModel"
+                            }
+                          },
+                          "subType": "array",
+                          "uid": "pe9ivfwt6cc",
+                          "use": "DetailsBlockModel"
+                        }
+                      ]
+                    },
+                    "subType": "object",
+                    "uid": "5eozet3998p",
+                    "use": "BlockGridModel"
+                  }
+                },
+                "subType": "array",
+                "uid": "obkh6w17lpl",
+                "use": "ChildPageTabModel"
+              }
+            ]
+          },
+          "subType": "object",
+          "uid": "dc0j592c5pg",
+          "use": "ChildPageModel"
+        }
+      },
+      "uid": "mwhh20ls44e",
+      "use": "DisplayTextFieldModel"
+    },
+    {
+      "decoratorProps": {},
+      "flowRegistry": {},
+      "props": {
+        "icon": "PlusOutlined",
+        "title": "{{t(\"Add new\")}}",
+        "type": "primary"
+      },
+      "stepParams": {
+        "buttonSettings": {
+          "general": {
+            "icon": "PlusOutlined",
+            "title": "{{t(\"Add new\")}}",
+            "type": "primary"
+          }
+        },
+        "popupSettings": {
+          "openView": {
+            "collectionName": "purchase_requests",
+            "dataSourceKey": "main",
+            "mode": "drawer",
+            "pageModelClass": "ChildPageModel",
+            "size": "medium"
+          }
+        }
+      },
+      "subModels": {
+        "page": {
+          "parentId": "s0crc8j9ec1",
+          "props": {
+            "displayTitle": false,
+            "enableTabs": true
+          },
+          "sortIndex": 1,
+          "stepParams": {
+            "pageSettings": {
+              "general": {
+                "displayTitle": false,
+                "enableTabs": true
+              }
+            }
+          },
+          "subKey": "page",
+          "subModels": {
+            "tabs": [
+              {
+                "parentId": "qjpgzeqiq6x",
+                "props": {
+                  "title": "{{t(\"Details\")}}"
+                },
+                "sortIndex": 1,
+                "stepParams": {
+                  "pageTabSettings": {
+                    "tab": {
+                      "title": "{{t(\"Details\")}}"
+                    }
+                  }
+                },
+                "subKey": "tabs",
+                "subModels": {
+                  "grid": {
+                    "parentId": "9z37kzifv43",
+                    "props": {
+                      "rowOrder": [
+                        "row1"
+                      ],
+                      "rows": {
+                        "row1": [
+                          [
+                            "uq65f6aq4lp"
+                          ]
+                        ]
+                      },
+                      "sizes": {
+                        "row1": [
+                          24
+                        ]
+                      }
+                    },
+                    "sortIndex": 1,
+                    "stepParams": {
+                      "gridSettings": {
+                        "grid": {
+                          "rowOrder": [
+                            "row1"
+                          ],
+                          "rows": {
+                            "row1": [
+                              [
+                                "i0u92wv57ry"
+                              ]
+                            ]
+                          },
+                          "sizes": {
+                            "row1": [
+                              24
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "subKey": "grid",
+                    "subModels": {
+                      "items": [
+                        {
+                          "decoratorProps": {},
+                          "parentId": "57cuqffo9yx",
+                          "props": {},
+                          "sortIndex": 1,
+                          "stepParams": {
+                            "resourceSettings": {
+                              "init": {
+                                "collectionName": "purchase_requests",
+                                "dataSourceKey": "main"
+                              }
+                            }
+                          },
+                          "subKey": "items",
+                          "subModels": {
+                            "actions": [
+                              {
+                                "decoratorProps": {},
+                                "flowRegistry": {},
+                                "parentId": "i0u92wv57ry",
+                                "props": {
+                                  "htmlType": "submit",
+                                  "title": "{{t(\"Submit\")}}",
+                                  "type": "primary"
+                                },
+                                "sortIndex": 1,
+                                "stepParams": {
+                                  "buttonSettings": {
+                                    "general": {
+                                      "title": "{{t(\"Submit\")}}",
+                                      "type": "primary"
+                                    }
+                                  },
+                                  "submitSettings": {
+                                    "confirm": {
+                                      "content": "{{t(\"Are you sure you want to save it?\")}}",
+                                      "enable": false,
+                                      "title": "{{t(\"Submit record\")}}"
+                                    }
+                                  }
+                                },
+                                "subKey": "actions",
+                                "subType": "array",
+                                "uid": "lnvdqvqt0e3",
+                                "use": "FormSubmitActionModel"
+                              }
+                            ],
+                            "grid": {
+                              "parentId": "i0u92wv57ry",
+                              "props": {
+                                "rowOrder": [
+                                  "row1",
+                                  "row2"
+                                ],
+                                "rows": {
+                                  "row1": [
+                                    [
+                                      "xa4kwq5gaa4"
+                                    ],
+                                    [
+                                      "yzlq8m1kjbp"
+                                    ]
+                                  ],
+                                  "row2": [
+                                    [
+                                      "de304npeqqx"
+                                    ]
+                                  ]
+                                },
+                                "sizes": {
+                                  "row1": [
+                                    12,
+                                    12
+                                  ],
+                                  "row2": [
+                                    24
+                                  ]
+                                }
+                              },
+                              "sortIndex": 1,
+                              "stepParams": {
+                                "gridSettings": {
+                                  "grid": {
+                                    "rowOrder": [
+                                      "row1",
+                                      "row2"
+                                    ],
+                                    "rows": {
+                                      "row1": [
+                                        [
+                                          "tuo3g3inshh"
+                                        ],
+                                        [
+                                          "gr6f5v9xxj4"
+                                        ]
+                                      ],
+                                      "row2": [
+                                        [
+                                          "5vqkjnazvpe"
+                                        ]
+                                      ]
+                                    },
+                                    "sizes": {
+                                      "row1": [
+                                        12,
+                                        12
+                                      ],
+                                      "row2": [
+                                        24
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "subKey": "grid",
+                              "subModels": {
+                                "items": [
+                                  {
+                                    "parentId": "w0zofwnuu30",
+                                    "props": {},
+                                    "sortIndex": 1,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "title"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "tuo3g3inshh",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "title"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "08tlkwencmf",
+                                        "use": "InputFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "tuo3g3inshh",
+                                    "use": "FormItemModel"
+                                  },
+                                  {
+                                    "parentId": "w0zofwnuu30",
+                                    "props": {},
+                                    "sortIndex": 2,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "amount"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "gr6f5v9xxj4",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "amount"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "8w9zy02fhwe",
+                                        "use": "IranianCurrencyFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "gr6f5v9xxj4",
+                                    "use": "FormItemModel"
+                                  },
+                                  {
+                                    "parentId": "w0zofwnuu30",
+                                    "props": {},
+                                    "sortIndex": 3,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "description"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "5vqkjnazvpe",
+                                        "props": {
+                                          "autoSize": {
+                                            "maxRows": 10,
+                                            "minRows": 3
+                                          }
+                                        },
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "description"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "ixfzbzqoxkt",
+                                        "use": "TextareaFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "5vqkjnazvpe",
+                                    "use": "FormItemModel"
+                                  }
+                                ]
+                              },
+                              "subType": "object",
+                              "uid": "w0zofwnuu30",
+                              "use": "FormGridModel"
+                            }
+                          },
+                          "subType": "array",
+                          "uid": "i0u92wv57ry",
+                          "use": "CreateFormModel"
+                        }
+                      ]
+                    },
+                    "subType": "object",
+                    "uid": "57cuqffo9yx",
+                    "use": "BlockGridModel"
+                  }
+                },
+                "subType": "array",
+                "uid": "9z37kzifv43",
+                "use": "ChildPageTabModel"
+              }
+            ]
+          },
+          "subType": "object",
+          "uid": "qjpgzeqiq6x",
+          "use": "ChildPageModel"
+        }
+      },
+      "uid": "s0crc8j9ec1",
+      "use": "AddNewActionModel"
+    },
+    {
+      "decoratorProps": {},
+      "flowRegistry": {},
+      "props": {
+        "icon": null,
+        "title": "{{t(\"View\")}}",
+        "type": "link"
+      },
+      "stepParams": {
+        "buttonSettings": {
+          "general": {
+            "icon": null,
+            "iconOnly": false,
+            "title": "{{t(\"View\")}}",
+            "type": "link"
+          }
+        },
+        "popupSettings": {
+          "openView": {
+            "collectionName": "purchase_requests",
+            "dataSourceKey": "main",
+            "filterByTk": "{{ctx.record.id}}",
+            "mode": "drawer",
+            "pageModelClass": "ChildPageModel",
+            "size": "medium"
+          }
+        }
+      },
+      "subModels": {
+        "page": {
+          "parentId": "sjakitw63dj",
+          "props": {
+            "displayTitle": false,
+            "enableTabs": true
+          },
+          "sortIndex": 1,
+          "stepParams": {
+            "pageSettings": {
+              "general": {
+                "displayTitle": false,
+                "enableTabs": true
+              }
+            }
+          },
+          "subKey": "page",
+          "subModels": {
+            "tabs": [
+              {
+                "parentId": "qj02ggcowsb",
+                "props": {
+                  "title": "{{t(\"Details\")}}"
+                },
+                "sortIndex": 1,
+                "stepParams": {
+                  "pageTabSettings": {
+                    "tab": {
+                      "title": "{{t(\"Details\")}}"
+                    }
+                  }
+                },
+                "subKey": "tabs",
+                "subModels": {
+                  "grid": {
+                    "parentId": "w1u641f5c6w",
+                    "props": {
+                      "rowOrder": [
+                        "row1"
+                      ],
+                      "rows": {
+                        "row1": [
+                          [
+                            "yl802z1o1hf"
+                          ]
+                        ]
+                      },
+                      "sizes": {
+                        "row1": [
+                          24
+                        ]
+                      }
+                    },
+                    "sortIndex": 1,
+                    "stepParams": {
+                      "gridSettings": {
+                        "grid": {
+                          "rowOrder": [
+                            "row1"
+                          ],
+                          "rows": {
+                            "row1": [
+                              [
+                                "r5tq1a1v7nk"
+                              ]
+                            ]
+                          },
+                          "sizes": {
+                            "row1": [
+                              24
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "subKey": "grid",
+                    "subModels": {
+                      "items": [
+                        {
+                          "decoratorProps": {},
+                          "parentId": "fn307y8x5ub",
+                          "props": {},
+                          "sortIndex": 1,
+                          "stepParams": {
+                            "detailsSettings": {
+                              "defaultSorting": {
+                                "sort": [
+                                  {
+                                    "direction": "desc",
+                                    "field": "createdAt"
+                                  }
+                                ]
+                              }
+                            },
+                            "resourceSettings": {
+                              "init": {
+                                "collectionName": "purchase_requests",
+                                "dataSourceKey": "main",
+                                "filterByTk": "{{ctx.view.inputArgs.filterByTk}}"
+                              }
+                            }
+                          },
+                          "subKey": "items",
+                          "subModels": {
+                            "actions": [
+                              {
+                                "decoratorProps": {},
+                                "flowRegistry": {},
+                                "parentId": "r5tq1a1v7nk",
+                                "props": {
+                                  "icon": "EditOutlined",
+                                  "title": "{{t(\"Edit\")}}",
+                                  "type": "default"
+                                },
+                                "sortIndex": 1,
+                                "stepParams": {
+                                  "buttonSettings": {
+                                    "general": {
+                                      "icon": "EditOutlined",
+                                      "title": "{{t(\"Edit\")}}",
+                                      "type": "default"
+                                    }
+                                  },
+                                  "popupSettings": {
+                                    "openView": {
+                                      "collectionName": "purchase_requests",
+                                      "dataSourceKey": "main",
+                                      "mode": "drawer",
+                                      "pageModelClass": "ChildPageModel",
+                                      "popupTemplateHasFilterByTk": true,
+                                      "popupTemplateHasSourceId": false,
+                                      "popupTemplateMode": "reference",
+                                      "popupTemplateUid": "a6u5ei9e4ee",
+                                      "size": "medium",
+                                      "title": "{{t(\"Edit\")}}",
+                                      "uid": "bfdp4fyifkh"
+                                    }
+                                  }
+                                },
+                                "subKey": "actions",
+                                "subType": "array",
+                                "uid": "94fdxzspg66",
+                                "use": "EditActionModel"
+                              }
+                            ],
+                            "grid": {
+                              "parentId": "r5tq1a1v7nk",
+                              "props": {
+                                "rowOrder": [
+                                  "row1",
+                                  "row2",
+                                  "row3"
+                                ],
+                                "rows": {
+                                  "row1": [
+                                    [
+                                      "pyg0su2x0ab"
+                                    ],
+                                    [
+                                      "y2kw08yd8gc"
+                                    ]
+                                  ],
+                                  "row2": [
+                                    [
+                                      "irx21r8j13q"
+                                    ],
+                                    [
+                                      "u4lxdsomu66"
+                                    ]
+                                  ],
+                                  "row3": [
+                                    [
+                                      "cn6btpug5gf"
+                                    ],
+                                    [
+                                      "d1qhf42ds0p"
+                                    ]
+                                  ]
+                                },
+                                "sizes": {
+                                  "row1": [
+                                    12,
+                                    12
+                                  ],
+                                  "row2": [
+                                    12,
+                                    12
+                                  ],
+                                  "row3": [
+                                    12,
+                                    12
+                                  ]
+                                }
+                              },
+                              "sortIndex": 1,
+                              "stepParams": {
+                                "gridSettings": {
+                                  "grid": {
+                                    "rowOrder": [
+                                      "row1",
+                                      "row2",
+                                      "row3"
+                                    ],
+                                    "rows": {
+                                      "row1": [
+                                        [
+                                          "xljv494f3ki"
+                                        ],
+                                        [
+                                          "doucng4mq6r"
+                                        ]
+                                      ],
+                                      "row2": [
+                                        [
+                                          "6z98qi2pk3u"
+                                        ],
+                                        [
+                                          "vr9p6xwqzhq"
+                                        ]
+                                      ],
+                                      "row3": [
+                                        [
+                                          "kz0v06tg790"
+                                        ],
+                                        [
+                                          "f7e21z2vxym"
+                                        ]
+                                      ]
+                                    },
+                                    "sizes": {
+                                      "row1": [
+                                        12,
+                                        12
+                                      ],
+                                      "row2": [
+                                        12,
+                                        12
+                                      ],
+                                      "row3": [
+                                        12,
+                                        12
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "subKey": "grid",
+                              "subModels": {
+                                "items": [
+                                  {
+                                    "parentId": "5us7olyv7l3",
+                                    "props": {},
+                                    "sortIndex": 1,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "title"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "xljv494f3ki",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "title"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "gf8knm2jehv",
+                                        "use": "DisplayTextFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "xljv494f3ki",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "5us7olyv7l3",
+                                    "props": {},
+                                    "sortIndex": 2,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "amount"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "doucng4mq6r",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "amount"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "yi8rqno31kb",
+                                        "use": "DisplayIranianCurrencyFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "doucng4mq6r",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "5us7olyv7l3",
+                                    "props": {},
+                                    "sortIndex": 3,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "description"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "6z98qi2pk3u",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "description"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "lqzbx78vga9",
+                                        "use": "DisplayTextFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "6z98qi2pk3u",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "5us7olyv7l3",
+                                    "props": {},
+                                    "sortIndex": 4,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "status"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "vr9p6xwqzhq",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "status"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "tszc6ws25x4",
+                                        "use": "DisplayEnumFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "vr9p6xwqzhq",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "5us7olyv7l3",
+                                    "props": {
+                                      "titleField": "nickname"
+                                    },
+                                    "sortIndex": 5,
+                                    "stepParams": {
+                                      "detailItemSettings": {
+                                        "fieldNames": {
+                                          "label": "nickname"
+                                        }
+                                      },
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "createdBy"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "kz0v06tg790",
+                                        "props": {
+                                          "clickToOpen": true,
+                                          "titleField": "nickname"
+                                        },
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "displayFieldSettings": {
+                                            "clickToOpen": {
+                                              "clickToOpen": true
+                                            }
+                                          },
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "createdBy"
+                                            }
+                                          },
+                                          "popupSettings": {
+                                            "openView": {
+                                              "associationName": "purchase_requests.createdBy",
+                                              "collectionName": "users",
+                                              "dataSourceKey": "main",
+                                              "popupTemplateHasFilterByTk": true,
+                                              "popupTemplateHasSourceId": true,
+                                              "popupTemplateMode": "reference",
+                                              "popupTemplateUid": "8g94wzut8a0",
+                                              "uid": "mwhh20ls44e"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "5jnngmuvyac",
+                                        "use": "DisplayTextFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "kz0v06tg790",
+                                    "use": "DetailsItemModel"
+                                  },
+                                  {
+                                    "parentId": "5us7olyv7l3",
+                                    "props": {},
+                                    "sortIndex": 6,
+                                    "stepParams": {
+                                      "fieldSettings": {
+                                        "init": {
+                                          "collectionName": "purchase_requests",
+                                          "dataSourceKey": "main",
+                                          "fieldPath": "createdAt"
+                                        }
+                                      }
+                                    },
+                                    "subKey": "items",
+                                    "subModels": {
+                                      "field": {
+                                        "parentId": "f7e21z2vxym",
+                                        "props": {},
+                                        "sortIndex": 1,
+                                        "stepParams": {
+                                          "fieldSettings": {
+                                            "init": {
+                                              "collectionName": "purchase_requests",
+                                              "dataSourceKey": "main",
+                                              "fieldPath": "createdAt"
+                                            }
+                                          }
+                                        },
+                                        "subKey": "field",
+                                        "subType": "object",
+                                        "uid": "1ma2d9lxclz",
+                                        "use": "DisplayDateTimeFieldModel"
+                                      }
+                                    },
+                                    "subType": "array",
+                                    "uid": "f7e21z2vxym",
+                                    "use": "DetailsItemModel"
+                                  }
+                                ]
+                              },
+                              "subType": "object",
+                              "uid": "5us7olyv7l3",
+                              "use": "DetailsGridModel"
+                            }
+                          },
+                          "subType": "array",
+                          "uid": "r5tq1a1v7nk",
+                          "use": "DetailsBlockModel"
+                        }
+                      ]
+                    },
+                    "subType": "object",
+                    "uid": "fn307y8x5ub",
+                    "use": "BlockGridModel"
+                  }
+                },
+                "subType": "array",
+                "uid": "w1u641f5c6w",
+                "use": "ChildPageTabModel"
+              }
+            ]
+          },
+          "subType": "object",
+          "uid": "qj02ggcowsb",
+          "use": "ChildPageModel"
+        }
+      },
+      "uid": "sjakitw63dj",
+      "use": "ViewActionModel"
+    }
+  ],
+  "format": "persian-erp-module",
+  "formatVersion": 1,
+  "module": {
+    "description": "درخواست خرید با تأیید مدیر در فرایند BPMN (نمونه‌ی اثبات مفهوم اپیک 016). به پلاگین موتور BPMN و استقرار مدل bpmn/purchase-request.bpmn نیاز دارد.",
+    "key": "purchase",
+    "title": "درخواست خرید",
+    "version": "1.0.0"
+  },
+  "nocobase": "2.2.24",
+  "requires": {
+    "collections": [
+      "users"
+    ],
+    "fieldInterfaces": [
+      "createdAt",
+      "createdBy",
+      "currencyIRR",
+      "input",
+      "select",
+      "snowflakeId",
+      "textarea",
+      "updatedAt",
+      "updatedBy"
+    ],
+    "fieldTypes": [
+      "belongsTo",
+      "bigInt",
+      "date",
+      "snowflakeId",
+      "string",
+      "text"
+    ],
+    "models": [
+      "AddNewActionModel",
+      "BlockGridModel",
+      "BpmTaskInboxBlockModel",
+      "BulkDeleteActionModel",
+      "ChildPageModel",
+      "ChildPageTabModel",
+      "CreateFormModel",
+      "DeleteActionModel",
+      "DetailsBlockModel",
+      "DetailsGridModel",
+      "DetailsItemModel",
+      "DisplayDateTimeFieldModel",
+      "DisplayEnumFieldModel",
+      "DisplayIranianCurrencyFieldModel",
+      "DisplayTextFieldModel",
+      "EditActionModel",
+      "EditFormModel",
+      "FilterActionModel",
+      "FormGridModel",
+      "FormItemModel",
+      "FormSubmitActionModel",
+      "InputFieldModel",
+      "IranianCurrencyFieldModel",
+      "MarkdownBlockModel",
+      "RefreshActionModel",
+      "RootPageModel",
+      "SelectFieldModel",
+      "TableActionsColumnModel",
+      "TableBlockModel",
+      "TableColumnModel",
+      "TextareaFieldModel",
+      "ViewActionModel"
+    ],
+    "workflowInstructions": [
+      "bpm-start",
+      "update"
+    ],
+    "workflowTriggers": [
+      "bpm-service-task",
+      "collection"
+    ]
+  },
+  "roles": [
+    {
+      "allowConfigure": false,
+      "allowNewAiEmployee": true,
+      "allowNewMenu": false,
+      "allowNewMobileMenu": false,
+      "default": false,
+      "description": null,
+      "hidden": false,
+      "name": "purchase_manager",
+      "resources": [
+        {
+          "actions": [
+            {
+              "fields": [
+                "amount",
+                "createdAt",
+                "createdBy",
+                "description",
+                "id",
+                "status",
+                "title",
+                "updatedAt",
+                "updatedBy"
+              ],
+              "name": "view",
+              "scope": null
+            }
+          ],
+          "name": "purchase_requests",
+          "usingActionsConfig": true
+        }
+      ],
+      "routes": [
+        "770aaq1kh0a",
+        "jmdqftzc2xx",
+        "nhkc1yspxwk",
+        "p5oa42ydun5",
+        "pk4xctvtuay"
+      ],
+      "scopes": [],
+      "snippets": [
+        "!pm",
+        "!pm.*",
+        "!ui.*"
+      ],
+      "strategy": null,
+      "title": "مدیر خرید"
+    },
+    {
+      "allowConfigure": false,
+      "allowNewAiEmployee": true,
+      "allowNewMenu": false,
+      "allowNewMobileMenu": false,
+      "default": false,
+      "description": null,
+      "hidden": false,
+      "name": "purchase_requester",
+      "resources": [
+        {
+          "actions": [
+            {
+              "fields": [
+                "amount",
+                "description",
+                "title"
+              ],
+              "name": "create",
+              "scope": null
+            },
+            {
+              "fields": [
+                "amount",
+                "createdAt",
+                "createdBy",
+                "description",
+                "id",
+                "status",
+                "title",
+                "updatedAt",
+                "updatedBy"
+              ],
+              "name": "view",
+              "scope": "own"
+            }
+          ],
+          "name": "purchase_requests",
+          "usingActionsConfig": true
+        }
+      ],
+      "routes": [
+        "770aaq1kh0a",
+        "jmdqftzc2xx",
+        "nhkc1yspxwk",
+        "p5oa42ydun5",
+        "pk4xctvtuay"
+      ],
+      "scopes": [
+        {
+          "key": "own",
+          "name": "{{t(\"Own records\")}}",
+          "resourceName": null,
+          "scope": {
+            "createdById": "{{ ctx.state.currentUser.id }}"
+          }
+        }
+      ],
+      "snippets": [
+        "!pm",
+        "!pm.*",
+        "!ui.*"
+      ],
+      "strategy": null,
+      "title": "درخواست‌دهنده‌ی خرید"
+    }
+  ],
+  "routes": {
+    "children": [
+      {
+        "children": [
+          {
+            "displayTitle": null,
+            "enableHeader": null,
+            "enableTabs": null,
+            "hidden": true,
+            "hideInMenu": null,
+            "icon": null,
+            "menuSchemaUid": null,
+            "options": {
+              "flowRegistry": {}
+            },
+            "ref": "jmdqftzc2xx",
+            "schemaUid": "jmdqftzc2xx",
+            "tabSchemaName": "nyajsooqq8c",
+            "title": "درخواست‌های خرید",
+            "tooltip": null,
+            "type": "tabs",
+            "uiLayouts": [
+              "admin-layout-model"
+            ]
+          }
+        ],
+        "displayTitle": true,
+        "enableHeader": null,
+        "enableTabs": false,
+        "hidden": null,
+        "hideInMenu": false,
+        "icon": "FileTextOutlined",
+        "menuSchemaUid": "l39f46tvw1v",
+        "options": {
+          "flowSurfaceMenuBindable": true
+        },
+        "ref": "770aaq1kh0a",
+        "schemaUid": "770aaq1kh0a",
+        "tabSchemaName": null,
+        "title": "درخواست‌های خرید",
+        "tooltip": null,
+        "type": "flowPage",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
+      },
+      {
+        "children": [
+          {
+            "displayTitle": null,
+            "enableHeader": null,
+            "enableTabs": null,
+            "hidden": true,
+            "hideInMenu": null,
+            "icon": null,
+            "menuSchemaUid": null,
+            "options": {
+              "flowRegistry": {}
+            },
+            "ref": "p5oa42ydun5",
+            "schemaUid": "p5oa42ydun5",
+            "tabSchemaName": "jeo7u5q5dhz",
+            "title": "کارتابل خرید",
+            "tooltip": null,
+            "type": "tabs",
+            "uiLayouts": [
+              "admin-layout-model"
+            ]
+          }
+        ],
+        "displayTitle": true,
+        "enableHeader": null,
+        "enableTabs": false,
+        "hidden": null,
+        "hideInMenu": false,
+        "icon": "InboxOutlined",
+        "menuSchemaUid": "6bh73s7frim",
+        "options": {
+          "flowSurfaceMenuBindable": true
+        },
+        "ref": "nhkc1yspxwk",
+        "schemaUid": "nhkc1yspxwk",
+        "tabSchemaName": null,
+        "title": "کارتابل خرید",
+        "tooltip": null,
+        "type": "flowPage",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
+      }
+    ],
+    "displayTitle": null,
+    "enableHeader": null,
+    "enableTabs": null,
+    "hidden": null,
+    "hideInMenu": false,
+    "icon": "ShoppingCartOutlined",
+    "menuSchemaUid": null,
+    "options": null,
+    "ref": "pk4xctvtuay",
+    "schemaUid": "pk4xctvtuay",
+    "tabSchemaName": null,
+    "title": "خرید",
+    "tooltip": null,
+    "type": "group",
+    "uiLayouts": [
+      "admin-layout-model"
+    ]
+  },
+  "uiSchemas": [
+    {
+      "name": "wj0xnfnhl0v",
+      "type": "void",
+      "x-async": false,
+      "x-component": "FlowRoute",
+      "x-uid": "770aaq1kh0a"
+    },
+    {
+      "name": "0ldk7ydu7b0",
+      "type": "void",
+      "x-async": false,
+      "x-component": "FlowRoute",
+      "x-uid": "nhkc1yspxwk"
+    }
+  ],
+  "workflows": [
+    {
+      "config": {
+        "collection": "purchase_requests",
+        "mode": 1
+      },
+      "description": "وقتی درخواست خرید تازه ثبت شود، فرایند BPMN «درخواست خرید» را با کلید همان درخواست شروع می‌کند تا کار «تأیید مدیر» به کارتابل مدیر خرید برود.",
+      "enabled": true,
+      "invalid": false,
+      "key": "kfz2qgrfvtr",
+      "nodes": [
+        {
+          "branchIndex": null,
+          "config": {
+            "businessKey": "purchase_requests:{{$context.data.id}}",
+            "processKey": "purchase_request",
+            "variables": [
+              {
+                "name": "recordId",
+                "value": "{{$context.data.id}}"
+              }
+            ]
+          },
+          "downstream": null,
+          "key": "15r5acomo47",
+          "title": "شروع فرایند درخواست خرید",
+          "type": "bpm-start",
+          "upstream": null
+        }
+      ],
+      "options": {
+        "timeout": 0
+      },
+      "sync": false,
+      "title": "شروع فرایند درخواست خرید",
+      "triggerTitle": null,
+      "type": "collection"
+    },
+    {
+      "config": {
+        "topic": "place-order"
+      },
+      "description": "وقتی مدیر خرید درخواست را تأیید کند، کار سرویس «ثبت سفارش» فرایند وضعیت درخواست را «سفارش داده شد» می‌کند.",
+      "enabled": true,
+      "invalid": false,
+      "key": "m9dntraypo3",
+      "nodes": [
+        {
+          "branchIndex": null,
+          "config": {
+            "collection": "purchase_requests",
+            "params": {
+              "filter": {
+                "id": "{{$context.recordId}}"
+              },
+              "values": {
+                "status": "ordered"
+              }
+            }
+          },
+          "downstream": null,
+          "key": "54t6as3ym88",
+          "title": "وضعیت درخواست",
+          "type": "update",
+          "upstream": null
+        }
+      ],
+      "options": {
+        "timeout": 0
+      },
+      "sync": false,
+      "title": "ثبت سفارش خرید",
+      "triggerTitle": null,
+      "type": "bpm-service-task"
+    },
+    {
+      "config": {
+        "topic": "reject-request"
+      },
+      "description": "وقتی مدیر خرید درخواست را رد کند، کار سرویس «ثبت رد» فرایند وضعیت درخواست را «ردشده» می‌کند.",
+      "enabled": true,
+      "invalid": false,
+      "key": "sypyjup7oce",
+      "nodes": [
+        {
+          "branchIndex": null,
+          "config": {
+            "collection": "purchase_requests",
+            "params": {
+              "filter": {
+                "id": "{{$context.recordId}}"
+              },
+              "values": {
+                "status": "rejected"
+              }
+            }
+          },
+          "downstream": null,
+          "key": "xjrvbm2oe7p",
+          "title": "وضعیت درخواست",
+          "type": "update",
+          "upstream": null
+        }
+      ],
+      "options": {
+        "timeout": 0
+      },
+      "sync": false,
+      "title": "ثبت رد درخواست خرید",
+      "triggerTitle": null,
+      "type": "bpm-service-task"
+    }
+  ]
+}

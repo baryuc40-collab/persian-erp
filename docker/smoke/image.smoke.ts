@@ -17,6 +17,7 @@ test('the Persian plugin is enabled and Persian is the app language', async ({ p
   expect(res.ok()).toBeTruthy();
   const names = ((await res.json()).data as { packageName: string }[]).map((p) => p.packageName);
   expect(names).toContain('@persian-erp/plugin-fa');
+  expect(names).toContain('@persian-erp/plugin-modules');
   const settings = await api.request.get('/api/systemSettings:get', { headers: api.headers });
   const { appLang, enabledLanguages } = (await settings.json()).data;
   expect(appLang).toBe('fa-IR');
@@ -36,4 +37,12 @@ test('signed in, the admin pages are Persian and use the Jalali calendar', async
   expect((await request).headers()['x-calendar']).toBe('jalali');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByText('کاربران و دسترسی‌ها').first()).toBeVisible();
+});
+
+test('the Vazirmatn font is served by the image', async ({ request }) => {
+  // The image's nginx serves only dist/client of a plugin package (STORY-072).
+  for (const file of ['Vazirmatn-Regular.woff2', 'Vazirmatn-FD-Bold.woff2']) {
+    const res = await request.get(`/static/plugins/@persian-erp/plugin-fa/dist/client/fonts/${file}`);
+    expect(res.status(), file).toBe(200);
+  }
 });

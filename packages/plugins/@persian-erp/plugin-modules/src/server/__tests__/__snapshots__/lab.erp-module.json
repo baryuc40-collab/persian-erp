@@ -1,0 +1,542 @@
+{
+  "collections": [
+    {
+      "description": null,
+      "fields": [
+        {
+          "description": null,
+          "foreignKey": "categoryId",
+          "interface": "o2m",
+          "name": "items",
+          "reverseFieldName": "category",
+          "sourceKey": "id",
+          "target": "lab_items",
+          "targetKey": "id",
+          "type": "hasMany"
+        },
+        {
+          "description": null,
+          "interface": "input",
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "filterTargetKey": "id",
+      "hidden": false,
+      "inherit": false,
+      "name": "lab_categories",
+      "title": "دسته",
+      "unavailableActions": []
+    },
+    {
+      "description": null,
+      "fields": [
+        {
+          "description": null,
+          "interface": "number",
+          "name": "amount",
+          "type": "double"
+        },
+        {
+          "description": null,
+          "foreignKey": "categoryId",
+          "interface": "m2o",
+          "name": "category",
+          "reverseFieldName": "items",
+          "target": "lab_categories",
+          "targetKey": "id",
+          "type": "belongsTo"
+        },
+        {
+          "description": null,
+          "interface": "integer",
+          "isForeignKey": true,
+          "name": "categoryId",
+          "type": "bigInt",
+          "uiSchema": {
+            "title": "categoryId",
+            "type": "number",
+            "x-component": "InputNumber",
+            "x-read-pretty": true
+          }
+        },
+        {
+          "description": null,
+          "foreignKey": "ownerId",
+          "interface": "m2o",
+          "name": "owner",
+          "target": "users",
+          "targetKey": "id",
+          "type": "belongsTo"
+        },
+        {
+          "description": null,
+          "interface": "integer",
+          "isForeignKey": true,
+          "name": "ownerId",
+          "type": "bigInt",
+          "uiSchema": {
+            "title": "ownerId",
+            "type": "number",
+            "x-component": "InputNumber",
+            "x-read-pretty": true
+          }
+        },
+        {
+          "description": null,
+          "interface": "input",
+          "name": "title",
+          "type": "string"
+        }
+      ],
+      "filterTargetKey": "id",
+      "hidden": false,
+      "inherit": false,
+      "name": "lab_items",
+      "title": "قلم",
+      "unavailableActions": []
+    }
+  ],
+  "flowModelTemplateUsages": [
+    {
+      "modelUid": "labview0001",
+      "templateUid": "labtmpl0001"
+    }
+  ],
+  "flowModelTemplates": [
+    {
+      "associationName": null,
+      "collectionName": "lab_items",
+      "dataSourceKey": "main",
+      "description": null,
+      "filterByTk": null,
+      "name": "قلم",
+      "sourceId": null,
+      "targetUid": "labpopup001",
+      "type": "popup",
+      "uid": "labtmpl0001",
+      "useModel": "DetailsBlockModel"
+    }
+  ],
+  "flowModels": [
+    {
+      "parentId": "labflowtab1",
+      "subKey": "grid",
+      "subModels": {
+        "items": [
+          {
+            "parentId": "labgrid0001",
+            "sortIndex": 1,
+            "stepParams": {
+              "resourceSettings": {
+                "init": {
+                  "collectionName": "lab_items",
+                  "dataSourceKey": "main"
+                }
+              }
+            },
+            "subKey": "items",
+            "subModels": {
+              "actions": [
+                {
+                  "parentId": "labtable001",
+                  "sortIndex": 1,
+                  "stepParams": {
+                    "popupSettings": {
+                      "openView": {
+                        "collectionName": "lab_items",
+                        "dataSourceKey": "main",
+                        "popupTemplateUid": "labtmpl0001",
+                        "uid": "labpopup001"
+                      }
+                    }
+                  },
+                  "subKey": "actions",
+                  "subType": "array",
+                  "uid": "labview0001",
+                  "use": "ViewActionModel"
+                }
+              ]
+            },
+            "subType": "array",
+            "uid": "labtable001",
+            "use": "TableBlockModel"
+          }
+        ]
+      },
+      "subType": "object",
+      "uid": "labgrid0001",
+      "use": "BlockGridModel"
+    },
+    {
+      "subModels": {
+        "page": {
+          "parentId": "labpopup001",
+          "sortIndex": 1,
+          "subKey": "page",
+          "subType": "object",
+          "uid": "labpopuppg1",
+          "use": "ChildPageModel"
+        }
+      },
+      "uid": "labpopup001",
+      "use": "ViewActionModel"
+    },
+    {
+      "parentId": "labflowpage",
+      "props": {
+        "title": "مدرن"
+      },
+      "subKey": "page",
+      "subType": "object",
+      "uid": "labroot0001",
+      "use": "RootPageModel"
+    }
+  ],
+  "format": "persian-erp-module",
+  "formatVersion": 1,
+  "module": {
+    "description": "",
+    "key": "lab",
+    "title": "آزمایشگاه",
+    "version": "1.0.0"
+  },
+  "nocobase": "<nocobase>",
+  "requires": {
+    "collections": [
+      "users"
+    ],
+    "fieldInterfaces": [
+      "input",
+      "integer",
+      "m2o",
+      "number",
+      "o2m"
+    ],
+    "fieldTypes": [
+      "belongsTo",
+      "bigInt",
+      "double",
+      "hasMany",
+      "string"
+    ],
+    "models": [
+      "BlockGridModel",
+      "ChildPageModel",
+      "RootPageModel",
+      "TableBlockModel",
+      "ViewActionModel"
+    ],
+    "workflowInstructions": [
+      "condition",
+      "query",
+      "update"
+    ],
+    "workflowTriggers": [
+      "action",
+      "collection"
+    ]
+  },
+  "roles": [
+    {
+      "allowConfigure": null,
+      "allowNewMenu": false,
+      "default": false,
+      "description": null,
+      "hidden": false,
+      "name": "lab_clerk",
+      "resources": [
+        {
+          "actions": [
+            {
+              "fields": [
+                "title"
+              ],
+              "name": "update",
+              "scope": null
+            },
+            {
+              "fields": [
+                "amount",
+                "title"
+              ],
+              "name": "view",
+              "scope": "labopenscop"
+            }
+          ],
+          "name": "lab_items",
+          "usingActionsConfig": true
+        }
+      ],
+      "routes": [
+        "labclsgrid1",
+        "labclspage1",
+        "labflowpage",
+        "labflowtab1",
+        "labgroup001",
+        "labgroup001/3"
+      ],
+      "scopes": [
+        {
+          "key": "labopenscop",
+          "name": "باز",
+          "resourceName": "lab_items",
+          "scope": {
+            "amount": 1
+          }
+        }
+      ],
+      "snippets": [
+        "!pm",
+        "!pm.*",
+        "!ui.*"
+      ],
+      "strategy": null,
+      "title": "کارمند آزمایشگاه"
+    }
+  ],
+  "routes": {
+    "children": [
+      {
+        "children": [
+          {
+            "displayTitle": null,
+            "enableHeader": null,
+            "enableTabs": null,
+            "hidden": true,
+            "hideInMenu": null,
+            "icon": null,
+            "menuSchemaUid": null,
+            "options": null,
+            "ref": "labclsgrid1",
+            "schemaUid": "labclsgrid1",
+            "tabSchemaName": "tab1",
+            "title": null,
+            "tooltip": null,
+            "type": "tabs",
+            "uiLayouts": [
+              "admin-layout-model"
+            ]
+          }
+        ],
+        "displayTitle": null,
+        "enableHeader": null,
+        "enableTabs": null,
+        "hidden": null,
+        "hideInMenu": null,
+        "icon": null,
+        "menuSchemaUid": "labclsmenu1",
+        "options": null,
+        "ref": "labclspage1",
+        "schemaUid": "labclspage1",
+        "tabSchemaName": null,
+        "title": "کلاسیک",
+        "tooltip": null,
+        "type": "page",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
+      },
+      {
+        "children": [
+          {
+            "displayTitle": null,
+            "enableHeader": null,
+            "enableTabs": null,
+            "hidden": true,
+            "hideInMenu": null,
+            "icon": null,
+            "menuSchemaUid": null,
+            "options": null,
+            "ref": "labflowtab1",
+            "schemaUid": "labflowtab1",
+            "tabSchemaName": "tab1",
+            "title": null,
+            "tooltip": null,
+            "type": "tabs",
+            "uiLayouts": [
+              "admin-layout-model"
+            ]
+          }
+        ],
+        "displayTitle": null,
+        "enableHeader": null,
+        "enableTabs": null,
+        "hidden": null,
+        "hideInMenu": null,
+        "icon": null,
+        "menuSchemaUid": "labflowmenu",
+        "options": null,
+        "ref": "labflowpage",
+        "schemaUid": "labflowpage",
+        "tabSchemaName": null,
+        "title": "مدرن",
+        "tooltip": null,
+        "type": "flowPage",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
+      },
+      {
+        "displayTitle": null,
+        "enableHeader": null,
+        "enableTabs": null,
+        "hidden": null,
+        "hideInMenu": null,
+        "icon": null,
+        "menuSchemaUid": null,
+        "options": {
+          "href": "https://example.com"
+        },
+        "ref": "labgroup001/3",
+        "schemaUid": null,
+        "tabSchemaName": null,
+        "title": "پیوند",
+        "tooltip": null,
+        "type": "link",
+        "uiLayouts": [
+          "admin-layout-model"
+        ]
+      }
+    ],
+    "displayTitle": null,
+    "enableHeader": null,
+    "enableTabs": null,
+    "hidden": null,
+    "hideInMenu": null,
+    "icon": null,
+    "menuSchemaUid": null,
+    "options": null,
+    "ref": "labgroup001",
+    "schemaUid": "labgroup001",
+    "tabSchemaName": null,
+    "title": "آزمایشگاه",
+    "tooltip": null,
+    "type": "group",
+    "uiLayouts": [
+      "admin-layout-model"
+    ]
+  },
+  "uiSchemas": [
+    {
+      "name": "labclspage",
+      "properties": {
+        "tab1": {
+          "properties": {
+            "table": {
+              "properties": {
+                "approve": {
+                  "type": "void",
+                  "x-action-settings": {
+                    "triggerWorkflows": [
+                      {
+                        "workflowKey": "labapprove1"
+                      }
+                    ]
+                  },
+                  "x-async": false,
+                  "x-component": "Action",
+                  "x-index": 1,
+                  "x-uid": "labclsbtn01"
+                }
+              },
+              "type": "void",
+              "x-acl-action": "lab_items:list",
+              "x-async": false,
+              "x-decorator": "TableBlockProvider",
+              "x-decorator-props": {
+                "collection": "lab_items",
+                "dataSource": "main"
+              },
+              "x-index": 1,
+              "x-uid": "labclstable"
+            }
+          },
+          "type": "void",
+          "x-async": false,
+          "x-component": "Grid",
+          "x-index": 1,
+          "x-uid": "labclsgrid1"
+        }
+      },
+      "type": "void",
+      "x-async": false,
+      "x-component": "Page",
+      "x-uid": "labclspage1"
+    }
+  ],
+  "workflows": [
+    {
+      "config": {
+        "collection": "users"
+      },
+      "description": null,
+      "enabled": true,
+      "invalid": false,
+      "key": "labapprove1",
+      "nodes": [],
+      "options": {
+        "timeout": 0
+      },
+      "sync": false,
+      "title": "تأیید",
+      "triggerTitle": null,
+      "type": "action"
+    },
+    {
+      "config": {
+        "collection": "lab_items",
+        "mode": 1
+      },
+      "description": null,
+      "enabled": false,
+      "invalid": false,
+      "key": "labstatus01",
+      "nodes": [
+        {
+          "branchIndex": null,
+          "config": {},
+          "downstream": "labnodeqry1",
+          "key": "labnodecond",
+          "title": "شرط",
+          "type": "condition",
+          "upstream": null
+        },
+        {
+          "branchIndex": 1,
+          "config": {
+            "collection": "lab_items",
+            "params": {
+              "values": {
+                "title": "{{$jobsMapByNodeKey.labnodecond}}"
+              }
+            }
+          },
+          "downstream": null,
+          "key": "labnodeyes1",
+          "title": null,
+          "type": "update",
+          "upstream": "labnodecond"
+        },
+        {
+          "branchIndex": null,
+          "config": {
+            "collection": "lab_categories"
+          },
+          "downstream": null,
+          "key": "labnodeqry1",
+          "title": null,
+          "type": "query",
+          "upstream": "labnodecond"
+        }
+      ],
+      "options": {
+        "timeout": 0
+      },
+      "sync": false,
+      "title": "وضعیت",
+      "triggerTitle": null,
+      "type": "collection"
+    }
+  ]
+}

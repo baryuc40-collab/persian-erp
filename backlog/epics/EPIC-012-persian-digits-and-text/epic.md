@@ -54,3 +54,4 @@ owner: mmsh
 | [STORY-052](STORY-052-persian-digit-input.md) | پذیرش ارقام فارسی و عربی در ورودی‌ها | done |
 | [STORY-053](STORY-053-normalize-ye-ke.md) | یکسان‌سازی «ي/ك» به «ی/ک» در ذخیره و جست‌وجو | done |
 | [STORY-054](STORY-054-currency-field.md) | فیلد مبلغ با واحد ریال یا تومان | done |
+| [STORY-073](STORY-073-modern-page-font.md) | فونت وزیرمتن و ارقام فارسی در بلوک‌های صفحه‌ی مدرن | done |
