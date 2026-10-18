@@ -2,7 +2,7 @@
 id: STORY-073
 epic: EPIC-012
 title: فونت وزیرمتن و ارقام فارسی در بلوک‌های صفحه‌ی مدرن
-status: in-review
+status: done
 model: sonnet   # رفع خطا در FaProvider
 ---
 
@@ -35,4 +35,4 @@ model: sonnet   # رفع خطا در FaProvider
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد

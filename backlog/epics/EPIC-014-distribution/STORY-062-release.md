@@ -2,7 +2,7 @@
 id: STORY-062
 epic: EPIC-014
 title: نسخه‌گذاری و انتشار در GitHub Release
-status: in-review
+status: done
 model: sonnet
 ---
 
@@ -54,4 +54,4 @@ model: sonnet
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد
