@@ -1,6 +1,6 @@
 import type Application from '@nocobase/server';
 import type { Model } from '@nocobase/database';
-import { buildModuleFile, ModuleExportError, ModuleRecords } from '../shared/build';
+import { buildModuleFile, ModuleExportError, ModuleRecords, ownerOf } from '../shared/build';
 import { collectionFromConfig, collectRefs, emptyRefs, ModuleFile, ModuleInfo, modulePrefix } from '../shared/format';
 
 type Row = Record<string, any>;
@@ -79,6 +79,10 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
     }
   }
 
+  const otherModules = (
+    await db.getRepository('erpModules').find({ filter: { key: { $ne: moduleRow.key } } })
+  ).map((row) => ({ key: row.get('key') as string, version: row.get('version') as string }));
+
   // Modern pages: models below the routes, then popup hosts and templates they reach, until nothing new turns up.
   const flowModels: Row[] = [];
   const templates = new Map<string, Row>();
@@ -118,6 +122,10 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
       const model = await repository.findModelById(uid, { includeAsyncNode: true });
       // A reference to a deleted model or template is left as it is; NocoBase ignores it too.
       if (!model?.uid) continue;
+      // The popup of a record of another module, such as a supplier opened from an order, is that module's: its file
+      // brings it, and requires.modules makes sure it is there.
+      const opens = model.stepParams?.popupSettings?.openView?.collectionName;
+      if (!parent && typeof opens === 'string' && ownerOf(opens, otherModules)) continue;
       flowModels.push(model);
       uidsOfModelTree(model, contained);
       const found = collectRefs(model);
@@ -151,9 +159,15 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
 
   // Workflows: current versions triggered on a module collection, run from a module page, or with a node that works on
   // a module collection, like a workflow of the BPMN service task event (STORY-083), which has no collection itself.
+  // A workflow triggered on a collection of another module is that module's, even when its nodes write here, like the
+  // purchase order workflow that issues a stock receipt.
   const workflows: Row[] = [];
   if (has('workflows')) {
     const inModule = (config?: Row) => collectionNames.has(collectionFromConfig(config?.collection));
+    const inOtherModule = (config?: Row) => {
+      const name = collectionFromConfig(config?.collection);
+      return !!name && !!ownerOf(name, otherModules);
+    };
     for (const workflow of await db
       .getRepository('workflows')
       .find({ filter: { current: true }, appends: ['nodes'] })) {
@@ -161,7 +175,7 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
       if (
         inModule(row.config) ||
         refs.workflowKeys.has(row.key) ||
-        (row.nodes || []).some((n: Row) => inModule(n.config))
+        (!inOtherModule(row.config) && (row.nodes || []).some((n: Row) => inModule(n.config)))
       ) {
         workflows.push(row);
       }
@@ -207,6 +221,7 @@ export async function readModuleRecords(app: Application, moduleRow: ModuleRow):
     flowModelTemplateUsages,
     workflows,
     roles,
+    otherModules,
   };
 }
 

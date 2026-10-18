@@ -28,6 +28,12 @@ export interface ModuleRecords {
   flowModelTemplateUsages: Row[];
   workflows: Row[]; // current versions, each with its nodes in `nodes`
   roles: Row[]; // each with `resources` (with `actions`), `scopes` and `routeIds`
+  otherModules?: { key: string; version: string }[]; // the other modules installed, which may own referenced collections
+}
+
+/** The installed module whose collections the name belongs to: the longest key that the name starts with, then `_`. */
+export function ownerOf(name: string, modules: { key: string }[]) {
+  return modules.filter((module) => name.startsWith(`${module.key}_`)).sort((a, b) => b.key.length - a.key.length)[0];
 }
 
 // Database ids, timestamps and audit columns: they differ between installs and are rebuilt on import.
@@ -59,10 +65,7 @@ const compareIds = (a: unknown, b: unknown) => {
 };
 
 export class ModuleExportError extends Error {
-  constructor(
-    message: string,
-    public readonly details: Record<string, unknown> = {},
-  ) {
+  constructor(message: string, public readonly details: Record<string, unknown> = {}) {
     super(message);
   }
 }
@@ -214,7 +217,6 @@ export function buildModuleFile(records: ModuleRecords): ModuleFile {
   const collectionNames = new Set(records.collections.map((c) => c.name));
   const { tree, refById } = buildRoutes(records.routes, records.groupId);
   const workflows = buildWorkflows(records.workflows);
-  const roles = buildRoles(records.roles, collectionNames, refById);
 
   // References that point outside the module.
   const refs = emptyRefs();
@@ -242,18 +244,33 @@ export function buildModuleFile(records: ModuleRecords): ModuleFile {
         .map((n) => n.config.channelName as string),
     ),
   );
+  // A collection of another installed module is not listed by name: the module is, with the version installed now.
+  const others = (records.otherModules || []).filter((module) => module.key !== records.module.key);
+  const external = [...referenced].filter((name) => !collectionNames.has(name));
+  const modules: Record<string, string> = {};
+  for (const name of external) {
+    const owner = ownerOf(name, others);
+    if (owner) modules[owner.key] = owner.version;
+  }
+  // A role keeps its permissions on the collections of the modules it needs, such as reading their items.
+  const roles = buildRoles(
+    records.roles,
+    new Set([...collectionNames, ...external.filter((name) => ownerOf(name, others))]),
+    refById,
+  );
   const file: ModuleFile = {
     format: MODULE_FORMAT,
     formatVersion: MODULE_FORMAT_VERSION,
     module: records.module,
     nocobase: records.nocobase,
     requires: {
-      collections: sorted([...referenced].filter((name) => !collectionNames.has(name))),
+      collections: sorted(external.filter((name) => !ownerOf(name, others))),
       fieldTypes: sorted(records.collections.flatMap((c) => (c.fields || []).map((f) => f.type))),
       fieldInterfaces: sorted(records.collections.flatMap((c) => (c.fields || []).map((f) => f.interface))),
       workflowTriggers: sorted(workflows.map((w) => w.type)),
       workflowInstructions: sorted(workflows.flatMap((w) => w.nodes.map((n) => n.type))),
       ...(channels.length ? { notificationChannels: channels } : {}),
+      ...(Object.keys(modules).length ? { modules: canonicalize(modules) as Record<string, string> } : {}),
       models: sorted(refs.models),
     },
     collections: buildCollections(records.collections),

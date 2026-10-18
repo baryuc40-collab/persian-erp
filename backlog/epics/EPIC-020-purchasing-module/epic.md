@@ -55,6 +55,6 @@ owner: mmsh
 ## استوری‌ها
 | شناسه | عنوان | وضعیت |
 | --- | --- | --- |
-| [STORY-087](STORY-087-module-dependencies.md) | وابستگی ماژول به ماژول دیگر | todo |
+| [STORY-087](STORY-087-module-dependencies.md) | وابستگی ماژول به ماژول دیگر | in-review |
 | [STORY-088](STORY-088-purchase-orders.md) | ماژول سفارش خرید ۱.۰: سفارش با ردیف، جمع ریالی و تأیید | todo |
 | [STORY-089](STORY-089-purchase-receipt.md) | ماژول سفارش خرید ۱.۱: صدور رسید انبار از سفارش | todo |

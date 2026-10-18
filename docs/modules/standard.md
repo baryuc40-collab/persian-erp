@@ -121,7 +121,7 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 هر چیزی که ماژول از بیرون خودش به کار می‌برد، در `requires` فایل آمده است. ورود ماژول پیش از هر تغییری `requires` را بررسی می‌کند (STORY-065)، پس ماژولی که ارجاع اعلام‌نشده دارد، ممکن است در نصب دیگر بدون پیام روشن خراب شود.
 
 ابزار این ارجاع‌ها را بررسی می‌کند:
-- **مجموعه‌های بیرونی:** هدف فیلدهای رابطه، `inherits`، مجموعه‌ی رویداد شروع و نودهای گردش‌کار، و مجموعه‌هایی که صفحه‌های کلاسیک و مدرن نشان می‌دهند. همه باید در `requires.collections` باشند.
+- **مجموعه‌های بیرونی:** هدف فیلدهای رابطه، `inherits`، مجموعه‌ی رویداد شروع و نودهای گردش‌کار، و مجموعه‌هایی که صفحه‌های کلاسیک و مدرن نشان می‌دهند. همه باید در `requires.collections` باشند، یا مال ماژولی باشند که در `requires.modules` آمده است (M008).
 - **نوع‌ها:** رابط فیلدها در `requires.fieldInterfaces`، نوع رویداد شروع در `requires.workflowTriggers` و نوع نودها در `requires.workflowInstructions`.
 - **کانال اعلان:** کانالی که نود «اعلان» از آن می‌فرستد، در `requires.notificationChannels`. ماژول‌ها کانال `erp_in_app` را به کار می‌برند که `plugin-modules` در هر نصب می‌سازد.
 
@@ -130,6 +130,21 @@ ERROR   M002 crm.erp-module.json collections[crm_people].fields[name].uiSchema.t
 | درست | نادرست |
 |---|---|
 | فیلد `owner` به `users` و `users` در `requires.collections` | فیلد `owner` به `users` و `requires.collections` خالی |
+
+<a id="m008"></a>
+
+### M008: وابستگی به ماژول دیگر با `requires.modules`
+
+جدولی که مال ماژول دیگری است (نامش با `<کلید>_` شروع می‌شود)، با نام آن ماژول و کمینه‌ی نسخه‌اش در `requires.modules` می‌آید، نه در `requires.collections`. ورود ماژول بدون آن ماژول یا با نسخه‌ی پایین‌تر رد می‌شود و پیامش می‌گوید کدام ماژول را اول نصب کنید. حذف ماژولی که دیگری به آن وابسته است هم رد می‌شود (STORY-087).
+
+ابزار این‌ها را خطا می‌داند:
+- کلیدی در `requires.modules` که کلید معتبر ماژول نیست یا کلید خود ماژول است
+- نسخه‌ای که به شکل `x.y.z` نیست
+- جدولی به شکل جدول ماژول در `requires.collections` که هیچ ماژولی در `requires.modules` صاحبش نیست
+
+| درست | نادرست |
+|---|---|
+| فیلد `item` به `inventory_items` و `"modules": { "inventory": "1.2.0" }` | فیلد `item` به `inventory_items` و `inventory_items` در `requires.collections` |
 
 ## افزودن قاعده
 

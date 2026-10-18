@@ -87,5 +87,10 @@
   "Upgrade to version {{version}}": "ارتقا به نسخه‌ی {{version}}",
   "Upgrade the module": "ارتقای ماژول",
   "Upgrade": "ارتقا",
-  "The module was upgraded": "ماژول ارتقا یافت"
+  "The module was upgraded": "ماژول ارتقا یافت",
+  "This module needs the module {{key}} version {{version}} or later; install it first": "این ماژول به ماژول {{key}} نسخه‌ی {{version}} یا بالاتر نیاز دارد؛ اول آن را نصب کنید",
+  "This module needs the module {{key}} version {{version}} or later; this install has version {{installed}}": "این ماژول به ماژول {{key}} نسخه‌ی {{version}} یا بالاتر نیاز دارد؛ نسخه‌ی نصب‌شده {{installed}} است",
+  "The module {{modules}} depends on this module; remove it first": "ماژول {{modules}} به این ماژول وابسته است؛ اول آن را حذف کنید",
+  "Required modules": "ماژول‌های لازم",
+  "{{key}} version {{version}} or later": "{{key}} نسخه‌ی {{version}} یا بالاتر"
 }

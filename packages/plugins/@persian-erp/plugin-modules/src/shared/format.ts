@@ -26,6 +26,8 @@ export interface ModuleRequires {
   workflowInstructions: string[];
   /** Notification channels the notification nodes of the workflows send through; absent when there are none. */
   notificationChannels?: string[];
+  /** Other modules whose collections this one uses, by key, with the lowest version that works; absent when none. */
+  modules?: Record<string, string>;
   models: string[];
 }
 
@@ -104,7 +106,7 @@ const xIndex = (value: unknown) =>
  */
 export function canonicalize<T>(value: T, parentKey?: string): T {
   if (Array.isArray(value)) {
-    return value.map((item) => canonicalize(item)) as unknown as T;
+    return (value.map((item) => canonicalize(item)) as unknown) as T;
   }
   if (!isPlainObject(value)) {
     return value;

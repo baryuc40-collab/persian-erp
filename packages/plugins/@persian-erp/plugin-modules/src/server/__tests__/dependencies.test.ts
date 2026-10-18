@@ -1,0 +1,215 @@
+import { createMockServer, MockServer } from '@nocobase/test';
+import { buildLabModule, MODULE_PLUGINS } from './lab-module';
+
+const createApp = () => createMockServer({ plugins: MODULE_PLUGINS, acl: true });
+
+async function rootAgent(app: MockServer) {
+  const user = await app.db.getRepository('users').findOne({ filter: { 'roles.name': 'root' } });
+  return app.agent().login(user, 'root');
+}
+
+const errorOf = (res) => res.body.errors?.[0]?.message as string;
+
+// A second module whose collection points at a collection of the lab module.
+async function buildShopModule(app: MockServer) {
+  const db = app.db;
+  await db.getRepository('collections').create({
+    values: { name: 'shop_orders', title: 'سفارش', fields: [{ name: 'note', type: 'string', interface: 'input' }] },
+    context: {},
+  });
+  await db.getRepository('fields').create({
+    values: {
+      collectionName: 'shop_orders',
+      name: 'item',
+      type: 'belongsTo',
+      interface: 'm2o',
+      target: 'lab_items',
+      foreignKey: 'itemId',
+    },
+    context: {},
+  });
+  await db.getRepository('desktopRoutes').create({
+    values: {
+      type: 'group',
+      title: 'فروشگاه',
+      schemaUid: 'shopgroup01',
+      children: [
+        {
+          type: 'flowPage',
+          title: 'سفارش‌ها',
+          schemaUid: 'shopflowpg1',
+          menuSchemaUid: 'shopflowmn1',
+          children: [{ type: 'tabs', schemaUid: 'shopflowtb1', tabSchemaName: 'tab1', hidden: true }],
+        },
+      ],
+    },
+  });
+  // The orders page opens an order in a popup of its own, and the item of an order in the item popup of the lab module.
+  const models = db.getRepository('flowModels') as any;
+  const host = (uid: string, collectionName: string) =>
+    models.insertModel({
+      uid,
+      use: 'ViewActionModel',
+      stepParams: { popupSettings: { openView: { dataSourceKey: 'main', collectionName } } },
+      subModels: { page: { uid: `${uid}pg`, use: 'ChildPageModel' } },
+    });
+  await host('labitemhost', 'lab_items');
+  await host('shopordhost', 'shop_orders');
+  const opens = (uid: string, target: string, collectionName: string) => ({
+    uid,
+    use: 'ViewActionModel',
+    stepParams: { popupSettings: { openView: { uid: target, dataSourceKey: 'main', collectionName } } },
+  });
+  await models.upsertModel({
+    uid: 'shoproot001',
+    parentId: 'shopflowpg1',
+    subKey: 'page',
+    subType: 'object',
+    use: 'RootPageModel',
+    subModels: {
+      actions: [opens('shopopenord', 'shopordhost', 'shop_orders'), opens('shopopenitm', 'labitemhost', 'lab_items')],
+    },
+  });
+  // A shop workflow that writes an item of the lab module.
+  const workflow = await db.getRepository('workflows').create({
+    values: {
+      key: 'shopwrites1',
+      title: 'ثبت قلم',
+      type: 'collection',
+      config: { mode: 1, collection: 'shop_orders' },
+    },
+  });
+  await db.getRepository('flow_nodes').create({
+    values: {
+      key: 'shopnodecr1',
+      workflowId: workflow.get('id'),
+      type: 'create',
+      config: { collection: 'lab_items', params: { values: { title: 'از سفارش' } } },
+    },
+  });
+  // The clerk reads the items of the lab module and nothing else of NocoBase.
+  await db.getRepository('roles').create({ values: { name: 'shop_clerk', title: 'فروشنده' } });
+  for (const [name, actions] of [
+    ['shop_orders', [{ name: 'view', fields: ['note', 'item'] }]],
+    ['lab_items', [{ name: 'view', fields: ['title'] }]],
+    ['users', [{ name: 'view', fields: ['nickname'] }]],
+  ] as const) {
+    await db.getRepository('dataSourcesRolesResources').create({
+      values: { roleName: 'shop_clerk', dataSourceKey: 'main', name, usingActionsConfig: true, actions },
+    });
+  }
+  await db.getRepository('erpModules').create({
+    values: { key: 'shop', title: 'فروشگاه', version: '1.0.0', groupSchemaUid: 'shopgroup01' },
+  });
+}
+
+// One module that needs another (STORY-087).
+describe('module dependencies', () => {
+  let app: MockServer;
+  let labFile: Record<string, any>;
+  let shopFile: Record<string, any>;
+
+  beforeAll(async () => {
+    const source = await createApp();
+    await buildLabModule(source);
+    await source.db.getRepository('erpModules').update({ filterByTk: 'lab', values: { version: '1.2.0' } });
+    await buildShopModule(source);
+    const agent = await rootAgent(source);
+    labFile = JSON.parse((await agent.resource('erpModules').export({ filterByTk: 'lab' })).text);
+    shopFile = JSON.parse((await agent.resource('erpModules').export({ filterByTk: 'shop' })).text);
+    await source.destroy();
+  });
+
+  beforeEach(async () => {
+    app = await createApp();
+  });
+
+  afterEach(async () => {
+    await app.destroy();
+  });
+
+  const importFile = async (file: object) => (await rootAgent(app)).resource('erpModules').import({ values: file });
+
+  it('lists the module that owns a referenced collection, with its installed version, instead of the collection', () => {
+    expect(shopFile.requires.modules).toEqual({ lab: '1.2.0' });
+    expect(shopFile.requires.collections).not.toContain('lab_items');
+    // A collection of NocoBase itself is still listed by name, and a module without dependencies has no entry.
+    expect(labFile.requires.collections).toContain('users');
+    expect(labFile.requires.modules).toBeUndefined();
+  });
+
+  it('keeps a workflow with the module whose collection triggers it, not the one whose collection it writes', () => {
+    expect(shopFile.workflows.map((w) => w.key)).toContain('shopwrites1');
+    expect(labFile.workflows.map((w) => w.key)).not.toContain('shopwrites1');
+    expect(labFile.requires.modules).toBeUndefined();
+  });
+
+  it("leaves out the popup of the needed module's records, and keeps its own", () => {
+    const uids = shopFile.flowModels.map((model) => model.uid);
+    expect(uids).toContain('shopordhost');
+    expect(uids).not.toContain('labitemhost');
+  });
+
+  it("keeps a role's permissions on the needed module's collections, not on NocoBase's own", () => {
+    const [clerk] = shopFile.roles;
+    expect(clerk.resources.map((r) => r.name)).toEqual(['lab_items', 'shop_orders']);
+  });
+
+  it("gives the role its permissions on the needed module's collections on import, and again on upgrade", async () => {
+    await importFile(labFile);
+    await importFile(shopFile);
+    const clerkResources = () =>
+      app.db
+        .getRepository('dataSourcesRolesResources')
+        .find({ filter: { roleName: 'shop_clerk' }, appends: ['actions'] });
+    expect((await clerkResources()).map((r) => r.get('name')).sort()).toEqual(['lab_items', 'shop_orders']);
+
+    const next = JSON.parse(JSON.stringify(shopFile));
+    next.module.version = '1.1.0';
+    next.roles[0].resources[0].actions[0].fields = ['amount', 'title'];
+    const res = await (await rootAgent(app)).resource('erpModules').upgrade({ values: next });
+    expect(res.status).toBe(200);
+    const resources = await clerkResources();
+    expect(resources.map((r) => r.get('name')).sort()).toEqual(['lab_items', 'shop_orders']);
+    const items = resources.find((r) => r.get('name') === 'lab_items');
+    expect(items.get('actions').map((a) => a.get('fields'))).toEqual([['amount', 'title']]);
+  });
+
+  it('refuses the import while the needed module is missing or older, and writes nothing', async () => {
+    let res = await importFile(shopFile);
+    expect(res.status).toBe(400);
+    expect(errorOf(res)).toContain('This module needs the module lab version 1.2.0 or later; install it first');
+    expect(app.db.hasCollection('shop_orders')).toBe(false);
+
+    expect((await importFile({ ...labFile, module: { ...labFile.module, version: '1.1.0' } })).status).toBe(200);
+    res = await importFile(shopFile);
+    expect(res.status).toBe(400);
+    expect(errorOf(res)).toContain('this install has version 1.1.0');
+    expect(await app.db.getRepository('erpModules').count({ filter: { key: 'shop' } })).toBe(0);
+  });
+
+  it('imports once the needed module is there, and shows the need in the preview', async () => {
+    expect((await importFile(labFile)).status).toBe(200);
+    const preview = await (await rootAgent(app)).resource('erpModules').import({ values: shopFile, dryRun: true });
+    expect(preview.body.data.summary.requiredModules).toEqual([{ key: 'lab', version: '1.2.0' }]);
+    expect(preview.body.data.problems).toEqual([]);
+    expect((await importFile(shopFile)).status).toBe(200);
+    expect(app.db.hasCollection('shop_orders')).toBe(true);
+  });
+
+  it('refuses to remove a module another one needs, until that one is removed', async () => {
+    await importFile(labFile);
+    await importFile(shopFile);
+    const agent = await rootAgent(app);
+    const preview = await agent.resource('erpModules').remove({ filterByTk: 'lab', dryRun: true });
+    expect(preview.body.data.dependents).toEqual([{ key: 'shop', title: 'فروشگاه' }]);
+
+    const res = await agent.resource('erpModules').remove({ filterByTk: 'lab', confirm: 'lab' });
+    expect(res.status).toBe(400);
+    expect(errorOf(res)).toBe('The module shop depends on this module; remove it first');
+    expect(app.db.hasCollection('lab_items')).toBe(true);
+
+    expect((await agent.resource('erpModules').remove({ filterByTk: 'shop', confirm: 'shop' })).status).toBe(200);
+    expect((await agent.resource('erpModules').remove({ filterByTk: 'lab', confirm: 'lab' })).status).toBe(200);
+  });
+});

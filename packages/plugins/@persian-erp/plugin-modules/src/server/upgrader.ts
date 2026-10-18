@@ -1,7 +1,7 @@
 import type { BelongsToManyRepository, Transaction } from '@nocobase/database';
 import type Application from '@nocobase/server';
 import { canonicalize, ModuleFile, ModuleRoute, ModuleWorkflow } from '../shared/format';
-import type { FileProblem } from '../shared/validate';
+import { compareVersions, FileProblem } from '../shared/validate';
 import { exportModule, ModuleRow, readModuleRecords } from './exporter';
 import { moduleHash, saveInstalledHash } from './installed-hash';
 import {
@@ -30,19 +30,6 @@ interface CollectionRepository {
 }
 interface AclPlugin {
   writeRoleToACL(role: unknown, options?: { transaction?: Transaction }): Promise<void>;
-}
-
-const VERSION = /^(\d+)\.(\d+)\.(\d+)/;
-/** Compares x.y.z versions; null when one of them is not of that form. */
-export function compareVersions(a: string, b: string): number | null {
-  const x = VERSION.exec(String(a || ''));
-  const y = VERSION.exec(String(b || ''));
-  if (!x || !y) return null;
-  for (let i = 1; i <= 3; i++) {
-    const diff = Number(x[i]) - Number(y[i]);
-    if (diff) return Math.sign(diff);
-  }
-  return 0;
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(canonicalize(a)) === JSON.stringify(canonicalize(b));
@@ -252,10 +239,13 @@ async function upgradeRoles(
     if (plan.roles.added.includes(name)) {
       await db.getRepository('roles').create({ values: { name, ...values }, transaction });
     } else if (plan.roles.updated.includes(name)) {
-      // Its permissions on module collections are written again from the file; others are not the module's.
+      // Its permissions on module collections, and on the collections of needed modules that either version lists, are
+      // written again from the file; others are not the module's.
+      const before = current.roles.find((r) => r.name === name)?.resources || [];
+      const names = [...new Set([...collections, ...[...before, ...resources].map((r) => r.name)])];
       await db.getRepository('roles').update({ filterByTk: name, values, transaction });
       await db.getRepository('dataSourcesRolesResources').destroy({
-        filter: { roleName: name, dataSourceKey: 'main', name: { $in: collections } },
+        filter: { roleName: name, dataSourceKey: 'main', name: { $in: names } },
         transaction,
       });
     } else {
