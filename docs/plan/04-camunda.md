@@ -58,4 +58,4 @@ Camunda وقتی ارزش دارد که:
 
 ## پس از اثبات مفهوم
 
-اثبات مفهوم در [EPIC-016](../../backlog/epics/EPIC-016-bpmn-engine/epic.md) انجام شد ([گزارش](../research/bpmn-poc.md)). طرح گام بعد، با ویرایشگر BPMN داخل NocoBase، مدیریت نمونه‌ها، لاگ و پایش و وضعیت امروز مجوز Camunda، در [سکوی فرایند](05-process-platform.md) است.
+اثبات مفهوم در [EPIC-016](../../backlog/epics/EPIC-016-bpmn-engine/epic.md) انجام شد ([گزارش](../research/bpmn-poc.md)). طرح گام بعد در [سکوی فرایند](05-process-platform.md) است: ویرایشگر BPMN داخل NocoBase، مدیریت نمونه‌ها، و لاگ و پایش. به خواست صاحب پروژه، موتور به Camunda 8.10 می‌رود و گردش‌کار NocoBase سازنده‌ی دوم فرایند می‌شود ([تصمیم ۰۰۰۸](../decisions/0008-camunda8-and-two-builders.md)).

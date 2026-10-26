@@ -66,7 +66,7 @@
 
 ## فاز ۶: موتور BPMN (Camunda یا جایگزین)
 
-جزئیات در [04-camunda.md](04-camunda.md). گام بعد از اثبات مفهوم، یعنی طراحی، مدیریت و پایش فرایند داخل NocoBase، در [05-process-platform.md](05-process-platform.md) آمده است.
+جزئیات در [04-camunda.md](04-camunda.md). گام بعد از اثبات مفهوم، یعنی طراحی، مدیریت و پایش فرایند داخل NocoBase با Camunda 8 و گردش‌کار NocoBase، در [05-process-platform.md](05-process-platform.md) آمده است.
 
 ---
 
