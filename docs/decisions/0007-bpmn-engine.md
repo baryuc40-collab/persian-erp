@@ -73,7 +73,7 @@ interface BpmEngine {
 
 - business key هر نمونه `<collection>:<id>` است، مثل `purchase_requests:1`.
 - متغیرهای فرایند فقط شناسه‌ها و تصمیم‌ها را دارند، مثل `recordId` و `approved`. فرم کار انسانی داده را از رکورد می‌خواند و در رکورد می‌نویسد، و فقط تصمیم به موتور می‌رود.
-- تاریخ در موتور هم UTC است، مثل پایگاه داده‌ی NocoBase. نمایش جلالی فقط در صندوق کار است.
+- تاریخ در موتور هم UTC است، مثل پایگاه داده‌ی NocoBase. نمایش جلالی فقط در کارتابل است.
 
 ### ۵. هویت و دسترسی
 
@@ -95,7 +95,7 @@ interface BpmEngine {
 | `BpmEngine`، `OperatonAdapter`، تنظیمات اتصال و استقرار مدل | `plugin-bpm/src/server/engine/` و صفحه‌ی «تنظیمات ← موتور BPMN» | STORY-079 |
 | نود «شروع فرایند BPMN» | `registerInstruction('bpm-start', ...)` در `plugin-workflow` ([`Plugin.ts`](https://github.com/nocobase/nocobase/blob/v2.2.22/packages/plugins/%40nocobase/plugin-workflow/src/server/Plugin.ts#L320)) | STORY-080 |
 | Worker و رویداد گردش‌کار «کار سرویس BPMN» | `plugin-bpm/src/server/worker.ts` و یک trigger گردش‌کار | STORY-081 |
-| صندوق کار | اکشن‌های `bpmTasks` و بلوک صفحه‌ی مدرن | STORY-082 |
+| کارتابل | اکشن‌های `bpmTasks` و بلوک صفحه‌ی مدرن | STORY-082 |
 | فرایند نمونه | [`bpmn/purchase-request.bpmn`](../../bpmn/purchase-request.bpmn) و یک ماژول ERP | STORY-083 |
 
 پلاگین اختیاری است. Operaton در Compose پشت profile `bpm` می‌آید و نصب بدون آن دست نمی‌خورد.

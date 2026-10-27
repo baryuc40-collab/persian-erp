@@ -90,7 +90,9 @@ async function eventually(check: () => Promise<void>) {
 async function inboxRow(page: Page, title: string): Promise<Locator> {
   // The requests page opened before stays in the document with its own table and refresh button, so both are looked
   // for inside the inbox block.
-  const inbox = page.locator('.ant-card').filter({ has: page.getByText('صندوق کار', { exact: true }) });
+  // «کارتابل» is also the name of NocoBase's own task center and part of the page title, so the block is found by its
+  // card title.
+  const inbox = page.locator('.ant-card').filter({ has: page.locator('.ant-card-head-title', { hasText: /^کارتابل$/ }) });
   const row = inbox.locator('tr', { hasText: title });
   await eventually(async () => {
     await inbox.getByRole('button', { name: 'تازه‌سازی' }).click();
@@ -122,7 +124,7 @@ test('a purchase request is approved or rejected by the purchase manager', async
 
   // The requester has no role of the task: nothing in the inbox, and deciding through the API is refused.
   await openMenu(requester, 'کارتابل خرید');
-  await expect(requester.getByText('صندوق کار', { exact: true })).toBeVisible();
+  await expect(requester.locator('.ant-card-head-title', { hasText: /^کارتابل$/ })).toBeVisible();
   await expect(requester.getByText('کاری برای شما نیست')).toBeVisible();
 
   const manager = await browser.newPage();

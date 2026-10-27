@@ -151,7 +151,7 @@ async function workflow(values, node) {
   // The task inbox of plugin-bpm is not a block the page builder knows, so it is added under the text, as the
   // "Other blocks" menu of the page does.
   const grid = await pageGrid('کارتابل خرید');
-  const inbox = { uid: `${KEY}inbox01`, use: 'BpmTaskInboxBlockModel', stepParams: { cardSettings: { titleDescription: { title: 'صندوق کار' } } } };
+  const inbox = { uid: `${KEY}inbox01`, use: 'BpmTaskInboxBlockModel', stepParams: { cardSettings: { titleDescription: { title: 'کارتابل' } } } };
   await call('flowModels:save', { ...inbox, parentId: grid.uid, subKey: 'items', subType: 'array' });
   const rows = { ...(grid.props && grid.props.rows), inbox: [[inbox.uid]] };
   await call('flowModels:save', { uid: grid.uid, use: grid.use, props: { ...grid.props, rows } });
