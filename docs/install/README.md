@@ -13,6 +13,7 @@ mkdir -p /opt/persian-erp && cd /opt/persian-erp
 curl -fsSLO https://raw.githubusercontent.com/baryuc40-collab/persian-erp/main/docker/docker-compose.yml
 curl -fsSL -o .env https://raw.githubusercontent.com/baryuc40-collab/persian-erp/main/docker/.env.example
 sed -i "s/^APP_KEY=.*/APP_KEY=$(openssl rand -hex 32)/; s/^DB_PASSWORD=.*/DB_PASSWORD=$(openssl rand -hex 16)/" .env
+sed -i "s/^CAMUNDA_DB_PASSWORD=.*/CAMUNDA_DB_PASSWORD=$(openssl rand -hex 16)/; s/^BPM_ENGINE_PASSWORD=.*/BPM_ENGINE_PASSWORD=$(openssl rand -hex 16)/" .env
 nano .env
 ```
 
@@ -46,6 +47,57 @@ erp.example.com {
 
 جزئیات و نمونه‌ی nginx در [راهنمای استقرار NocoBase](https://docs.nocobase.com/get-started/deployment/production) است.
 
+## موتور فرایند (اختیاری)
+
+موتور فرایند Camunda 8 فرایندهای BPMN را اجرا می‌کند ([تصمیم ۰۰۰۸](../decisions/0008-camunda8-and-two-builders.md)). اگر فرایند BPMN ندارید، این بخش را رد کنید.
+
+پیش از روشن کردن بدانید:
+- **مجوز:** Camunda 8 با Camunda License 1.0 فقط برای محیط غیرعملیاتی (آزمون و آزمایش) آزاد است. برای کار واقعی سازمان یا کلید مجوز Camunda لازم است، که در `CAMUNDA_LICENSE_KEY` می‌نشیند، یا موتور جایگزین Operaton ([مجوز Camunda 8](../decisions/0008-camunda8-and-two-builders.md#مجوز-camunda-8)).
+- **حافظه:** موتور حدود ۲ گیگابایت حافظه‌ی بیشتر می‌خواهد. سرور دست‌کم ۴ گیگابایت حافظه لازم دارد.
+
+### روشن کردن
+
+نصبی که با `.env.example` تازه ساخته شده، رمزهای موتور را از دستور `sed` بخش نصب گرفته است. در نصب قدیمی‌تر، اول فایل Compose تازه را بگیرید و رمزها را به `.env` اضافه کنید:
+
+```bash
+cd /opt/persian-erp
+curl -fsSLO https://raw.githubusercontent.com/baryuc40-collab/persian-erp/main/docker/docker-compose.yml
+grep -q '^CAMUNDA_DB_PASSWORD=' .env || printf 'CAMUNDA_DB_PASSWORD=%s\nBPM_ENGINE_USERNAME=nocobase\nBPM_ENGINE_PASSWORD=%s\n' "$(openssl rand -hex 16)" "$(openssl rand -hex 16)" >> .env
+```
+
+سپس موتور و پلاگین را روشن کنید:
+
+```bash
+sed -i 's/^#COMPOSE_PROFILES=bpm/COMPOSE_PROFILES=bpm/' .env
+grep -q '^COMPOSE_PROFILES=bpm' .env || echo 'COMPOSE_PROFILES=bpm' >> .env
+docker compose up -d
+docker compose ps camunda
+docker compose exec app yarn nocobase pm enable @persian-erp/plugin-bpm
+```
+
+`COMPOSE_PROFILES=bpm` در `.env` موتور را جزو همه‌ی دستورهای `docker compose` می‌کند. بار اول بالا آمدن موتور حدود یک دقیقه طول می‌کشد. وقتی `docker compose ps camunda` وضعیت `healthy` را نشان داد، موتور آماده است.
+
+نکته‌ها:
+- داده‌ی موتور در `storage/camunda` است و تاریخچه‌اش در پایگاه داده‌ی `camunda` همان PostgreSQL. سرویس `camunda-init` این پایگاه داده و کاربرش را می‌سازد. اگر یکی از دو رمز موتور در `.env` خالی یا `change-me` باشد، این سرویس با پیام روشن می‌ایستد و موتور بالا نمی‌آید.
+- هیچ درگاهی از موتور بیرون نمی‌آید. فقط برنامه با `http://camunda:8080` به آن وصل می‌شود.
+- نمونه‌های تمام‌شده‌ی فرایند پس از `CAMUNDA_HISTORY_TTL` از تاریخچه‌ی موتور پاک می‌شوند. پیش‌فرض `P180D` یعنی ۱۸۰ روز است. نمونه‌های باز هیچ‌وقت پاک نمی‌شوند.
+- لاگ موتور با `docker compose logs -f camunda` دیده می‌شود. Docker آن را در پنج فایل ۵۰ مگابایتی نگه می‌دارد.
+- سلامت موتور: `docker compose exec camunda wget -q -O - http://localhost:9600/actuator/health`.
+
+### عوض کردن رمز کاربر سرویس
+
+موتور کاربر سرویس را فقط بار اول از `BPM_ENGINE_PASSWORD` می‌سازد. پس برای عوض کردن رمز، اول رمز را در خود موتور عوض کنید و بعد در `.env`. `<رمز تازه>` را با رمز تازه عوض کنید:
+
+```bash
+cd /opt/persian-erp
+NEW='<رمز تازه>'
+docker compose exec -T -e NEW="$NEW" camunda sh -c 'u="$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME"; wget -q -O - --method=PUT --header="Content-Type: application/json" --body-data="{\"password\":\"$NEW\",\"name\":\"NocoBase\",\"email\":\"nocobase@example.com\"}" --user "$u" --password "$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_PASSWORD" --auth-no-challenge "http://localhost:8080/v2/users/$u"'
+sed -i "s/^BPM_ENGINE_PASSWORD=.*/BPM_ENGINE_PASSWORD=$NEW/" .env
+docker compose up -d
+```
+
+رمز `CAMUNDA_DB_PASSWORD` را فقط در `.env` عوض کنید و `docker compose up -d` بزنید. `camunda-init` رمز کاربر پایگاه داده را با آن یکی می‌کند.
+
 ## پشتیبان‌گیری
 
 این دستورها یک فایل پشتیبان با تاریخ ساخت در پوشه‌ی `backups` می‌سازند. برنامه در این مدت کار می‌کند.
@@ -59,6 +111,23 @@ rm backups/db.dump
 ```
 
 فایل `tar.gz` را به جای دیگری (سرور دیگر یا فضای ابری) منتقل کنید. پشتیبانی که روی همان سرور بماند، با خراب شدن سرور از دست می‌رود. برای پشتیبان‌گیری خودکار شبانه، این دستورها را در یک فایل بگذارید و با `cron` اجرا کنید.
+
+### پشتیبان با موتور فرایند
+
+اگر موتور فرایند روشن است، پوشه‌ی `storage/camunda` و پایگاه داده‌ی `camunda` باید از یک لحظه باشند. پس موتور در زمان پشتیبان‌گیری چند ده ثانیه خاموش می‌شود. در این مدت شروع فرایند و کارتابل پیام «موتور در دسترس نیست» می‌دهند، پس پشتیبان را در ساعت کم‌کار بگیرید. این دستورها جای دستورهای بالا را می‌گیرند:
+
+```bash
+cd /opt/persian-erp
+mkdir -p backups
+docker compose stop camunda
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > backups/db.dump
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc camunda' > backups/camunda.dump
+tar czf "backups/persian-erp-$(date +%Y%m%d-%H%M).tar.gz" --exclude=storage/db .env backups/db.dump backups/camunda.dump storage
+docker compose start camunda
+rm backups/db.dump backups/camunda.dump
+```
+
+موتور با `docker compose stop` مرتب بسته می‌شود، پس چیزی از کارهای باز از دست نمی‌رود. Camunda روش پشتیبان بدون خاموشی هم دارد که به فضای ذخیره‌ی پشتیبان (S3 یا مانند آن) نیاز دارد ([راهنمای Camunda](https://docs.camunda.io/docs/self-managed/operational-guides/backup-restore/rdbms/rdbms-backup/)). برای یک سرور، روش بالا ساده‌تر است.
 
 ### بازگردانی
 
@@ -76,6 +145,15 @@ docker compose up -d
 
 `.env` از پشتیبان برمی‌گردد، پس `APP_KEY` و رمزها همان قبلی‌اند و کاربران با همان رمزها وارد می‌شوند.
 
+اگر پشتیبان موتور فرایند دارد (`backups/camunda.dump`)، پیش از آخرین `docker compose up -d` پایگاه داده‌ی موتور را هم برگردانید:
+
+```bash
+docker compose run --rm camunda-init
+docker compose exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d camunda --clean --if-exists' < backups/camunda.dump
+```
+
+پوشه‌ی `storage/camunda` با `tar` برگشته است. نمونه‌های باز فرایند و کارهایشان همان‌اند که در لحظه‌ی پشتیبان بودند.
+
 ## ارتقا
 
 هر انتشار تازه در [صفحه‌ی انتشارها](https://github.com/baryuc40-collab/persian-erp/releases) یادداشتی دارد که می‌گوید چه چیزی عوض شده است. پیش از ارتقا پشتیبان بگیرید (بخش بالا). سپس `IMAGE_TAG` را در `.env` به نسخه‌ی تازه عوض کنید:
@@ -89,6 +167,19 @@ docker compose logs -f app
 ```
 
 برنامه هنگام بالا آمدن پایگاه داده را خودش ارتقا می‌دهد و داده‌ها می‌مانند. اگر ارتقا شکست خورد، `IMAGE_TAG` قبلی را برگردانید و پشتیبان را بازگردانید. نسخه‌ی پایین‌تر روی پایگاه داده‌ی ارتقایافته اجرا نمی‌شود.
+
+### ارتقای موتور فرایند
+
+نسخه‌ی Camunda در فایل `docker-compose.yml` است و با فایل تازه عوض می‌شود. یادداشت انتشار می‌گوید که نسخه‌ی موتور عوض شده یا نه. Camunda نسخه‌ی فرعی را فقط یکی‌یکی ارتقا می‌دهد، مثلاً 8.10 به 8.11، و برگشت به نسخه‌ی پایین‌تر ندارد ([سازگاری نسخه‌ها](https://docs.camunda.io/docs/self-managed/components/orchestration-cluster/core-settings/concepts/version-compatibility)). اگر از چند انتشار عقب‌اید و یادداشت‌ها بیش از یک ارتقای نسخه‌ی فرعی موتور دارند، انتشارها را به‌ترتیب نصب کنید. پیش از ارتقا پشتیبان بگیرید، سپس:
+
+```bash
+cd /opt/persian-erp
+curl -fsSLO https://raw.githubusercontent.com/baryuc40-collab/persian-erp/main/docker/docker-compose.yml
+docker compose pull camunda
+docker compose up -d
+```
+
+موتور هنگام بالا آمدن جدول‌های پایگاه داده‌ی `camunda` را خودش ارتقا می‌دهد.
 
 ## افزودن به NocoBase موجود
 

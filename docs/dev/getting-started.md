@@ -96,16 +96,21 @@ yarn i18n:translate client --export todo.json   # کلیدهای ترجمه‌ن
 yarn i18n:translate client --import todo.json   # ادغام، با همان بررسی‌ها
 ```
 
-## موتور BPMN (اختیاری)
+## موتور فرایند (اختیاری)
 
-پلاگین `@persian-erp/plugin-bpm` به موتور Operaton وصل می‌شود ([تصمیم ۰۰۰۷](../decisions/0007-bpmn-engine.md)). موتور پشت profile `bpm` است:
+پلاگین `@persian-erp/plugin-bpm` به یک موتور فرایند BPMN وصل می‌شود. موتور پیش‌فرض Camunda 8 است ([تصمیم ۰۰۰۸](../decisions/0008-camunda8-and-two-builders.md)) و پشت profile `bpm` بالا می‌آید:
 
 ```bash
 docker compose --profile bpm up -d
+docker/camunda/check.sh   # سلامت، نسخه، رمز و پایگاه داده‌ی موتور را می‌سنجد
 ```
 
-- موتور در schema جدای `operaton` همان PostgreSQL نصب می‌شود و درگاهش بیرون نمی‌آید.
-- کاربر سرویس از `BPM_ENGINE_USERNAME` و `BPM_ENGINE_PASSWORD` در `.env` می‌آید. پیش از استفاده‌ی واقعی رمز `change-me` را عوض کنید.
+- **مجوز:** Camunda 8 با Camunda License 1.0 فقط برای محیط غیرعملیاتی (توسعه و آزمون) آزاد است. برای استفاده‌ی واقعی یا کلید مجوز لازم است (`CAMUNDA_LICENSE_KEY`) یا موتور Operaton ([مجوز Camunda 8](../decisions/0008-camunda8-and-two-builders.md#مجوز-camunda-8)).
+- **منابع:** موتور حدود ۲ گیگابایت حافظه می‌گیرد (`CAMUNDA_HEAP`). کل محیط با NocoBase و PostgreSQL دست‌کم ۴ گیگابایت حافظه می‌خواهد. بار اول بالا آمدن موتور حدود یک دقیقه طول می‌کشد.
+- **داده:** وضعیت موتور در volume `camunda-data` است و تاریخچه‌ی آن (جست‌وجو، Operate و Tasklist) در پایگاه داده‌ی `camunda` همان PostgreSQL. سرویس `camunda-init` پیش از هر بار بالا آمدن موتور، این پایگاه داده و کاربرش را اگر نباشند می‌سازد. نمونه‌های تمام‌شده پس از `CAMUNDA_HISTORY_TTL` (پیش‌فرض ۱۸۰ روز) از تاریخچه پاک می‌شوند.
+- **شبکه:** هیچ درگاهی از موتور بیرون نمی‌آید. برنامه با `http://camunda:8080` به آن وصل می‌شود.
+- **کاربر سرویس:** از `BPM_ENGINE_USERNAME` و `BPM_ENGINE_PASSWORD` در `.env` می‌آید و موتور آن را فقط بار اول می‌سازد. برای عوض کردن رمز بعد از آن، [راهنمای نصب](../install/README.md#موتور-فرایند-اختیاری) را ببینید.
+- **Operaton:** موتور جایگزین پشت profile `bpm-operaton` است: `docker compose --profile bpm-operaton up -d`، با `BPM_ENGINE=operaton` و `BPM_ENGINE_URL=http://operaton:8080` در `.env`. تا آداپتور Camunda 8 ([STORY-092](../../backlog/epics/EPIC-021-process-platform/STORY-092-camunda8-adapter.md)) آماده شود، پلاگین فقط با Operaton کار می‌کند.
 - پلاگین را در «مدیر پلاگین» فعال کنید. «تنظیمات ← موتور BPMN» اتصال را نشان می‌دهد، «آزمون اتصال» دارد و فایل `.bpmn` را مستقر می‌کند.
 - Worker کارهای سرویس در هر نمونه‌ی برنامه اجرا می‌شود و کار هر موضوع را به گردش‌کار با رویداد «کار سرویس BPMN» می‌دهد. `BPM_WORKER=off` آن را خاموش می‌کند و `BPM_WORKER_INTERVAL` فاصله‌ی پرسش از موتور را به میلی‌ثانیه تعیین می‌کند (پیش‌فرض ۲۰۰۰).
 - کارهای انسانی فرایند در بلوک «صندوق کار» صفحه‌ی مدرن دیده و کامل می‌شوند (افزودن بلوک ← بلوک‌های دیگر ← صندوق کار). candidate group کار باید نام فنی نقش NocoBase باشد و فرم کار با `operaton:formField` در مدل تعریف می‌شود. آزمون e2e آن (`e2e/bpm/`) فقط با `BPM_E2E=1` و موتور بالا اجرا می‌شود.

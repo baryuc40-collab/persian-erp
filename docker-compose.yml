@@ -28,7 +28,9 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       # پلاگین plugin-bpm تا وقتی اتصال در تنظیمات ذخیره نشده، این‌ها را به کار می‌برد.
-      BPM_ENGINE_URL: ${BPM_ENGINE_URL:-http://operaton:8080}
+      # BPM_ENGINE: camunda8 (پیش‌فرض) یا operaton.
+      BPM_ENGINE: ${BPM_ENGINE:-camunda8}
+      BPM_ENGINE_URL: ${BPM_ENGINE_URL:-http://camunda:8080}
       BPM_ENGINE_USERNAME: ${BPM_ENGINE_USERNAME:-nocobase}
       BPM_ENGINE_PASSWORD: ${BPM_ENGINE_PASSWORD:-change-me}
     # بار اول نصب می‌کند، بارهای بعد فقط ارتقای پایگاه داده در صورت نیاز
@@ -43,11 +45,89 @@ services:
       postgres:
         condition: service_healthy
 
-  # موتور BPMN (EPIC-016، تصمیم ۰۰۰۷). اختیاری: docker compose --profile bpm up -d
+  # موتور فرایند Camunda 8 (EPIC-021، تصمیم ۰۰۰۸). اختیاری: docker compose --profile bpm up -d
+  # مجوز Camunda 8 فقط برای محیط غیرعملیاتی است، مگر با کلید مجوز (CAMUNDA_LICENSE_KEY). حافظه: دست‌کم ۴ گیگابایت برای کل سرور.
+  # پایگاه داده و کاربر camunda را روی همان PostgreSQL می‌سازد و پوشه‌ی داده‌ی موتور را به کاربر موتور (1001) می‌دهد.
+  # هر بار اجرا می‌شود و فقط چیزی را که نیست می‌سازد؛ رمز کاربر را با CAMUNDA_DB_PASSWORD یکی می‌کند.
+  camunda-init:
+    image: postgres:16
+    profiles: [bpm]
+    user: root
+    environment:
+      PGHOST: postgres
+      PGUSER: ${DB_USER:-nocobase}
+      PGPASSWORD: ${DB_PASSWORD:-nocobase}
+      PGDATABASE: ${DB_DATABASE:-nocobase}
+      CAMUNDA_DB_PASSWORD: ${CAMUNDA_DB_PASSWORD:-camunda}
+    volumes:
+      - camunda-data:/camunda-data
+    entrypoint: ['sh', '-c']
+    command:
+      - |
+        set -eu
+        chown 1001:1001 /camunda-data
+        psql -v ON_ERROR_STOP=1 -v password="$$CAMUNDA_DB_PASSWORD" <<'SQL'
+        SELECT 'CREATE ROLE camunda LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'camunda') \gexec
+        SELECT format('ALTER ROLE camunda PASSWORD %L', :'password') \gexec
+        SELECT 'CREATE DATABASE camunda OWNER camunda' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'camunda') \gexec
+        REVOKE ALL ON DATABASE camunda FROM PUBLIC;
+        SQL
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  camunda:
+    image: camunda/camunda:8.10.7
+    profiles: [bpm]
+    restart: unless-stopped
+    environment:
+      # ذخیره‌ی ثانویه (جست‌وجو، تاریخچه، Operate و Tasklist) در پایگاه داده‌ی camunda، بدون Elasticsearch.
+      CAMUNDA_DATA_SECONDARYSTORAGE_TYPE: rdbms
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_URL: jdbc:postgresql://postgres:5432/camunda
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_USERNAME: camunda
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_PASSWORD: ${CAMUNDA_DB_PASSWORD:-camunda}
+      # نمونه‌های تمام‌شده پس از این مدت از تاریخچه پاک می‌شوند (ISO-8601).
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_HISTORY_DEFAULTHISTORYTTL: ${CAMUNDA_HISTORY_TTL:-P180D}
+      # یک نمونه‌ی باز برای هر کلید کسب‌وکار؛ شروع دوباره ۴۰۹ می‌گیرد.
+      CAMUNDA_PROCESSINSTANCECREATION_BUSINESSIDUNIQUENESSENABLED: 'true'
+      # همه‌ی APIها با رمز؛ تنها کاربر، کاربر سرویس plugin-bpm است.
+      CAMUNDA_SECURITY_AUTHENTICATION_METHOD: basic
+      CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI: 'false'
+      CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED: 'true'
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME: ${BPM_ENGINE_USERNAME:-nocobase}
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_PASSWORD: ${BPM_ENGINE_PASSWORD:-change-me}
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_NAME: NocoBase
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_EMAIL: nocobase@example.com
+      CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_USERS_0: ${BPM_ENGINE_USERNAME:-nocobase}
+      CAMUNDA_LICENSE_KEY: ${CAMUNDA_LICENSE_KEY:-}
+      JAVA_TOOL_OPTIONS: -Xmx${CAMUNDA_HEAP:-2g}
+      TZ: ${TZ:-Asia/Tehran}
+    # درگاهی بیرون نمی‌آید: app با نام camunda در شبکه‌ی Docker به 8080 وصل می‌شود.
+    volumes:
+      - camunda-data:/usr/local/camunda/data
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:9600/actuator/health/readiness']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    # فرصت بستن مرتب داده‌ها پیش از kill.
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: '5'
+    depends_on:
+      camunda-init:
+        condition: service_completed_successfully
+
+  # موتور جایگزین Operaton (تصمیم ۰۰۰۷)، برای آزمون آداپتور دوم: docker compose --profile bpm-operaton up -d
+  # با BPM_ENGINE=operaton و BPM_ENGINE_URL=http://operaton:8080 در .env.
   # در schema جدای operaton همان PostgreSQL؛ درگاهش بیرون نمی‌آید و فقط app به آن وصل می‌شود.
   operaton-schema:
     image: postgres:16
-    profiles: [bpm]
+    profiles: [bpm-operaton]
     environment:
       PGPASSWORD: ${DB_PASSWORD:-nocobase}
     command: psql -h postgres -U ${DB_USER:-nocobase} -d ${DB_DATABASE:-nocobase} -c 'create schema if not exists operaton'
@@ -57,7 +137,7 @@ services:
 
   operaton:
     image: operaton/operaton:2.1.5
-    profiles: [bpm]
+    profiles: [bpm-operaton]
     restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_DATABASE:-nocobase}?currentSchema=operaton
@@ -77,5 +157,6 @@ services:
 
 volumes:
   postgres-data:
+  camunda-data:
   node-modules:
   yarn-cache:

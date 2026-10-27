@@ -26,4 +26,4 @@
 | [EPIC-018](epics/EPIC-018-module-upgrade/epic.md) | ارتقا و حذف ماژول نصب‌شده | 5 | in-progress |
 | [EPIC-019](epics/EPIC-019-inventory-module/epic.md) | ماژول مرجع انبار | 5 | in-progress |
 | [EPIC-020](epics/EPIC-020-purchasing-module/epic.md) | ماژول مرجع سفارش خرید | 5 | in-progress |
-| [EPIC-021](epics/EPIC-021-process-platform/epic.md) | سکوی فرایند: طراحی، مدیریت و پایش فرایند در NocoBase | 6 | draft |
+| [EPIC-021](epics/EPIC-021-process-platform/epic.md) | سکوی فرایند: طراحی، مدیریت و پایش فرایند در NocoBase | 6 | in-progress |

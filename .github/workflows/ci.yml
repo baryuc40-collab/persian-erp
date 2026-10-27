@@ -20,6 +20,7 @@ jobs:
     outputs:
       app: ${{ steps.filter.outputs.app }}
       docker: ${{ steps.filter.outputs.docker }}
+      camunda: ${{ steps.filter.outputs.camunda }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -38,6 +39,13 @@ jobs:
               - 'NOCOBASE_VERSION'
               - 'package.json'
               - '.github/workflows/ci.yml'
+            camunda:
+              - 'docker-compose.yml'
+              - 'docker/docker-compose.yml'
+              - 'docker/.env.example'
+              - 'docker/camunda/**'
+              - 'CAMUNDA_VERSION'
+              - '.github/workflows/ci.yml'
 
   checks:
     name: Lightweight checks
@@ -52,6 +60,8 @@ jobs:
         run: node tools/check-glossary.js
       - name: NocoBase version pin
         run: node tools/check-nocobase-version.js
+      - name: Camunda version pin
+        run: node tools/check-camunda-version
       - name: Tool tests
         run: node --test 'tools/**/__tests__/*.test.js'
       - name: Translations vs glossary
@@ -313,6 +323,38 @@ jobs:
             storage/playwright/e2e-results
             storage/playwright/e2e-report
 
+  # Camunda 8 of the bpm profile (STORY-091), with each Compose file: the engine starts with its history in the
+  # camunda database, refuses requests without a password, answers the service user and publishes no port.
+  camunda:
+    name: Camunda 8 (Compose)
+    needs: changes
+    if: needs.changes.outputs.camunda == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        compose: [development, server]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare env file
+        run: |
+          if [ "${{ matrix.compose }}" = server ]; then
+            sed -e "s#change-me#ci-$(openssl rand -hex 16)#" docker/.env.example > docker/.env
+          else
+            cp .env.example .env
+          fi
+      - name: Start the engine
+        working-directory: ${{ matrix.compose == 'server' && 'docker' || '.' }}
+        run: docker compose --profile bpm up -d camunda
+      - name: Check the engine
+        working-directory: ${{ matrix.compose == 'server' && 'docker' || '.' }}
+        run: sh "$GITHUB_WORKSPACE/docker/camunda/check.sh"
+      - name: Logs
+        if: failure()
+        working-directory: ${{ matrix.compose == 'server' && 'docker' || '.' }}
+        run: docker compose --profile bpm logs camunda-init camunda | tail -300
+
   # Builds the Persian image (docker/build.sh) and smoke-tests a fresh install of it with docker/docker-compose.yml.
   # Nothing is pushed; publishing is the release workflow's job (STORY-062).
   docker-image:
@@ -342,6 +384,9 @@ jobs:
         run: |
           label="$(docker image inspect persian-erp:ci --format '{{ index .Config.Labels "com.nocobase.version" }}')"
           test "$label" = "$(cat NOCOBASE_VERSION)" || { echo "image label $label != NOCOBASE_VERSION"; exit 1; }
+      - name: Image carries plugin-bpm
+        run: |
+          docker run --rm --entrypoint test persian-erp:ci -f /app/nocobase/node_modules/@persian-erp/plugin-bpm/dist/server/index.js
       - name: Start a fresh install
         working-directory: docker
         run: |
