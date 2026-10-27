@@ -70,5 +70,6 @@
   "No": "خیر",
   "Submit": "ثبت",
   "Cancel": "انصراف",
-  "The workflow \"{{title}}\" did not succeed (execution {{execution}}).": "گردش‌کار «{{title}}» انجام نشد (اجرای {{execution}})."
+  "The workflow \"{{title}}\" did not succeed (execution {{execution}}).": "گردش‌کار «{{title}}» انجام نشد (اجرای {{execution}}).",
+  "The connection log is read-only": "لاگ اتصال فقط‌خواندنی است"
 }

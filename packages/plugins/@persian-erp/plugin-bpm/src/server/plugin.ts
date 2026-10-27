@@ -1,12 +1,16 @@
 import type { Context, Next } from '@nocobase/actions';
 import { Plugin } from '@nocobase/server';
+import { randomUUID } from 'crypto';
+import bpmEventsCollection from './bpm-events-collection';
 import bpmSettingsCollection from './bpm-settings-collection';
 import { Camunda8Engine } from './camunda8';
 import { BpmEngine, BpmEngineError, EngineKind, ENGINES } from './engine';
+import { BpmEvents, EventFields, EVENTS_COLLECTION, TrackOptions } from './events';
 import { EngineSettings } from './http';
 import { OperatonEngine } from './operaton';
 import { SERVICE_TASK_TRIGGER, ServiceTaskTrigger } from './service-task-trigger';
 import { START_INSTRUCTION, StartProcessInstruction } from './start-instruction';
+import { traces } from './trace';
 import { TaskInbox, TASKS_RESOURCE } from './tasks';
 import { ServiceTaskWorker } from './worker';
 
@@ -15,6 +19,8 @@ export const BPM_SNIPPET = 'pm.bpm';
 const NAMESPACE = '@persian-erp/plugin-bpm';
 const SETTINGS_ID = 1;
 const MAX_MODEL_BYTES = 2 * 1024 * 1024;
+// The connection log can be read, never changed through the API.
+const EVENTS_READ_ACTIONS = ['list', 'get', 'count', 'export'];
 
 export interface BpmConnection extends EngineSettings {
   engine: EngineKind;
@@ -41,9 +47,16 @@ export class PluginBpmServer extends Plugin {
   /** Runs the service tasks of the engine (STORY-081); off with BPM_WORKER=off. */
   worker = new ServiceTaskWorker(this, { interval: Number(process.env.BPM_WORKER_INTERVAL) || undefined });
 
+  /** The connection log bpmEvents (STORY-093). */
+  events = new BpmEvents(this);
+
   async beforeLoad() {
     this.db.collection(bpmSettingsCollection);
-    this.app.acl.registerSnippet({ name: BPM_SNIPPET, actions: [`${BPM_RESOURCE}:*`] });
+    this.db.collection(bpmEventsCollection);
+    this.app.acl.registerSnippet({
+      name: BPM_SNIPPET,
+      actions: [`${BPM_RESOURCE}:*`, ...EVENTS_READ_ACTIONS.map((action) => `${EVENTS_COLLECTION}:${action}`)],
+    });
     // Open to every signed-in user; the actions return and accept only the user's own tasks (STORY-082).
     this.app.acl.allow(TASKS_RESOURCE, ['list', 'get', 'complete'], 'loggedIn');
   }
@@ -65,6 +78,21 @@ export class PluginBpmServer extends Plugin {
         this.app.on('beforeDestroy', () => this.worker.stop());
       }
     }
+
+    this.app.on('afterStart', () => this.events.startCleanup());
+    this.app.on('beforeStop', () => this.events.stopCleanup());
+    this.app.on('beforeDestroy', () => this.events.stopCleanup());
+    // Rows are written by the plugin alone, also for the root role.
+    this.app.resourceManager.use(
+      async (ctx: Context, next: Next) => {
+        const { resourceName, actionName } = ctx.action || {};
+        if (resourceName === EVENTS_COLLECTION && !EVENTS_READ_ACTIONS.includes(actionName)) {
+          ctx.throw(403, this.tr(ctx, 'The connection log is read-only'));
+        }
+        await next();
+      },
+      { tag: 'bpm-events-read-only', before: 'acl' },
+    );
 
     // Not a collection, so the resource is defined here with its actions.
     this.app.resourceManager.define({
@@ -126,10 +154,26 @@ export class PluginBpmServer extends Plugin {
     return ctx.t(message, { ns: NAMESPACE, ...values, interpolation: { escapeValue: false } });
   }
 
-  // Engine errors become a 400 with the translated message; anything else is a server error.
-  async withEngine<T>(ctx: Context, run: (engine: BpmEngine) => Promise<T>) {
+  /**
+   * An exchange with the engine for a request: logged in bpmEvents with the user and a correlation ID, which the
+   * answer carries as X-Correlation-Id (STORY-093). Engine errors become a 400 with the translated message; anything
+   * else is a server error.
+   */
+  async withEngine<T>(
+    ctx: Context,
+    event: string,
+    run: (engine: BpmEngine) => Promise<T>,
+    fields: EventFields = {},
+    options: TrackOptions<T> = {},
+  ) {
+    // One correlation ID for all the exchanges of a request.
+    const correlationId: string = (ctx.state.bpmCorrelationId ||= randomUUID());
+    ctx.set('X-Correlation-Id', correlationId);
+    const userId = ctx.state.currentUser?.id ?? null;
     try {
-      return await run(await this.getEngine());
+      return await traces.run({ correlationId }, () =>
+        this.events.track(event, { ...fields, userId }, async () => run(await this.getEngine()), options),
+      );
     } catch (error) {
       if (error instanceof BpmEngineError) ctx.throw(400, this.tr(ctx, error.message, error.values));
       throw error;
@@ -166,12 +210,12 @@ export class PluginBpmServer extends Plugin {
   }
 
   async testAction(ctx: Context, next: Next) {
-    ctx.body = { version: await this.withEngine(ctx, (engine) => engine.version()) };
+    ctx.body = { version: await this.withEngine(ctx, 'version', (engine) => engine.version(), {}, { readOnly: true }) };
     await next();
   }
 
   async processesAction(ctx: Context, next: Next) {
-    ctx.body = await this.withEngine(ctx, (engine) => engine.listProcesses());
+    ctx.body = await this.withEngine(ctx, 'processes', (engine) => engine.listProcesses(), {}, { readOnly: true });
     await next();
   }
 
@@ -190,8 +234,20 @@ export class PluginBpmServer extends Plugin {
     if (isForm && (await this.settings()).engine !== 'camunda8') {
       ctx.throw(400, this.tr(ctx, 'Only Camunda 8 takes form files'));
     }
-    ctx.body = await this.withEngine(ctx, (engine) =>
-      engine.deploy(fileName.replace(/\.(bpmn|form)$/i, ''), [{ name: fileName, content: text }]),
+    ctx.body = await this.withEngine(
+      ctx,
+      'deploy',
+      (engine) => engine.deploy(fileName.replace(/\.(bpmn|form)$/i, ''), [{ name: fileName, content: text }]),
+      { detail: { file: fileName } },
+      {
+        after: (deployment) => ({
+          processKey: deployment.processes.length === 1 ? deployment.processes[0].key : null,
+          detail: {
+            deploymentId: deployment.id,
+            processes: deployment.processes.map((process) => `${process.key}:${process.version}`),
+          },
+        }),
+      },
     );
     await next();
   }

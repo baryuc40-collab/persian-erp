@@ -99,6 +99,7 @@ describe('workflow node bpm-start', () => {
       created: true,
       processKey: 'purchase_request',
       businessKey: `purchase_requests:${record.get('id')}`,
+      correlationId: expect.any(String),
     });
   });
 
@@ -110,7 +111,10 @@ describe('workflow node bpm-start', () => {
     await sleep(500);
     const job = await lastJob();
     expect(job.status).toBe(JOB_FAILED);
-    expect(job.result).toEqual({ error: 'The BPMN engine cannot be reached: connect ECONNREFUSED' });
+    expect(job.result).toEqual({
+      error: 'The BPMN engine cannot be reached: connect ECONNREFUSED',
+      correlationId: expect.any(String),
+    });
     expect(await app.db.getRepository('purchase_requests').count()).toBe(1);
   });
 

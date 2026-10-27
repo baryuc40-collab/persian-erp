@@ -1,4 +1,5 @@
 import { BpmEngineError } from './engine';
+import { currentCorrelationId } from './trace';
 
 export interface EngineSettings {
   url: string;
@@ -24,6 +25,8 @@ export async function engineRequest<T = any>(
     headers.Authorization = `Basic ${token}`;
   }
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  const correlationId = currentCorrelationId();
+  if (correlationId) headers['X-Correlation-Id'] = correlationId;
   let res: Response;
   try {
     res = await fetch(url, {

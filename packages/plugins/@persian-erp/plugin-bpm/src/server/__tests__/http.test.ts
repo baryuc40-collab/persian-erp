@@ -2,6 +2,7 @@ import http from 'http';
 import { AddressInfo } from 'net';
 import { BpmEngineError } from '../engine';
 import { engineRequest } from '../http';
+import { traces } from '../trace';
 
 // How an engine's answers become errors (STORY-092): a wrong password, a missing permission of the service user and
 // Camunda's problem+json each get their own message.
@@ -24,6 +25,11 @@ const answers: Record<string, { status: number; body: string }> = {
 
 beforeAll(async () => {
   server = http.createServer((req, res) => {
+    if (req.url === '/echo') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ correlationId: req.headers['x-correlation-id'] ?? null }));
+      return;
+    }
     const answer = answers[req.url || ''];
     res.writeHead(answer.status, { 'Content-Type': 'application/json' });
     res.end(answer.body);
@@ -49,6 +55,11 @@ async function errorOf(path: string) {
 describe('engineRequest', () => {
   it('returns the JSON of a good answer', async () => {
     await expect(call('/ok')).resolves.toEqual({ a: 1 });
+  });
+
+  it('sends the correlation ID of the exchange in progress (STORY-093)', async () => {
+    await expect(call('/echo')).resolves.toEqual({ correlationId: null });
+    await expect(traces.run({ correlationId: 'c-1' }, () => call('/echo'))).resolves.toEqual({ correlationId: 'c-1' });
   });
 
   it('tells a wrong user name or password', async () => {

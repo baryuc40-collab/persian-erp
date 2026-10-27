@@ -105,8 +105,12 @@ export class TaskInbox {
 
   async list(ctx: Context, next: Next) {
     const { roles, userId } = this.user(ctx);
-    const tasks = await this.plugin.withEngine(ctx, (engine) =>
-      engine.listUserTasks({ candidateGroups: roles, assignee: userId ?? undefined }),
+    const tasks = await this.plugin.withEngine(
+      ctx,
+      'task.list',
+      (engine) => engine.listUserTasks({ candidateGroups: roles, assignee: userId ?? undefined }),
+      {},
+      { readOnly: true },
     );
     ctx.body = await Promise.all(tasks.filter((task) => this.allowed(ctx, task)).map((task) => this.summary(task)));
     await next();
@@ -115,15 +119,39 @@ export class TaskInbox {
   // The task of filterByTk, or a 404 when it is done and a 403 when it is not the user's.
   private async task(ctx: Context) {
     const taskId = String(ctx.action.params.filterByTk || '');
-    const task = taskId ? await this.plugin.withEngine(ctx, (engine) => engine.getUserTask(taskId)) : null;
+    const task = taskId
+      ? await this.plugin.withEngine(
+          ctx,
+          'task.get',
+          (engine) => engine.getUserTask(taskId),
+          { taskId },
+          { readOnly: true },
+        )
+      : null;
     if (!task) ctx.throw(404, this.plugin.tr(ctx, 'The task is no longer open'));
     if (!this.allowed(ctx, task)) ctx.throw(403, this.plugin.tr(ctx, 'This task is not yours'));
     return task;
   }
 
+  // The task's form, a read that is logged only when it fails.
+  private form(ctx: Context, task: UserTask) {
+    return this.plugin.withEngine(ctx, 'task.form', (engine) => engine.getTaskForm(task), this.fields(task), {
+      readOnly: true,
+    });
+  }
+
+  private fields(task: UserTask) {
+    return {
+      processKey: task.processKey,
+      businessKey: task.businessKey,
+      instanceId: task.processInstanceId,
+      taskId: task.id,
+    };
+  }
+
   async get(ctx: Context, next: Next) {
     const task = await this.task(ctx);
-    const form = await this.plugin.withEngine(ctx, (engine) => engine.getTaskForm(task));
+    const form = await this.form(ctx, task);
     const found = await this.findRecord(task.businessKey);
     const fields: RecordField[] = [];
     if (found) {
@@ -145,9 +173,13 @@ export class TaskInbox {
 
   async complete(ctx: Context, next: Next) {
     const task = await this.task(ctx);
-    const form = await this.plugin.withEngine(ctx, (engine) => engine.getTaskForm(task));
+    const form = await this.form(ctx, task);
     const variables = this.formValues(ctx, form, ctx.action.params.values || {});
-    await this.plugin.withEngine(ctx, (engine) => engine.completeUserTask(task.id, variables));
+    // The names of the fields go in the log, never their values.
+    await this.plugin.withEngine(ctx, 'task.complete', (engine) => engine.completeUserTask(task.id, variables), {
+      ...this.fields(task),
+      detail: { task: task.taskKey, fields: Object.keys(variables) },
+    });
     ctx.body = { id: task.id };
     await next();
   }
