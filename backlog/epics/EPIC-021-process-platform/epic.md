@@ -39,7 +39,7 @@ owner: mmsh
 - ویرایشگر bpmn-js داخل NocoBase با ترجمه‌ی فارسی و پنل ویژگی‌های آگاه از NocoBase، نسخه‌ها و انتقال نمونه‌ها، و فرایند در قالب ماژول ERP.
 
 ## خارج از دامنه
-- **مجوز Enterprise Camunda.** مجوز Camunda 8 فقط محیط غیرعملیاتی را می‌پوشاند ([تصمیم ۰۰۰۸](../../../docs/decisions/0008-camunda8-and-two-builders.md#مجوز-camunda-8)). خرید مجوز تصمیم جدای صاحب پروژه است.
+- **گرفتن مجوز Camunda.** مجوز رایگان Camunda 8 فقط محیط غیرعملیاتی را می‌پوشاند ([تصمیم ۰۰۰۸](../../../docs/decisions/0008-camunda8-and-two-builders.md#مجوز-camunda-8)). درخواست مجوز غیرتجاری یا خرید Enterprise تصمیم جدای صاحب پروژه است.
 - **تبدیل خودکار گردش‌کار NocoBase به BPMN یا برعکس.**
 - **DMN و جبران خطا (compensation).**
 - **Optimize، Web Modeler، Connectors و Console** از Camunda.
