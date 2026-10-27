@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, Locator, Page, test } from '@playwright/test';
 import { apiAs, enablePersian, openAs } from './helpers';
 import { cleanup, COLLECTION, seedCollection, seedV1Page, seedV2Page } from './jalali/seed';
 
@@ -71,17 +71,27 @@ test('the user menu switches Persian users to the Gregorian calendar', async ({ 
   await expect(firstRow(page)).toContainText('2026-10-12');
 });
 
+// The calendar opens on the current month, so it steps back to the month of the sample day first.
+async function pickDay(dropdown: Locator, day: string) {
+  const cell = dropdown.locator(`td[title="${day}"]`);
+  await dropdown.locator('.ant-picker-cell').first().waitFor();
+  for (let i = 0; i < 36 && (await cell.count()) === 0; i++) {
+    await dropdown.locator('.ant-picker-header-prev-btn').click();
+  }
+  await cell.click();
+}
+
 // Picks the same day in both form fields and submits; returns what was sent to the server.
 async function pickAndSubmit(page: Page, day: string) {
   const pickers = page.locator('form .ant-picker input');
   await expect(pickers).toHaveCount(2);
   const openDropdown = page.locator('.ant-picker-dropdown:visible');
   await pickers.nth(0).click();
-  await openDropdown.locator(`td[title="${day}"]`).click();
+  await pickDay(openDropdown, day);
   // Wait for the first calendar to close, or both match while it fades out.
   await expect(openDropdown).toHaveCount(0);
   await pickers.nth(1).click();
-  await openDropdown.locator(`td[title="${day}"]`).click();
+  await pickDay(openDropdown, day);
   await openDropdown.locator('.ant-picker-ok button').click();
   await expect(pickers.nth(0)).toHaveValue(day);
   const request = page.waitForRequest((req) => req.method() === 'POST' && req.url().includes(`${COLLECTION}:create`));
