@@ -21,9 +21,13 @@ const messageModel = (camunda8: boolean) => ({
   content: `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="https://persian-erp.example/bpmn" id="defs">
   <bpmn:message id="paid" name="contract-paid">${
-    camunda8 ? '<bpmn:extensionElements><zeebe:subscription correlationKey="=businessKey" /></bpmn:extensionElements>' : ''
+    camunda8
+      ? '<bpmn:extensionElements><zeebe:subscription correlationKey="=businessKey" /></bpmn:extensionElements>'
+      : ''
   }</bpmn:message>
-  <bpmn:process id="bpm_message_contract" name="پیام" isExecutable="true"${camunda8 ? '' : ' operaton:historyTimeToLive="1"'}>
+  <bpmn:process id="bpm_message_contract" name="پیام" isExecutable="true"${
+    camunda8 ? '' : ' operaton:historyTimeToLive="1"'
+  }>
     <bpmn:startEvent id="start" />
     <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="wait" />
     <bpmn:intermediateCatchEvent id="wait"><bpmn:messageEventDefinition messageRef="paid" /></bpmn:intermediateCatchEvent>
@@ -48,6 +52,8 @@ interface EngineCase {
   workerOwnsLock: boolean;
   /** Camunda 8 keeps a message no instance waits for yet; Operaton does not. */
   keepsMessages: boolean;
+  /** An instance ID of the engine's form that no instance has. */
+  unknownInstance: string;
   incidentMessages(settings: EngineSettings, instanceId: string): Promise<string[]>;
 }
 
@@ -64,6 +70,7 @@ const CASES: EngineCase[] = [
     eventual: false,
     workerOwnsLock: true,
     keepsMessages: false,
+    unknownInstance: '00000000-0000-0000-0000-000000000000',
     incidentMessages: async (settings, instanceId) =>
       (
         await engineRequest(settings, `${settings.url}/engine-rest/incident?processInstanceId=${instanceId}`, {
@@ -83,6 +90,7 @@ const CASES: EngineCase[] = [
     eventual: true,
     workerOwnsLock: false,
     keepsMessages: true,
+    unknownInstance: '2251799813000001',
     incidentMessages: async (settings, instanceId) =>
       (
         await engineRequest(settings, `${settings.url}/v2/incidents/search`, {
@@ -268,6 +276,42 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
   it('says when a message reaches no instance', async () => {
     expect(await engine.sendMessage(`nothing-waits-${run}`, key(4))).toEqual({ delivered: false });
   });
+
+  it('reads an instance: where it waits, its tasks, and whether the searches have it (STORY-095)', async () => {
+    const since = new Date(Date.now() - 60000);
+    const { instanceId } = await engine.start('purchase_request', key(6), { recordId: 6, amount: 10 });
+    const state = await later(async () => {
+      const found = await engine.getInstance(instanceId);
+      expect(found).toMatchObject({
+        instanceId,
+        status: 'active',
+        processKey: 'purchase_request',
+        businessKey: key(6),
+      });
+      expect(found.steps).toEqual([{ id: 'approve', name: 'تأیید مدیر' }]);
+      expect(found.tasks).toEqual([
+        expect.objectContaining({ name: 'تأیید مدیر', assignee: null, candidateGroups: ['purchase_manager'] }),
+      ]);
+      return found;
+    });
+    expect(state.version).toBeGreaterThan(0);
+    expect(new Date(state.startedAt).getTime()).toBeGreaterThan(since.getTime());
+    expect(state.endedAt).toBeNull();
+    await later(async () => {
+      expect(await engine.changedInstances(['purchase_request'], since)).toContain(instanceId);
+      expect(await engine.activeInstances(['purchase_request'])).toContain(instanceId);
+    });
+    expect(await engine.changedInstances(['nothing_like_it'], since)).toEqual([]);
+    expect(await engine.getInstance(engineCase.unknownInstance)).toBeNull();
+
+    // Approved: it waits at the order, a service task, with no user task.
+    await engine.completeUserTask(state.tasks[0].id, { approved: true });
+    await later(async () => {
+      const found = await engine.getInstance(instanceId);
+      expect(found.steps.map((step) => step.id)).toEqual(['order']);
+      expect(found.tasks).toEqual([]);
+    });
+  }, 60000);
 
   it('sends a message that may come before its instance waits, once for one message ID', async () => {
     const options = { ttlMs: 60000, messageId: `contract-${run}` };

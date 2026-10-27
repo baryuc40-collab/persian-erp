@@ -88,5 +88,11 @@
   "Only an item that was not sent can be sent again": "Only an item that was not sent can be sent again",
   "Only an item that was not sent can be put aside": "Only an item that was not sent can be put aside",
   "Put aside in the outbox": "Put aside in the outbox",
-  "An outbox item can only be sent again or put aside": "An outbox item can only be sent again or put aside"
+  "An outbox item can only be sent again or put aside": "An outbox item can only be sent again or put aside",
+  "The process instances are kept by the plugin and are read-only": "The process instances are kept by the plugin and are read-only",
+  "Choose NocoBase or BPMN as the builder": "Choose NocoBase or BPMN as the builder",
+  "Choose the workflow or the BPMN process": "Choose the workflow or the BPMN process",
+  "There is no workflow with the key {{key}}": "There is no workflow with the key {{key}}",
+  "This process is in the list already": "This process is in the list already",
+  "The engine does not know this open instance": "The engine does not know this open instance"
 }

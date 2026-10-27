@@ -2,7 +2,9 @@ import type { Context, Next } from '@nocobase/actions';
 import { Plugin } from '@nocobase/server';
 import { randomUUID } from 'crypto';
 import bpmEventsCollection from './bpm-events-collection';
+import bpmInstancesCollection from './bpm-instances-collection';
 import bpmOutboxCollection from './bpm-outbox-collection';
+import bpmProcessesCollection from './bpm-processes-collection';
 import bpmSettingsCollection from './bpm-settings-collection';
 import { Camunda8Engine } from './camunda8';
 import { BpmEngine, BpmEngineError, EngineKind, ENGINES } from './engine';
@@ -11,6 +13,7 @@ import { EngineSettings } from './http';
 import { MESSAGE_INSTRUCTION, SendMessageInstruction } from './message-instruction';
 import { OperatonEngine } from './operaton';
 import { BpmOutbox, OUTBOX_COLLECTION } from './outbox';
+import { BpmRegistry, BUILDERS, INSTANCES_COLLECTION, PROCESSES_COLLECTION } from './registry';
 import { SERVICE_TASK_TRIGGER, ServiceTaskTrigger } from './service-task-trigger';
 import { START_INSTRUCTION, StartProcessInstruction } from './start-instruction';
 import { traces } from './trace';
@@ -28,6 +31,13 @@ const READ_ACTIONS = ['list', 'get', 'count', 'export'];
 const API_ACTIONS: Record<string, string[]> = {
   [EVENTS_COLLECTION]: READ_ACTIONS,
   [OUTBOX_COLLECTION]: [...READ_ACTIONS, 'resend', 'discard'],
+  // Kept by the plugin from the engine and the executions; «read again» compares one with its source now.
+  [INSTANCES_COLLECTION]: [...READ_ACTIONS, 'refresh'],
+};
+const READ_ONLY_MESSAGES: Record<string, string> = {
+  [EVENTS_COLLECTION]: 'The connection log is read-only',
+  [OUTBOX_COLLECTION]: 'An outbox item can only be sent again or put aside',
+  [INSTANCES_COLLECTION]: 'The process instances are kept by the plugin and are read-only',
 };
 
 export interface BpmConnection extends EngineSettings {
@@ -64,19 +74,44 @@ export class PluginBpmServer extends Plugin {
     maxAttempts: Number(process.env.BPM_OUTBOX_MAX_ATTEMPTS) || undefined,
   });
 
+  /** The processes and their instances, bpmProcesses and bpmInstances (STORY-095). */
+  registry = new BpmRegistry(this, { interval: Number(process.env.BPM_SYNC_INTERVAL) || undefined });
+
   async beforeLoad() {
     this.db.collection(bpmSettingsCollection);
     this.db.collection(bpmEventsCollection);
     this.db.collection(bpmOutboxCollection);
+    this.db.collection(bpmProcessesCollection);
+    this.db.collection(bpmInstancesCollection);
     this.app.acl.registerSnippet({
       name: BPM_SNIPPET,
       actions: [
         `${BPM_RESOURCE}:*`,
+        `${PROCESSES_COLLECTION}:*`,
         ...Object.entries(API_ACTIONS).flatMap(([name, actions]) => actions.map((action) => `${name}:${action}`)),
       ],
     });
     // Open to every signed-in user; the actions return and accept only the user's own tasks (STORY-082).
     this.app.acl.allow(TASKS_RESOURCE, ['list', 'get', 'complete'], 'loggedIn');
+    // A user whose roles may not read bpmInstances still reads the instances they started (STORY-095).
+    this.app.acl.use(
+      async (ctx: Context, next: Next) => {
+        const { resourceName, actionName } = ctx.permission || {};
+        const userId = ctx.state.currentUser?.id;
+        if (
+          resourceName === INSTANCES_COLLECTION &&
+          ['list', 'get', 'count'].includes(actionName) &&
+          !ctx.permission.can &&
+          userId !== undefined &&
+          userId !== null
+        ) {
+          ctx.permission.skip = true;
+          ctx.action.mergeParams({ filter: { requesterId: userId } }, { filter: 'andMerge' });
+        }
+        await next();
+      },
+      { tag: 'bpm-own-instances', before: 'core' },
+    );
   }
 
   async load() {
@@ -91,8 +126,9 @@ export class PluginBpmServer extends Plugin {
       workflow.registerInstruction(START_INSTRUCTION, new StartProcessInstruction(workflow as never, this));
       workflow.registerInstruction(MESSAGE_INSTRUCTION, new SendMessageInstruction(workflow as never, this));
       workflow.registerTrigger(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
+      this.registry.listen();
       if (process.env.BPM_WORKER !== 'off') {
-        for (const runner of [this.worker, this.outbox]) {
+        for (const runner of [this.worker, this.outbox, this.registry]) {
           this.app.on('afterStart', () => runner.start());
           this.app.on('beforeStop', () => runner.stop());
           this.app.on('beforeDestroy', () => runner.stop());
@@ -108,15 +144,10 @@ export class PluginBpmServer extends Plugin {
       async (ctx: Context, next: Next) => {
         const { resourceName, actionName } = ctx.action || {};
         if (API_ACTIONS[resourceName] && !API_ACTIONS[resourceName].includes(actionName)) {
-          ctx.throw(
-            403,
-            this.tr(
-              ctx,
-              resourceName === OUTBOX_COLLECTION
-                ? 'An outbox item can only be sent again or put aside'
-                : 'The connection log is read-only',
-            ),
-          );
+          ctx.throw(403, this.tr(ctx, READ_ONLY_MESSAGES[resourceName]));
+        }
+        if (resourceName === PROCESSES_COLLECTION && ['create', 'update'].includes(actionName)) {
+          await this.checkProcess(ctx);
         }
         await next();
       },
@@ -125,6 +156,7 @@ export class PluginBpmServer extends Plugin {
     this.app.resourceManager.registerActionHandlers({
       [`${OUTBOX_COLLECTION}:resend`]: (ctx: Context, next: Next) => this.outboxAction(ctx, next, 'resend'),
       [`${OUTBOX_COLLECTION}:discard`]: (ctx: Context, next: Next) => this.outboxAction(ctx, next, 'discard'),
+      [`${INSTANCES_COLLECTION}:refresh`]: (ctx: Context, next: Next) => this.refreshInstanceAction(ctx, next),
     });
 
     // Not a collection, so the resource is defined here with its actions.
@@ -213,10 +245,68 @@ export class PluginBpmServer extends Plugin {
     }
   }
 
-  /** Every night: the old rows of the connection log and the outbox. */
+  /** Every night: the old rows of the connection log and the outbox, and the check of the open instances. */
   async cleanup(now = new Date()) {
     await this.events.cleanup(now);
     await this.outbox.cleanup(now);
+    try {
+      await this.registry.reconcile();
+    } catch (error) {
+      this.app.logger.warn(`bpm: the nightly check of the instances failed: ${(error as Error).message}`, {
+        module: 'bpm',
+      });
+    }
+  }
+
+  /**
+   * A process is a workflow of NocoBase, by the key all its versions share, or a process of the engine, by its ID in
+   * the model; each one once. The title is the workflow's when none is given.
+   */
+  private async checkProcess(ctx: Context) {
+    const values = (ctx.action.params.values || {}) as Record<string, unknown>;
+    const current =
+      ctx.action.actionName === 'update' && ctx.action.params.filterByTk
+        ? await this.db.getRepository(PROCESSES_COLLECTION).findOne({ filterByTk: ctx.action.params.filterByTk })
+        : null;
+    const builder = (values.builder ?? current?.get('builder')) as string;
+    const key = String(values.key ?? current?.get('key') ?? '').trim();
+    if (!BUILDERS.includes(builder as never)) ctx.throw(400, this.tr(ctx, 'Choose NocoBase or BPMN as the builder'));
+    if (!key) ctx.throw(400, this.tr(ctx, 'Choose the workflow or the BPMN process'));
+    if (builder === 'nocobase') {
+      const [workflow] = await this.db
+        .getRepository('workflows')
+        .find({ filter: { key }, sort: ['-current', '-id'], limit: 1 });
+      if (!workflow) ctx.throw(400, this.tr(ctx, 'There is no workflow with the key {{key}}', { key }));
+      if (!values.title && !current?.get('title')) values.title = workflow.get('title');
+    } else if (!values.title && !current?.get('title')) {
+      values.title = key;
+    }
+    const twin = await this.db.getRepository(PROCESSES_COLLECTION).findOne({ filter: { builder, key } });
+    if (twin && String(twin.get('id')) !== String(current?.get('id'))) {
+      ctx.throw(400, this.tr(ctx, 'This process is in the list already'));
+    }
+    values.key = key;
+    ctx.action.params.values = values;
+  }
+
+  // «Read again» of an instance on its page: compared with the engine or the execution now (STORY-095, STORY-098).
+  async refreshInstanceAction(ctx: Context, next: Next) {
+    const row = await this.db.getRepository(INSTANCES_COLLECTION).findOne({ filterByTk: ctx.action.params.filterByTk });
+    if (!row) ctx.throw(404);
+    const instanceId = row.get('instanceId');
+    if (row.get('builder') === 'nocobase') {
+      await this.registry.refreshExecution(instanceId);
+    } else {
+      await this.withEngine(
+        ctx,
+        'instance.refresh',
+        () => this.registry.refreshEngineInstance(instanceId, 'instance.sync'),
+        { processKey: row.get('processKey'), businessKey: row.get('businessKey'), instanceId },
+        { readOnly: true },
+      );
+    }
+    ctx.body = await this.db.getRepository(INSTANCES_COLLECTION).findOne({ filterByTk: row.get('id') });
+    await next();
   }
 
   // «Send again» and «put aside» of an outbox row, on the monitoring page (STORY-094, STORY-099).

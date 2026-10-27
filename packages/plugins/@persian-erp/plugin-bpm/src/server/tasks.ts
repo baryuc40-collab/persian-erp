@@ -180,6 +180,8 @@ export class TaskInbox {
       ...this.fields(task),
       detail: { task: task.taskKey, fields: Object.keys(variables) },
     });
+    // The next step shows in bpmInstances once the engine's searches have it (STORY-095).
+    this.plugin.registry.later('camunda', task.processInstanceId);
     ctx.body = { id: task.id };
     await next();
   }

@@ -87,7 +87,7 @@ owner: mmsh
 | [STORY-092](STORY-092-camunda8-adapter.md) | آداپتور Camunda 8 و انتقال اثبات مفهوم به آن | ۱ | in-review |
 | [STORY-093](STORY-093-bpm-events-log.md) | لاگ اتصال و شناسه‌ی پیگیری | ۱ | in-review |
 | [STORY-094](STORY-094-bpm-outbox.md) | صف ارسال برای شروع و پیام | ۱ | in-review |
-| [STORY-095](STORY-095-process-registry.md) | فهرست فرایندها با دو سازنده و جدول نمونه‌ها | ۱ | todo |
+| [STORY-095](STORY-095-process-registry.md) | فهرست فرایندها با دو سازنده و جدول نمونه‌ها | ۱ | in-review |
 | [STORY-096](STORY-096-processes-menu.md) | منوی «فرایندها» و صفحه‌ی مدیریت فرایندها | ۱ | todo |
 | [STORY-097](STORY-097-process-page.md) | صفحه‌ی یک فرایند: نمودار با شمار نمونه‌ها | ۱ | todo |
 | [STORY-098](STORY-098-instance-page.md) | صفحه‌ی یک نمونه و کارهای مدیر فرایند | ۱ | todo |

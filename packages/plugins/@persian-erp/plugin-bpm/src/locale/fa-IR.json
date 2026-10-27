@@ -88,5 +88,11 @@
   "Only an item that was not sent can be sent again": "فقط موردی که فرستاده نشده را می‌شود دوباره فرستاد",
   "Only an item that was not sent can be put aside": "فقط موردی که فرستاده نشده را می‌شود کنار گذاشت",
   "Put aside in the outbox": "در صف ارسال کنار گذاشته شد",
-  "An outbox item can only be sent again or put aside": "مورد صف ارسال را فقط می‌شود دوباره فرستاد یا کنار گذاشت"
+  "An outbox item can only be sent again or put aside": "مورد صف ارسال را فقط می‌شود دوباره فرستاد یا کنار گذاشت",
+  "The process instances are kept by the plugin and are read-only": "هر نمونه‌ی فرایند را خود پلاگین نگه می‌دارد و فقط‌خواندنی است",
+  "Choose NocoBase or BPMN as the builder": "سازنده را NocoBase یا BPMN انتخاب کنید",
+  "Choose the workflow or the BPMN process": "گردش‌کار یا فرایند BPMN را انتخاب کنید",
+  "There is no workflow with the key {{key}}": "گردش‌کاری با کلید {{key}} نیست",
+  "This process is in the list already": "این فرایند از قبل در فهرست هست",
+  "The engine does not know this open instance": "موتور این نمونه‌ی باز را نمی‌شناسد"
 }

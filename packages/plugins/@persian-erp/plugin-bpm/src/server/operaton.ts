@@ -1,4 +1,13 @@
-import { BpmEngine, BpmEngineError, FormField, ProcessDefinition, ServiceTask, UserTask, Variables } from './engine';
+import {
+  BpmEngine,
+  BpmEngineError,
+  FormField,
+  InstanceState,
+  ProcessDefinition,
+  ServiceTask,
+  UserTask,
+  Variables,
+} from './engine';
 import { EngineSettings, engineRequest } from './http';
 
 export type OperatonSettings = EngineSettings;
@@ -24,6 +33,27 @@ const fromOperaton = (variables: Row = {}): Variables =>
       )
       .map(([name, v]) => [name, v.value ?? null]),
   );
+
+// Dates of Operaton's REST API: 2026-10-27T22:07:55.616+0000.
+const toOperatonDate = (date: Date) => date.toISOString().replace('Z', '+0000');
+const fromOperatonDate = (text: string | null | undefined) =>
+  text ? new Date(text.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')).toISOString() : null;
+// Pages of the history queries; a page that comes back full is followed by the next one.
+const PAGE = 500;
+// Where an instance waits is a task or event inside it, not the process or a container around them.
+const CONTAINERS = ['processDefinition', 'subProcess', 'eventSubProcess', 'multiInstanceBody', 'transaction'];
+
+/** The innermost activities of an activity instance tree. */
+function waitingActivities(tree: Row): { id: string; name: string | null }[] {
+  const children: Row[] = tree?.childActivityInstances || [];
+  const transitions: Row[] = tree?.childTransitionInstances || [];
+  const own = CONTAINERS.includes(tree?.activityType) ? [] : [{ id: tree.activityId, name: tree.activityName ?? null }];
+  const inner = [
+    ...children.flatMap(waitingActivities),
+    ...transitions.map((t) => ({ id: t.activityId, name: t.activityName ?? null })),
+  ];
+  return inner.length ? inner : own;
+}
 
 const definition = (row: Row): ProcessDefinition => ({
   id: row.id,
@@ -236,6 +266,88 @@ export class OperatonEngine implements BpmEngine {
         retries: row.retries ?? null,
       }),
     );
+  }
+
+  /** Every page of a query, up to `max` rows. */
+  private async all(method: 'GET' | 'POST', path: string, body?: Row, max = 100 * PAGE): Promise<Row[]> {
+    const rows: Row[] = [];
+    const join = path.includes('?') ? '&' : '?';
+    for (let first = 0; rows.length < max; first += PAGE) {
+      const page = await this.call<Row[]>(method, `${path}${join}firstResult=${first}&maxResults=${PAGE}`, body);
+      rows.push(...page);
+      if (page.length < PAGE) break;
+    }
+    return rows;
+  }
+
+  async getInstance(instanceId: string): Promise<InstanceState | null> {
+    let row: Row;
+    try {
+      row = await this.call<Row>('GET', `/history/process-instance/${encodeURIComponent(instanceId)}`);
+    } catch (error) {
+      if (error instanceof BpmEngineError && error.status === 404) return null;
+      throw error;
+    }
+    const running = row.state === 'ACTIVE' || row.state === 'SUSPENDED';
+    const id = encodeURIComponent(instanceId);
+    const [tree, incidents, tasks] = running
+      ? await Promise.all([
+          this.call<Row>('GET', `/process-instance/${id}/activity-instances`),
+          this.call<Row[]>('GET', `/incident?processInstanceId=${id}`),
+          this.all('GET', `/task?processInstanceId=${id}`),
+        ])
+      : [null, [], []];
+    let status: InstanceState['status'] = 'completed';
+    if (/TERMINATED/.test(row.state)) status = 'canceled';
+    else if (running) status = incidents.length ? 'incident' : row.state === 'SUSPENDED' ? 'suspended' : 'active';
+    return {
+      instanceId: row.id,
+      processKey: row.processDefinitionKey,
+      version: row.processDefinitionVersion ?? null,
+      businessKey: row.businessKey ?? null,
+      status,
+      startedAt: fromOperatonDate(row.startTime),
+      endedAt: fromOperatonDate(row.endTime),
+      steps: tree ? waitingActivities(tree) : [],
+      tasks: await Promise.all(
+        tasks.map(async (task) => {
+          const links = await this.call<Row[]>('GET', `/task/${task.id}/identity-links?type=candidate`);
+          return {
+            id: task.id,
+            name: task.name ?? null,
+            assignee: task.assignee ?? null,
+            candidateGroups: links.filter((l) => l.groupId).map((l) => l.groupId),
+            dueAt: fromOperatonDate(task.due),
+          };
+        }),
+      ),
+    };
+  }
+
+  async changedInstances(processKeys: string[], since: Date) {
+    if (!processKeys.length) return [];
+    const after = toOperatonDate(since);
+    const keys = { processDefinitionKeyIn: processKeys };
+    const incidents = `processDefinitionKeyIn=${processKeys.map(encodeURIComponent).join(',')}`;
+    // The task history takes one process key, not a list.
+    const tasks = processKeys.flatMap((processDefinitionKey) => [
+      this.all('POST', '/history/task', { processDefinitionKey, startedAfter: after }),
+      this.all('POST', '/history/task', { processDefinitionKey, finishedAfter: after }),
+    ]);
+    const searches = await Promise.all([
+      this.all('POST', '/history/process-instance', { ...keys, startedAfter: after }),
+      this.all('POST', '/history/process-instance', { ...keys, finishedAfter: after }),
+      ...tasks,
+      this.all('GET', `/history/incident?${incidents}&createTimeAfter=${encodeURIComponent(after)}`),
+      this.all('GET', `/history/incident?${incidents}&endTimeAfter=${encodeURIComponent(after)}`),
+    ]);
+    return [...new Set(searches.flat().map((row) => String(row.processInstanceId ?? row.id)))];
+  }
+
+  async activeInstances(processKeys: string[]) {
+    if (!processKeys.length) return [];
+    const rows = await this.all('POST', '/process-instance', { processDefinitionKeyIn: processKeys });
+    return rows.map((row) => String(row.id));
   }
 
   async completeServiceTask(workerId: string, taskId: string, variables?: Variables) {

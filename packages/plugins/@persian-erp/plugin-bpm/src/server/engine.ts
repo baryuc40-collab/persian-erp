@@ -53,6 +53,29 @@ export interface ServiceTask {
   retries: number | null;
 }
 
+/** The state of a process instance in the engine, for the table bpmInstances (STORY-095). */
+export interface InstanceState {
+  instanceId: string;
+  processKey: string;
+  version: number | null;
+  businessKey: string | null;
+  /** An incident is shown before suspended, and both only while the instance runs. */
+  status: 'active' | 'incident' | 'suspended' | 'completed' | 'canceled';
+  /** ISO dates in UTC. */
+  startedAt: string | null;
+  endedAt: string | null;
+  /** Where it waits now, such as a user task, a service task or a message event. */
+  steps: { id: string; name: string | null }[];
+  /** Its open user tasks. */
+  tasks: {
+    id: string;
+    name: string | null;
+    assignee: string | null;
+    candidateGroups: string[];
+    dueAt: string | null;
+  }[];
+}
+
 export interface BpmEngine {
   version(): Promise<string>;
   deploy(
@@ -95,6 +118,15 @@ export interface BpmEngine {
     taskId: string,
     error: { message: string; retries: number; retryMs: number },
   ): Promise<void>;
+  /** An instance as the engine has it now; null when the engine does not know it, or no longer. */
+  getInstance(instanceId: string): Promise<InstanceState | null>;
+  /**
+   * The instances of these processes that started or ended, or whose user tasks or incidents came or went, after a
+   * time. Searches of Camunda 8 follow the engine by a moment, so callers look a little further back than they need.
+   */
+  changedInstances(processKeys: string[], since: Date): Promise<string[]>;
+  /** The running instances of these processes, for the nightly check. */
+  activeInstances(processKeys: string[]): Promise<string[]>;
 }
 
 /** An engine error with a message the plugin translates; `values` fill its placeholders. */
