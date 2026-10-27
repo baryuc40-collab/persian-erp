@@ -1,6 +1,6 @@
 # بک‌لاگ
 
-اولویت از بالا به پایین. اپیک‌ها فعلاً پیش‌نویس‌اند تا صاحب پروژه تأیید کند. اپیک‌های فاز ۰ تا ۲ و EPIC-010 تا EPIC-020 با استوری‌هایشان نوشته شده‌اند (STORY-001 تا STORY-089)؛ بقیه را عامل اپیک‌نویس با قالب [epic.md](templates/epic.md) می‌سازد.
+اولویت از بالا به پایین. اپیک‌ها فعلاً پیش‌نویس‌اند تا صاحب پروژه تأیید کند. اپیک‌های فاز ۰ تا ۲ و EPIC-010 تا EPIC-021 با استوری‌هایشان نوشته شده‌اند (STORY-001 تا STORY-106)؛ بقیه را عامل اپیک‌نویس با قالب [epic.md](templates/epic.md) می‌سازد.
 
 ترتیب پیشنهادی اجرای فاز ۰: STORY-011 (بازبینی واژه‌نامه، کار شما) هم‌زمان با STORY-001 و STORY-002، سپس STORY-004 تا STORY-008، سپس STORY-010، STORY-012 و STORY-003.
 
@@ -26,3 +26,4 @@
 | [EPIC-018](epics/EPIC-018-module-upgrade/epic.md) | ارتقا و حذف ماژول نصب‌شده | 5 | in-progress |
 | [EPIC-019](epics/EPIC-019-inventory-module/epic.md) | ماژول مرجع انبار | 5 | in-progress |
 | [EPIC-020](epics/EPIC-020-purchasing-module/epic.md) | ماژول مرجع سفارش خرید | 5 | in-progress |
+| [EPIC-021](epics/EPIC-021-process-platform/epic.md) | سکوی فرایند: طراحی، مدیریت و پایش فرایند در NocoBase | 6 | draft |
