@@ -1,8 +1,10 @@
 import type { Context, Next } from '@nocobase/actions';
 import { Plugin } from '@nocobase/server';
 import bpmSettingsCollection from './bpm-settings-collection';
-import { BpmEngine, BpmEngineError } from './engine';
-import { OperatonEngine, OperatonSettings } from './operaton';
+import { Camunda8Engine } from './camunda8';
+import { BpmEngine, BpmEngineError, EngineKind, ENGINES } from './engine';
+import { EngineSettings } from './http';
+import { OperatonEngine } from './operaton';
 import { SERVICE_TASK_TRIGGER, ServiceTaskTrigger } from './service-task-trigger';
 import { START_INSTRUCTION, StartProcessInstruction } from './start-instruction';
 import { TaskInbox, TASKS_RESOURCE } from './tasks';
@@ -14,9 +16,27 @@ const NAMESPACE = '@persian-erp/plugin-bpm';
 const SETTINGS_ID = 1;
 const MAX_MODEL_BYTES = 2 * 1024 * 1024;
 
+export interface BpmConnection extends EngineSettings {
+  engine: EngineKind;
+}
+
+const engineOf = (value: unknown): EngineKind | null =>
+  ENGINES.includes(value as EngineKind) ? (value as EngineKind) : null;
+
+/** A Camunda form (form-js schema): a JSON object with a list of components. */
+function isFormSchema(text: string) {
+  try {
+    const schema = JSON.parse(text);
+    return !!schema && typeof schema === 'object' && Array.isArray(schema.components);
+  } catch {
+    return false;
+  }
+}
+
 export class PluginBpmServer extends Plugin {
   /** Builds the engine of the saved settings; another adapter can take its place in tests. */
-  createEngine: (settings: OperatonSettings) => BpmEngine = (settings) => new OperatonEngine(settings);
+  createEngine: (settings: BpmConnection) => BpmEngine = (settings) =>
+    settings.engine === 'operaton' ? new OperatonEngine(settings) : new Camunda8Engine(settings);
 
   /** Runs the service tasks of the engine (STORY-081); off with BPM_WORKER=off. */
   worker = new ServiceTaskWorker(this, { interval: Number(process.env.BPM_WORKER_INTERVAL) || undefined });
@@ -61,14 +81,16 @@ export class PluginBpmServer extends Plugin {
   }
 
   /**
-   * The connection settings: what the administrator saved, else BPM_ENGINE_URL, BPM_ENGINE_USERNAME and
-   * BPM_ENGINE_PASSWORD from the environment (docker-compose.yml sets them for the bpm profile).
+   * The connection settings: what the administrator saved, else BPM_ENGINE, BPM_ENGINE_URL, BPM_ENGINE_USERNAME and
+   * BPM_ENGINE_PASSWORD from the environment (docker-compose.yml sets them for the bpm profile). The engine is Camunda 8
+   * unless set otherwise; a connection saved before there was a choice (no engine in the row) is Operaton's.
    */
-  async settings(): Promise<OperatonSettings & { fromEnv: boolean }> {
+  async settings(): Promise<BpmConnection & { fromEnv: boolean }> {
     const row = await this.db.getRepository('bpmSettings').findOne({ filterByTk: SETTINGS_ID });
     const url = (row?.get('url') as string) || '';
     if (url) {
       return {
+        engine: engineOf(row.get('engine')) || 'operaton',
         url,
         username: (row.get('username') as string) || '',
         password: (row.get('password') as string) || '',
@@ -76,6 +98,7 @@ export class PluginBpmServer extends Plugin {
       };
     }
     return {
+      engine: engineOf(process.env.BPM_ENGINE) || 'camunda8',
       url: process.env.BPM_ENGINE_URL || '',
       username: process.env.BPM_ENGINE_USERNAME || '',
       password: process.env.BPM_ENGINE_PASSWORD || '',
@@ -94,11 +117,13 @@ export class PluginBpmServer extends Plugin {
   async translate(message: string, values: Record<string, unknown> = {}) {
     const settings = await this.db.getRepository('systemSettings')?.findOne();
     const lng = (settings?.get('appLang') as string) || (settings?.get('enabledLanguages') as string[])?.[0] || 'en-US';
-    return this.app.i18n.t(message, { ns: NAMESPACE, lng, ...values });
+    return this.app.i18n.t(message, { ns: NAMESPACE, lng, ...values, interpolation: { escapeValue: false } });
   }
 
+  // The messages go to the page as text and to logs, never into HTML, so values such as the engine's own message are
+  // not escaped («'CREATE'», not «&#39;CREATE&#39;»).
   tr(ctx: Context, message: string, values: Record<string, unknown> = {}) {
-    return ctx.t(message, { ns: NAMESPACE, ...values });
+    return ctx.t(message, { ns: NAMESPACE, ...values, interpolation: { escapeValue: false } });
   }
 
   // Engine errors become a 400 with the translated message; anything else is a server error.
@@ -112,8 +137,8 @@ export class PluginBpmServer extends Plugin {
   }
 
   async getSettingsAction(ctx: Context, next: Next) {
-    const { url, username, password, fromEnv } = await this.settings();
-    ctx.body = { url, username, hasPassword: !!password, fromEnv };
+    const { engine, url, username, password, fromEnv } = await this.settings();
+    ctx.body = { engine, url, username, hasPassword: !!password, fromEnv };
     await next();
   }
 
@@ -122,8 +147,11 @@ export class PluginBpmServer extends Plugin {
     const url = typeof values.url === 'string' ? values.url.trim() : '';
     if (url && !/^https?:\/\/[^\s]+$/.test(url))
       ctx.throw(400, this.tr(ctx, 'The engine address must start with http:// or https://'));
+    const engine = values.engine === undefined ? 'camunda8' : engineOf(values.engine);
+    if (!engine) ctx.throw(400, this.tr(ctx, 'Choose Camunda 8 or Operaton as the engine'));
     const repository = this.db.getRepository('bpmSettings');
     const update: Record<string, unknown> = {
+      engine,
       url,
       username: typeof values.username === 'string' ? values.username.trim() : '',
     };
@@ -147,16 +175,23 @@ export class PluginBpmServer extends Plugin {
     await next();
   }
 
-  /** Deploys a .bpmn file given as text: values {name, content}. */
+  /**
+   * Deploys a .bpmn file, or a .form file of a Camunda form that user tasks link to (Camunda 8 only), given as text:
+   * values {name, content}. The file name stays the same across versions, so the same file again makes no new one.
+   */
   async deployAction(ctx: Context, next: Next) {
     const { name, content } = ctx.action.params.values || {};
     const fileName = typeof name === 'string' ? name.trim() : '';
-    if (!/\.bpmn$/i.test(fileName) || typeof content !== 'string' || !content.includes('definitions')) {
-      ctx.throw(400, this.tr(ctx, 'This is not a BPMN file'));
+    const text = typeof content === 'string' ? content : '';
+    const isModel = /\.bpmn$/i.test(fileName) && text.includes('definitions');
+    const isForm = /\.form$/i.test(fileName) && isFormSchema(text);
+    if (!isModel && !isForm) ctx.throw(400, this.tr(ctx, 'This is not a BPMN or form file'));
+    if (Buffer.byteLength(text) > MAX_MODEL_BYTES) ctx.throw(400, this.tr(ctx, 'The BPMN file is too large'));
+    if (isForm && (await this.settings()).engine !== 'camunda8') {
+      ctx.throw(400, this.tr(ctx, 'Only Camunda 8 takes form files'));
     }
-    if (Buffer.byteLength(content) > MAX_MODEL_BYTES) ctx.throw(400, this.tr(ctx, 'The BPMN file is too large'));
     ctx.body = await this.withEngine(ctx, (engine) =>
-      engine.deploy(fileName.replace(/\.bpmn$/i, ''), [{ name: fileName, content }]),
+      engine.deploy(fileName.replace(/\.(bpmn|form)$/i, ''), [{ name: fileName, content: text }]),
     );
     await next();
   }

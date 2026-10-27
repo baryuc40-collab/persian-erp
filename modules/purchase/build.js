@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Builds the «درخواست خرید» module of the BPMN proof of concept (STORY-083) on a fresh install with plugin-bpm, through
 // the same HTTP actions the NocoBase UI uses, then exports it with erpModules:export. The process itself is the model
-// bpmn/purchase-request.bpmn, deployed in Settings > BPMN engine; the module holds the data, pages, workflows and roles.
+// bpmn/purchase-request.bpmn with its form bpmn/purchase-approve.form (Camunda 8) or bpmn/operaton/purchase-request.bpmn
+// (Operaton), deployed in Settings > BPMN engine; the module holds the data, pages, workflows and roles.
 // The module file is never written by hand; to change the module, change this script and run it again.
 //
 // usage: node modules/purchase/build.js <base-url> <email> <password> [output file]
@@ -214,7 +215,7 @@ async function workflow(values, node) {
     key: KEY,
     title: 'درخواست خرید',
     version: '1.0.0',
-    description: 'درخواست خرید با تأیید مدیر در فرایند BPMN (نمونه‌ی اثبات مفهوم اپیک ۰۱۶). به پلاگین موتور BPMN و استقرار مدل bpmn/purchase-request.bpmn نیاز دارد.',
+    description: 'درخواست خرید با تأیید مدیر در فرایند BPMN (نمونه‌ی اثبات مفهوم اپیک ۰۱۶). به پلاگین موتور BPMN و استقرار مدل bpmn/purchase-request.bpmn و فرم bpmn/purchase-approve.form نیاز دارد (با Operaton، مدل bpmn/operaton/purchase-request.bpmn).',
     groupSchemaUid: group.schemaUid,
   });
   const exported = JSON.parse(await call(`erpModules:export?filterByTk=${KEY}`, undefined, { text: true }));

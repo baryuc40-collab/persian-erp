@@ -1,12 +1,7 @@
 import { BpmEngine, BpmEngineError, FormField, ProcessDefinition, ServiceTask, UserTask, Variables } from './engine';
+import { EngineSettings, engineRequest } from './http';
 
-export interface OperatonSettings {
-  url: string;
-  username?: string;
-  password?: string;
-  /** Milliseconds before a request is given up. */
-  timeout?: number;
-}
+export type OperatonSettings = EngineSettings;
 
 type Row = Record<string, any>;
 
@@ -98,43 +93,8 @@ export class OperatonEngine implements BpmEngine {
     this.base = `${settings.url.replace(/\/+$/, '')}/engine-rest`;
   }
 
-  private async call<T = any>(method: string, path: string, body?: unknown, form?: FormData): Promise<T> {
-    const headers: Record<string, string> = { Accept: 'application/json' };
-    if (this.settings.username) {
-      const token = Buffer.from(`${this.settings.username}:${this.settings.password || ''}`).toString('base64');
-      headers.Authorization = `Basic ${token}`;
-    }
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
-    let res: Response;
-    try {
-      res = await fetch(`${this.base}${path}`, {
-        method,
-        headers,
-        body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
-        signal: AbortSignal.timeout(this.settings.timeout ?? 10000),
-      });
-    } catch (error) {
-      const reason = (error as Error & { cause?: Error }).cause?.message || (error as Error).message;
-      throw new BpmEngineError('The BPMN engine cannot be reached: {{reason}}', { reason });
-    }
-    if (res.status === 401 || res.status === 403) {
-      throw new BpmEngineError('The BPMN engine did not accept the user name or password', {}, res.status);
-    }
-    const text = await res.text();
-    if (!res.ok) {
-      let message = text;
-      try {
-        message = JSON.parse(text).message || text;
-      } catch {
-        // Not JSON; the text is the message.
-      }
-      throw new BpmEngineError(
-        'The BPMN engine answered {{status}}: {{message}}',
-        { status: res.status, message },
-        res.status,
-      );
-    }
-    return (text ? JSON.parse(text) : undefined) as T;
+  private call<T = any>(method: string, path: string, body?: unknown, form?: FormData): Promise<T> {
+    return engineRequest<T>(this.settings, `${this.base}${path}`, { method, body, form });
   }
 
   async version() {
@@ -175,7 +135,16 @@ export class OperatonEngine implements BpmEngine {
   }
 
   async sendMessage(name: string, businessKey: string, variables?: Variables) {
-    await this.call('POST', '/message', { messageName: name, businessKey, processVariables: toOperaton(variables) });
+    try {
+      await this.call('POST', '/message', { messageName: name, businessKey, processVariables: toOperaton(variables) });
+      return { delivered: true };
+    } catch (error) {
+      // Operaton answers 400 "Cannot correlate message" when no instance waits for it.
+      if (error instanceof BpmEngineError && error.status === 400 && /correlate/i.test(String(error.values.message))) {
+        return { delivered: false };
+      }
+      throw error;
+    }
   }
 
   private definition(id: string) {

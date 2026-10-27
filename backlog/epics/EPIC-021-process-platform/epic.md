@@ -84,7 +84,7 @@ owner: mmsh
 | شناسه | عنوان | مرحله | وضعیت |
 | --- | --- | --- | --- |
 | [STORY-091](STORY-091-camunda8-compose.md) | Camunda 8.10 در Compose و تنظیمات عملیاتی | ۱ | in-review |
-| [STORY-092](STORY-092-camunda8-adapter.md) | آداپتور Camunda 8 و انتقال اثبات مفهوم به آن | ۱ | todo |
+| [STORY-092](STORY-092-camunda8-adapter.md) | آداپتور Camunda 8 و انتقال اثبات مفهوم به آن | ۱ | in-review |
 | [STORY-093](STORY-093-bpm-events-log.md) | لاگ اتصال و شناسه‌ی پیگیری | ۱ | todo |
 | [STORY-094](STORY-094-bpm-outbox.md) | صف ارسال برای شروع و پیام | ۱ | todo |
 | [STORY-095](STORY-095-process-registry.md) | فهرست فرایندها با دو سازنده و جدول نمونه‌ها | ۱ | todo |

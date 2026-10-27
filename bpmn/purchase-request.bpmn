@@ -1,27 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="https://persian-erp.example/bpmn" id="defs">
-  <bpmn:process id="purchase_request" name="درخواست خرید" isExecutable="true" operaton:historyTimeToLive="180">
-    <bpmn:startEvent id="start" />
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" targetNamespace="https://persian-erp.example/bpmn" id="defs">
+  <bpmn:process id="purchase_request" name="درخواست خرید" isExecutable="true">
+    <bpmn:startEvent id="start" name="ثبت درخواست" />
     <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="approve" />
-    <bpmn:userTask id="approve" name="تأیید مدیر" operaton:candidateGroups="purchase_manager">
+    <bpmn:userTask id="approve" name="تأیید مدیر">
       <bpmn:extensionElements>
-        <operaton:formData>
-          <operaton:formField id="approved" label="درخواست تأیید می‌شود؟" type="boolean">
-            <operaton:validation><operaton:constraint name="required" /></operaton:validation>
-          </operaton:formField>
-          <operaton:formField id="managerNote" label="یادداشت مدیر" type="string" />
-        </operaton:formData>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="purchase-approve" />
+        <zeebe:assignmentDefinition candidateGroups="purchase_manager" />
       </bpmn:extensionElements>
     </bpmn:userTask>
     <bpmn:sequenceFlow id="f2" sourceRef="approve" targetRef="gw" />
-    <bpmn:exclusiveGateway id="gw" />
-    <bpmn:sequenceFlow id="yes" sourceRef="gw" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="no" sourceRef="gw" targetRef="reject"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${!approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:serviceTask id="order" name="ثبت سفارش" operaton:type="external" operaton:topic="place-order" />
+    <bpmn:exclusiveGateway id="gw" name="تأیید شد؟" />
+    <bpmn:sequenceFlow id="yes" name="بله" sourceRef="gw" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=approved = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="no" name="خیر" sourceRef="gw" targetRef="reject"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=approved = false</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:serviceTask id="order" name="ثبت سفارش">
+      <bpmn:extensionElements><zeebe:taskDefinition type="place-order" retries="3" /></bpmn:extensionElements>
+    </bpmn:serviceTask>
     <bpmn:sequenceFlow id="f3" sourceRef="order" targetRef="done" />
-    <bpmn:endEvent id="done" />
-    <bpmn:serviceTask id="reject" name="ثبت رد" operaton:type="external" operaton:topic="reject-request" />
+    <bpmn:endEvent id="done" name="سفارش داده شد" />
+    <bpmn:serviceTask id="reject" name="ثبت رد">
+      <bpmn:extensionElements><zeebe:taskDefinition type="reject-request" retries="3" /></bpmn:extensionElements>
+    </bpmn:serviceTask>
     <bpmn:sequenceFlow id="f4" sourceRef="reject" targetRef="rejected" />
-    <bpmn:endEvent id="rejected" />
+    <bpmn:endEvent id="rejected" name="رد شد" />
   </bpmn:process>
+  <bpmndi:BPMNDiagram id="d1"><bpmndi:BPMNPlane id="p1" bpmnElement="purchase_request">
+    <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="150" y="180" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="approve_di" bpmnElement="approve"><dc:Bounds x="240" y="158" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="gw_di" bpmnElement="gw" isMarkerVisible="true"><dc:Bounds x="400" y="173" width="50" height="50" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="order_di" bpmnElement="order"><dc:Bounds x="510" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="done_di" bpmnElement="done"><dc:Bounds x="672" y="102" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="reject_di" bpmnElement="reject"><dc:Bounds x="510" y="240" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="rejected_di" bpmnElement="rejected"><dc:Bounds x="672" y="262" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="186" y="198" /><di:waypoint x="240" y="198" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="340" y="198" /><di:waypoint x="400" y="198" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="yes_di" bpmnElement="yes"><di:waypoint x="425" y="173" /><di:waypoint x="425" y="120" /><di:waypoint x="510" y="120" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="no_di" bpmnElement="no"><di:waypoint x="425" y="223" /><di:waypoint x="425" y="280" /><di:waypoint x="510" y="280" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="610" y="120" /><di:waypoint x="672" y="120" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="610" y="280" /><di:waypoint x="672" y="280" /></bpmndi:BPMNEdge>
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
 </bpmn:definitions>

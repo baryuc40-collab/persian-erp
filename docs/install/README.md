@@ -13,7 +13,7 @@ mkdir -p /opt/persian-erp && cd /opt/persian-erp
 curl -fsSLO https://raw.githubusercontent.com/baryuc40-collab/persian-erp/main/docker/docker-compose.yml
 curl -fsSL -o .env https://raw.githubusercontent.com/baryuc40-collab/persian-erp/main/docker/.env.example
 sed -i "s/^APP_KEY=.*/APP_KEY=$(openssl rand -hex 32)/; s/^DB_PASSWORD=.*/DB_PASSWORD=$(openssl rand -hex 16)/" .env
-sed -i "s/^CAMUNDA_DB_PASSWORD=.*/CAMUNDA_DB_PASSWORD=$(openssl rand -hex 16)/; s/^BPM_ENGINE_PASSWORD=.*/BPM_ENGINE_PASSWORD=$(openssl rand -hex 16)/" .env
+sed -i "s/^CAMUNDA_DB_PASSWORD=.*/CAMUNDA_DB_PASSWORD=$(openssl rand -hex 16)/; s/^BPM_ENGINE_PASSWORD=.*/BPM_ENGINE_PASSWORD=$(openssl rand -hex 16)/; s/^CAMUNDA_ADMIN_PASSWORD=.*/CAMUNDA_ADMIN_PASSWORD=$(openssl rand -hex 16)/" .env
 nano .env
 ```
 
@@ -62,7 +62,7 @@ erp.example.com {
 ```bash
 cd /opt/persian-erp
 curl -fsSLO https://raw.githubusercontent.com/baryuc40-collab/persian-erp/main/docker/docker-compose.yml
-grep -q '^CAMUNDA_DB_PASSWORD=' .env || printf 'CAMUNDA_DB_PASSWORD=%s\nBPM_ENGINE_USERNAME=nocobase\nBPM_ENGINE_PASSWORD=%s\n' "$(openssl rand -hex 16)" "$(openssl rand -hex 16)" >> .env
+grep -q '^CAMUNDA_DB_PASSWORD=' .env || printf 'CAMUNDA_DB_PASSWORD=%s\nBPM_ENGINE_USERNAME=nocobase\nBPM_ENGINE_PASSWORD=%s\nCAMUNDA_ADMIN_USERNAME=admin\nCAMUNDA_ADMIN_PASSWORD=%s\n' "$(openssl rand -hex 16)" "$(openssl rand -hex 16)" "$(openssl rand -hex 16)" >> .env
 ```
 
 سپس موتور و پلاگین را روشن کنید:
@@ -78,21 +78,49 @@ docker compose exec app yarn nocobase pm enable @persian-erp/plugin-bpm
 `COMPOSE_PROFILES=bpm` در `.env` موتور را جزو همه‌ی دستورهای `docker compose` می‌کند. بار اول بالا آمدن موتور حدود یک دقیقه طول می‌کشد. وقتی `docker compose ps camunda` وضعیت `healthy` را نشان داد، موتور آماده است.
 
 نکته‌ها:
-- داده‌ی موتور در `storage/camunda` است و تاریخچه‌اش در پایگاه داده‌ی `camunda` همان PostgreSQL. سرویس `camunda-init` این پایگاه داده و کاربرش را می‌سازد. اگر یکی از دو رمز موتور در `.env` خالی یا `change-me` باشد، این سرویس با پیام روشن می‌ایستد و موتور بالا نمی‌آید.
+- داده‌ی موتور در `storage/camunda` است و تاریخچه‌اش در پایگاه داده‌ی `camunda` همان PostgreSQL. سرویس `camunda-init` این پایگاه داده و کاربرش را می‌سازد. اگر یکی از سه رمز موتور در `.env` خالی یا `change-me` باشد، این سرویس با پیام روشن می‌ایستد و موتور بالا نمی‌آید.
+- موتور دو کاربر دارد. برنامه با کاربر سرویس (`BPM_ENGINE_USERNAME`) وصل می‌شود، که فقط اجازه‌ی کار با فرایندها، کارها و پیام‌ها را دارد. نه کاربر می‌سازد و نه Operate را باز می‌کند. کاربر مدیر (`CAMUNDA_ADMIN_USERNAME`) برای Operate و Tasklist و عوض کردن رمزهاست.
 - هیچ درگاهی از موتور بیرون نمی‌آید. فقط برنامه با `http://camunda:8080` به آن وصل می‌شود.
 - نمونه‌های تمام‌شده‌ی فرایند پس از `CAMUNDA_HISTORY_TTL` از تاریخچه‌ی موتور پاک می‌شوند. پیش‌فرض `P180D` یعنی ۱۸۰ روز است. نمونه‌های باز هیچ‌وقت پاک نمی‌شوند.
 - لاگ موتور با `docker compose logs -f camunda` دیده می‌شود. Docker آن را در پنج فایل ۵۰ مگابایتی نگه می‌دارد.
 - سلامت موتور: `docker compose exec camunda wget -q -O - http://localhost:9600/actuator/health`.
 
-### عوض کردن رمز کاربر سرویس
+### Operate و Tasklist
 
-موتور کاربر سرویس را فقط بار اول از `BPM_ENGINE_PASSWORD` می‌سازد. پس برای عوض کردن رمز، اول رمز را در خود موتور عوض کنید و بعد در `.env`. `<رمز تازه>` را با رمز تازه عوض کنید:
+ابزار خود موتور برای دیدن نمونه‌ها و کارها و رفع خطا، فقط برای مدیر فنی است. چون درگاه موتور بیرون نیست، با تونل SSH باز می‌شود. اول روی سرور نشانی موتور را در شبکه‌ی Docker بگیرید:
+
+```bash
+cd /opt/persian-erp
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$(docker compose ps -q camunda)"
+```
+
+سپس روی رایانه‌ی خودتان تونل را باز کنید (`<نشانی>` خروجی دستور بالاست) و `http://localhost:8088/operate` را در مرورگر باز کنید. نام کاربر و رمز، `CAMUNDA_ADMIN_USERNAME` و `CAMUNDA_ADMIN_PASSWORD` در `.env` است.
+
+```bash
+ssh -N -L 8088:<نشانی>:8080 <کاربر>@<سرور>
+```
+
+### عوض کردن رمزهای موتور
+
+موتور دو کاربرش را فقط بار اول از `.env` می‌سازد. پس برای عوض کردن رمز، اول رمز را با کاربر مدیر در خود موتور عوض کنید و بعد در `.env`. رمز تازه چند ثانیه بعد کار می‌کند. `<رمز تازه>` را با رمز تازه عوض کنید.
+
+رمز کاربر سرویس:
 
 ```bash
 cd /opt/persian-erp
 NEW='<رمز تازه>'
-docker compose exec -T -e NEW="$NEW" camunda sh -c 'u="$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME"; wget -q -O - --method=PUT --header="Content-Type: application/json" --body-data="{\"password\":\"$NEW\",\"name\":\"NocoBase\",\"email\":\"nocobase@example.com\"}" --user "$u" --password "$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_PASSWORD" --auth-no-challenge "http://localhost:8080/v2/users/$u"'
+docker compose exec -T -e NEW="$NEW" camunda sh -c 'u="$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME"; wget -q -O - --method=PUT --header="Content-Type: application/json" --body-data="{\"password\":\"$NEW\",\"name\":\"NocoBase\",\"email\":\"nocobase@example.com\"}" --user "$CAMUNDA_SECURITY_INITIALIZATION_USERS_1_USERNAME" --password "$CAMUNDA_SECURITY_INITIALIZATION_USERS_1_PASSWORD" --auth-no-challenge "http://localhost:8080/v2/users/$u"'
 sed -i "s/^BPM_ENGINE_PASSWORD=.*/BPM_ENGINE_PASSWORD=$NEW/" .env
+docker compose up -d
+```
+
+رمز کاربر مدیر:
+
+```bash
+cd /opt/persian-erp
+NEW='<رمز تازه>'
+docker compose exec -T -e NEW="$NEW" camunda sh -c 'u="$CAMUNDA_SECURITY_INITIALIZATION_USERS_1_USERNAME"; wget -q -O - --method=PUT --header="Content-Type: application/json" --body-data="{\"password\":\"$NEW\",\"name\":\"Camunda admin\",\"email\":\"admin@example.com\"}" --user "$u" --password "$CAMUNDA_SECURITY_INITIALIZATION_USERS_1_PASSWORD" --auth-no-challenge "http://localhost:8080/v2/users/$u"'
+sed -i "s/^CAMUNDA_ADMIN_PASSWORD=.*/CAMUNDA_ADMIN_PASSWORD=$NEW/" .env
 docker compose up -d
 ```
 

@@ -25,9 +25,9 @@ export interface WorkerOptions {
 const DEFAULTS: WorkerOptions = { interval: 2000, lockMs: 60000, maxTasks: 10, retries: 3, retryMs: 10000 };
 
 /**
- * Takes the external service tasks of the engine whose topic has an enabled «BPMN service task» workflow, runs that
- * workflow with the task, and completes the task or reports the failure (decision 0007, section 6). Each app instance
- * has its own worker ID, so in a cluster the engine gives each task to one of them.
+ * Takes the service tasks of the engine (Camunda 8 jobs, Operaton external tasks) whose topic has an enabled «BPMN
+ * service task» workflow, runs that workflow with the task, and completes the task or reports the failure (decision
+ * 0007, section 6). Each app instance has its own worker ID, so in a cluster the engine gives each task to one of them.
  */
 export class ServiceTaskWorker {
   readonly workerId = `nocobase-${os.hostname()}-${process.pid}`;
@@ -126,7 +126,13 @@ export class ServiceTaskWorker {
     for (const workflow of workflows) {
       const processor = await workflowPlugin.trigger(workflow, context);
       if (!processor || processor.execution.status !== RESOLVED) {
-        failures.push(`workflow ${workflow.get('key')} execution ${processor ? processor.execution.id : '-'}`);
+        // The engine shows this as the incident's message: short, in the app's language, with the execution to look up.
+        failures.push(
+          await this.bpm.translate('The workflow "{{title}}" did not succeed (execution {{execution}}).', {
+            title: workflow.get('title') || workflow.get('key'),
+            execution: processor ? processor.execution.id : '-',
+          }),
+        );
       }
     }
     if (!failures.length) {
@@ -136,7 +142,7 @@ export class ServiceTaskWorker {
     // The first failure sets the number of retries; after that the engine counts them down.
     const retries = Math.max((task.retries ?? this.options.retries) - (task.retries === null ? 0 : 1), 0);
     await engine.failServiceTask(this.workerId, task.id, {
-      message: `NocoBase: ${failures.join(', ')} did not succeed`,
+      message: failures.join(' '),
       retries,
       retryMs: this.options.retryMs,
     });

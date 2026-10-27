@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     services:
-      # The BPMN engine of decision 0007, for the OperatonEngine tests of plugin-bpm (H2 is enough here).
+      # The second BPMN engine (decision 0008), for the contract tests of plugin-bpm (H2 is enough here).
       operaton:
         image: operaton/operaton:2.1.5
         env:
@@ -119,6 +119,11 @@ jobs:
           sed -i "s#^APP_KEY=.*#APP_KEY=ci-$(openssl rand -hex 32)#" .env
           cp .env .env.test
           sed -i "s#^APP_ENV=.*#APP_ENV=test#" .env.test
+      # Camunda 8 of the bpm profile (decision 0008) with its API on localhost:18088; it starts while the rest installs.
+      - name: Start Camunda 8
+        run: |
+          printf 'services:\n  camunda:\n    ports: ["127.0.0.1:18088:8080"]\n' > "$RUNNER_TEMP/camunda-port.yml"
+          docker compose -f docker-compose.yml -f "$RUNNER_TEMP/camunda-port.yml" --profile bpm up -d camunda
       - name: Install
         run: yarn install --ignore-engines --network-timeout 600000
       - name: Upload generated yarn.lock
@@ -138,16 +143,23 @@ jobs:
         run: yarn eslint packages/plugins/@persian-erp tools
       - name: Build plugins
         run: yarn build @persian-erp/plugin-fa @persian-erp/plugin-modules @persian-erp/plugin-bpm --no-dts
-      - name: Wait for the BPMN engine
+      - name: Wait for the BPMN engines
         run: |
           for i in $(seq 1 60); do
-            curl -sf -u nocobase:secret http://localhost:18080/engine-rest/version && exit 0
+            curl -sf -u nocobase:secret http://localhost:18080/engine-rest/version && break
+            [ "$i" -lt 60 ] || { echo "Operaton did not start"; exit 1; }
             sleep 3
           done
-          echo "Operaton did not start"; exit 1
+          for i in $(seq 1 60); do
+            docker compose exec -T camunda wget -q -O /dev/null http://localhost:9600/actuator/health/readiness && exit 0
+            sleep 5
+          done
+          echo "Camunda 8 did not start"; docker compose logs --tail 200 camunda; exit 1
       - name: Test
         env:
           OPERATON_URL: http://localhost:18080
+          CAMUNDA_URL: http://localhost:18088
+          CAMUNDA_PASSWORD: change-me
         run: yarn test --server packages/plugins/@persian-erp --run
       - name: Client tests
         run: yarn test --client packages/plugins/@persian-erp --run
@@ -251,15 +263,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     services:
-      operaton:
-        image: operaton/operaton:2.1.5
-        env:
-          OPERATON_BPM_RUN_AUTH_ENABLED: 'true'
-          OPERATON_BPM_RUN_EXAMPLE_ENABLED: 'false'
-          OPERATON_BPM_ADMIN_USER_ID: nocobase
-          OPERATON_BPM_ADMIN_USER_PASSWORD: secret
-        ports:
-          - 18080:8080
       postgres:
         image: postgres:16
         env:
@@ -290,7 +293,12 @@ jobs:
           sed -i "s#^APP_KEY=.*#APP_KEY=ci-$(openssl rand -hex 32)#" .env
           sed -i "s#^APPEND_PRESET_BUILT_IN_PLUGINS=.*#&,@persian-erp/plugin-bpm#" .env
           sed -i "s#^BPM_ENGINE_PASSWORD=.*#BPM_ENGINE_PASSWORD=secret#" .env
-          printf 'BPM_ENGINE_URL=http://localhost:18080\nBPM_WORKER_INTERVAL=1000\n' >> .env
+          printf 'BPM_ENGINE_URL=http://localhost:18088\nBPM_WORKER_INTERVAL=1000\n' >> .env
+      # Camunda 8 of the bpm profile (decision 0008) with its API on localhost:18088; it starts while the rest installs.
+      - name: Start Camunda 8
+        run: |
+          printf 'services:\n  camunda:\n    ports: ["127.0.0.1:18088:8080"]\n' > "$RUNNER_TEMP/camunda-port.yml"
+          docker compose -f docker-compose.yml -f "$RUNNER_TEMP/camunda-port.yml" --profile bpm up -d camunda
       - name: Install
         run: yarn install --ignore-engines --network-timeout 600000
       - name: Build plugins
@@ -298,10 +306,10 @@ jobs:
       - name: Wait for the BPMN engine
         run: |
           for i in $(seq 1 60); do
-            curl -sf -u nocobase:secret http://localhost:18080/engine-rest/version && exit 0
+            docker compose exec -T camunda wget -q -O /dev/null http://localhost:9600/actuator/health/readiness && exit 0
             sleep 5
           done
-          echo "Operaton did not start"; exit 1
+          echo "Camunda 8 did not start"; docker compose logs --tail 200 camunda; exit 1
       - name: Install and start NocoBase
         run: |
           yarn start --quickstart -d
@@ -314,6 +322,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run e2e tests
         run: BPM_E2E=1 npx playwright test -c e2e/playwright.config.ts e2e/bpm e2e/modules/all-modules.e2e.ts
+      - name: Engine logs
+        if: failure()
+        run: docker compose logs --tail 300 camunda
       - name: Upload screenshots and report
         if: failure()
         uses: actions/upload-artifact@v4

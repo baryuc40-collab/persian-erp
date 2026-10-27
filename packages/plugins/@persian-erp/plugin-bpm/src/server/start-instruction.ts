@@ -46,9 +46,10 @@ export class StartProcessInstruction extends Instruction {
     }
     try {
       const engine = await this.bpm.getEngine();
-      // The engine does not keep business keys unique, so two starts for one key at once would make two instances
-      // (decision 0007, section 6). The app's lock manager makes them wait for each other; across a cluster it needs
-      // the shared lock adapter of NocoBase's cluster mode.
+      // Operaton does not keep business keys unique, so two starts for one key at once would make two instances
+      // (decision 0007, section 6); Camunda 8 refuses the second, which then has to find the first by search. The app's
+      // lock manager makes them wait for each other; across a cluster it needs the shared lock adapter of NocoBase's
+      // cluster mode.
       const started = await this.bpm.app.lockManager.runExclusive(
         `bpm-start:${processKey}:${businessKey}`,
         () => engine.start(processKey, businessKey, variables),

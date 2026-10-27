@@ -13,7 +13,9 @@ function ServiceTaskFieldset() {
       name={['config', 'topic']}
       label={t('Topic')}
       rules={[{ required: true }]}
-      extra={t('The topic of the external service task in the BPMN model (operaton:topic), such as place-order')}
+      extra={t(
+        'The service task type in the BPMN model (the type of zeebe:taskDefinition in Camunda 8, operaton:topic in Operaton), such as place-order',
+      )}
     >
       <Input dir="ltr" />
     </Form.Item>

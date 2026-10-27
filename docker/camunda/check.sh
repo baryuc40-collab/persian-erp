@@ -3,6 +3,7 @@
 # started it, after `docker compose --profile bpm up -d camunda`. Waits for the engine, then checks that
 #   - it is the version of CAMUNDA_VERSION,
 #   - the API refuses a request without a password and answers the service user of plugin-bpm,
+#   - the service user has only its role (it may not create users) and the administrator is a separate user,
 #   - its secondary storage is the camunda database of the same PostgreSQL,
 #   - no port of the engine is published outside Docker.
 # Exits non-zero at the first failed check. Uses only what the images have (wget in camunda, psql in postgres).
@@ -12,10 +13,12 @@ here="$(cd "$(dirname "$0")" && pwd)"
 expected="${CAMUNDA_VERSION:-$(tr -d ' \r\n' < "$here/../../CAMUNDA_VERSION")}"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
-# The engine's own wget, so no port has to be published; the service user is read from the engine's environment.
+# The engine's own wget, so no port has to be published; the users are read from the engine's environment.
 in_camunda() { docker compose exec -T camunda sh -c "$1"; }
 AUTH='--user "$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME" --password "$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_PASSWORD" --auth-no-challenge'
+ADMIN='--user "$CAMUNDA_SECURITY_INITIALIZATION_USERS_1_USERNAME" --password "$CAMUNDA_SECURITY_INITIALIZATION_USERS_1_PASSWORD" --auth-no-challenge'
 SEARCH='--post-data="{}" --header="Content-Type: application/json" http://localhost:8080/v2/process-instances/search'
+NEW_USER='--post-data="{\"username\":\"check-sh\",\"password\":\"check-sh-password\",\"name\":\"check\",\"email\":\"check@example.com\"}" --header="Content-Type: application/json" http://localhost:8080/v2/users'
 status() { in_camunda "wget -S -O /dev/null $1 2>&1 | awk '/HTTP\\//{code=\$2} END{print code}'"; }
 
 echo "Waiting for the engine to be ready"
@@ -37,6 +40,14 @@ echo "ok: no password, 401"
 code="$(status "$AUTH $SEARCH")"
 [ "$code" = 200 ] || fail "the service user got $code, not 200"
 echo "ok: service user, 200"
+
+code="$(status "$AUTH $NEW_USER")"
+[ "$code" = 403 ] || fail "the service user got $code, not 403, creating a user"
+echo "ok: service user may not create users, 403"
+
+code="$(status "$ADMIN --post-data='{}' --header='Content-Type: application/json' http://localhost:8080/v2/users/search")"
+[ "$code" = 200 ] || fail "the administrator got $code, not 200, listing users"
+echo "ok: administrator, 200"
 
 tables="$(docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d camunda -tAc "select count(*) from information_schema.tables where table_schema = current_schema()"')"
 [ "${tables:-0}" -gt 0 ] || fail "the camunda database has no tables"

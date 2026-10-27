@@ -2,7 +2,7 @@
 id: STORY-092
 epic: EPIC-021
 title: آداپتور Camunda 8 و انتقال اثبات مفهوم به آن
-status: todo
+status: in-review
 model: opus
 ---
 
@@ -22,7 +22,7 @@ model: opus
 - `plugin-bpm/src/server/engine/camunda8.ts` با REST API v2؛ جدول نگاشت در بخش ۴ [تصمیم ۰۰۰۸](../../../docs/decisions/0008-camunda8-and-two-builders.md#۴-تغییرها-در-bpmengine-و-camunda8adapter).
 - انتخاب موتور با `BPM_ENGINE=camunda8|operaton` و صفحه‌ی «تنظیمات ← موتور BPMN».
 - Worker با `/v2/jobs/activation` و `requestTimeout`. «موضوع» امروز همان `type` کار است. هر اثر با `jobKey` یکتا می‌شود.
-- مدل [`docs/bpm/camunda8-purchase-request.bpmn`](../../../docs/bpm/camunda8-purchase-request.bpmn) (آزموده روی 8.10.7) جای `bpmn/purchase-request.bpmn` می‌آید. نسخه‌ی Operaton به `bpmn/operaton/` می‌رود.
+- مدل Camunda 8 (آزموده روی 8.10.7) جای `bpmn/purchase-request.bpmn` می‌آید. نسخه‌ی Operaton به `bpmn/operaton/` می‌رود.
 - شناسه‌ها رشته‌اند، چون کلیدهای Camunda 8 عدد ۶۴ بیتی‌اند.
 - جست‌وجوها با تأخیر کوتاه به‌روز می‌شوند. آداپتور پس از نوشتن به جست‌وجو تکیه نمی‌کند.
 - کمترین دسترسی کاربر سرویس بررسی و در تصمیم ۰۰۰۸ نوشته می‌شود.
@@ -31,7 +31,32 @@ model: opus
 - آزمون خودکار: آزمون قرارداد `BpmEngine` روی هر دو موتور در CI؛ کار «E2E (BPMN)» روی Camunda 8.
 - بررسی دستی: دیدن همان نمونه‌ها در Operate.
 
+## پیاده‌سازی
+- **آداپتور** [`camunda8.ts`](../../../packages/plugins/@persian-erp/plugin-bpm/src/server/camunda8.ts) با REST API v2:
+  - شروع با `businessId`. اگر موتور ۴۰۹ `ALREADY_EXISTS` بدهد، نمونه‌ی باز با جست‌وجو پیدا و با `created: false` برگردانده می‌شود. جست‌وجو چند بار تکرار می‌شود، چون نمونه‌ی تازه کمی دیرتر در جست‌وجو می‌آید.
+  - پیام با `/v2/messages/correlation`. اگر نمونه‌ی منتظری نباشد (۴۰۴)، نتیجه `delivered: false` است. Operaton هم همین را برمی‌گرداند.
+  - کارتابل با جست‌وجوی کارهای باز بر اساس candidate group یا assignee. کاری که همین‌جا تکمیل شده، یک دقیقه پنهان می‌ماند تا جست‌وجو به‌روز شود.
+  - فرم کار از فرم Camunda پیوندی (`/v2/user-tasks/{key}/form`) خوانده می‌شود. checkbox در کارتابل «بله یا خیر» الزامی است، چون در Tasklist هم همیشه مقدار دارد. فهرست‌های چندمقداری و اجزای نمایشی کنار گذاشته می‌شوند.
+  - کار سرویس با `/v2/jobs/activation`؛ «موضوع» همان `type` کار است.
+- **کد مشترک دو آداپتور:** درخواست HTTP و خطاها در [`http.ts`](../../../packages/plugins/@persian-erp/plugin-bpm/src/server/http.ts) هستند. رمز نادرست (۴۰۱) و نداشتن دسترسی (۴۰۳) حالا دو پیام جدا دارند و پیام خود موتور در پیام دوم می‌آید.
+- **انتخاب موتور:** `BPM_ENGINE` (پیش‌فرض `camunda8`) یا فیلد «موتور» در «تنظیمات ← موتور BPMN». تنظیم ذخیره‌شده‌ی قدیمی که موتور ندارد، Operaton می‌ماند. ستون تازه‌ی `engine` در `bpmSettings` با شروع `--quickstart` (همان که ایمیج Docker می‌زند) یا `yarn nocobase upgrade` ساخته می‌شود. این روی پایگاه داده‌ای که ستون را نداشت، آزموده شد. با Camunda 8 همان صفحه فایل فرم (`.form`) را هم مستقر می‌کند.
+- **مدل‌ها:** [`bpmn/purchase-request.bpmn`](../../../bpmn/purchase-request.bpmn) حالا مدل Camunda 8 است و فرمش [`bpmn/purchase-approve.form`](../../../bpmn/purchase-approve.form) است. نسخه‌ی Operaton به [`bpmn/operaton/`](../../../bpmn/operaton/purchase-request.bpmn) رفت.
+- **کمترین دسترسی:** کاربر سرویس در هر دو فایل Compose فقط نقش `bpm_service` را دارد و مدیر موتور کاربر جدای `CAMUNDA_ADMIN_USERNAME` است ([تصمیم ۰۰۰۸، بخش ۶](../../../docs/decisions/0008-camunda8-and-two-builders.md#۶-هویت-دسترسی-و-ممیزی)). Compose سرور بدون رمز تازه‌ی مدیر بالا نمی‌آید. راهنمای نصب عوض کردن رمزها و باز کردن Operate با تونل SSH را دارد.
+- **پیام خطای کار سرویس:** خطایی که موتور برای کار سرویس شکست‌خورده نشان می‌دهد، حالا کوتاه و به زبان برنامه است، مثل «گردش‌کار «ثبت سفارش» انجام نشد (اجرای ۱۲۳).». مقدارهای پیام‌ها دیگر HTML-escape نمی‌شوند.
+- **CI:** کار «Install, lint, build, test» آزمون قرارداد را روی Camunda 8 و Operaton اجرا می‌کند. کار «E2E (BPMN)» حالا روی Camunda 8 است.
+
+### آزمون
+- آزمون قرارداد [`engines.test.ts`](../../../packages/plugins/@persian-erp/plugin-bpm/src/server/__tests__/engines.test.ts) روی Camunda 8.10.7 (با کاربر سرویس محدود) و Operaton 2.1.5 سبز است: استقرار، شروع و شروع تکراری، کارتابل و فرم، پیام رسیده و نرسیده، کار سرویس، تکمیل، شکست و خطای موتور.
+- آزمون‌های سرور plugin-bpm: ۴۰ آزمون سبز، از جمله [`http.test.ts`](../../../packages/plugins/@persian-erp/plugin-bpm/src/server/__tests__/http.test.ts) برای پیام‌های ۴۰۱ و ۴۰۳.
+- e2e [`purchase.e2e.ts`](../../../e2e/bpm/purchase.e2e.ts) و `all-modules.e2e.ts` روی Camunda 8 با کاربر سرویس محدود: ۱۳ از ۱۳ سبز. نمونه‌ها با `businessId` برابر `purchase_requests:<id>` شروع و تمام شدند.
+- بررسی دستی: کاربر مدیر نمونه‌ها را در Operate دید. کاربر سرویس صفحه‌ی «You don’t have access to this component» دید.
+
+## پرسش‌های باز
+- **دسترسی تازه در نصب موجود.** موتور نقش و دسترسی‌ها را فقط بار اول می‌سازد. برای همین لغو، تعلیق و جابه‌جایی نمونه از همین حالا در نقش هستند. اگر استوری‌ای دسترسی دیگری لازم داشت، باید قدم `POST /v2/authorizations` با کاربر مدیر را در راهنمای ارتقا بنویسد.
+- **عدد اعشاری در فرم Camunda.** فیلد عددی فرم در کارتابل عدد صحیح است، مثل `long` در Operaton. اگر فرمی عدد اعشاری لازم داشت، نوع تازه‌ای در کارتابل لازم است. پیش‌فرض: فقط عدد صحیح.
+- **e2e روی Operaton.** e2e فقط روی Camunda 8 اجرا می‌شود و Operaton فقط آزمون قرارداد دارد. پیش‌فرض: همین، تا وقتی Operaton موتور دوم است.
+
 ## تعریف انجام‌شده
-- [ ] کد و آزمون در یک PR
-- [ ] PR به این استوری لینک دارد
+- [x] کد و آزمون در یک PR
+- [x] PR به این استوری لینک دارد
 - [ ] بازبینی شد و ادغام شد

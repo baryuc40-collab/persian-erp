@@ -61,7 +61,8 @@
 | `CAMUNDA_SECURITY_AUTHENTICATION_METHOD` | `basic` | پلاگین با کاربر سرویس وصل می‌شود. |
 | `CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI` | `false` | API بدون رمز باز نمی‌ماند. |
 | `CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED` | `true` | |
-| `CAMUNDA_SECURITY_INITIALIZATION_USERS_0_*` و `CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_USERS_0` | کاربر سرویس پلاگین | رمز از secret |
+| `CAMUNDA_SECURITY_INITIALIZATION_USERS_0_*`، `_ROLES_0_*` و `_AUTHORIZATIONS_*` | کاربر سرویس پلاگین با نقش `bpm_service` | کمترین دسترسی (بخش ۶)؛ رمز از secret |
+| `CAMUNDA_SECURITY_INITIALIZATION_USERS_1_*` و `_DEFAULTROLES_ADMIN_USERS_0` | کاربر مدیر موتور | برای Operate، Tasklist و عوض کردن رمزها؛ رمز از secret |
 | `CAMUNDA_LICENSE_KEY` | خالی | فقط اگر روزی مجوز غیرتجاری یا Enterprise گرفته شود. |
 | `JAVA_TOOL_OPTIONS` | `-Xmx2g` | سقف حافظه‌ی موتور |
 | درگاه‌ها | 8080 (REST، Operate و Tasklist)، 26500 (gRPC)، 9600 (سلامت و متریک)، همه بدون `ports` | موتور فقط در شبکه‌ی داخلی است. |
@@ -119,7 +120,7 @@ STORY-091 این پیکربندی را در هر دو فایل Compose گذاش�
 
 ### ۵. مدل BPMN
 
-مدل‌های Operaton در Camunda 8 اجرا نمی‌شوند، چون افزونه‌های XML و زبان عبارت‌ها فرق دارد. [`docs/bpm/camunda8-purchase-request.bpmn`](../bpm/camunda8-purchase-request.bpmn) همان «درخواست خرید» با DI است که روی 8.10.7 مستقر و اجرا شد. STORY-092 آن را جای مدل فعلی می‌گذارد.
+مدل‌های Operaton در Camunda 8 اجرا نمی‌شوند، چون افزونه‌های XML و زبان عبارت‌ها فرق دارد. [`bpmn/purchase-request.bpmn`](../../bpmn/purchase-request.bpmn) همان «درخواست خرید» با DI است که روی 8.10.7 مستقر و اجرا شد. از STORY-092 مدل اصلی همین است و نسخه‌ی Operaton در [`bpmn/operaton/`](../../bpmn/operaton/purchase-request.bpmn) است.
 
 | Operaton | Camunda 8 |
 | --- | --- |
@@ -127,7 +128,7 @@ STORY-091 این پیکربندی را در هر دو فایل Compose گذاش�
 | `operaton:type="external" operaton:topic="place-order"` | `<zeebe:taskDefinition type="place-order" retries="3"/>` |
 | شرط `${approved}` (JUEL) | `=approved = true` (FEEL) |
 | `operaton:historyTimeToLive` | ندارد؛ TTL برای کل موتور تنظیم می‌شود. |
-| `operaton:formField` | ندارد؛ فرم کار، فرم NocoBase است (`zeebe:formDefinition` با `externalReference`). |
+| `operaton:formField` | فرم Camunda در فایل `.form` که کار با `zeebe:formDefinition formId` به آن وصل است (STORY-092)، مثل [`purchase-approve.form`](../../bpmn/purchase-approve.form). فرم جاسازی‌شده در مدل برای کار انسانی Camunda پذیرفته نیست. فرم NocoBase با `externalReference` در STORY-101 می‌آید. |
 
 ### ۶. هویت، دسترسی و ممیزی
 
@@ -136,6 +137,15 @@ STORY-091 این پیکربندی را در هر دو فایل Compose گذاش�
   - کاربران NocoBase در موتور ساخته نمی‌شوند. ACL فقط در NocoBase است.
 - لاگ ممیزی خود موتور (`/v2/audit-logs/search`) همه‌ی کارها را به نام کاربر سرویس می‌نویسد. پس نام کاربر واقعی فقط در لاگ اتصال `bpmEvents` در NocoBase است.
 - Operate و Tasklist فقط برای مدیر فنی‌اند: با کاربر جدای Camunda برای هر مدیر فنی و فقط با تونل SSH.
+- **کمترین دسترسی (STORY-092).** کاربر سرویس فقط نقش `bpm_service` را دارد:
+
+  | منبع | دسترسی |
+  | --- | --- |
+  | `PROCESS_DEFINITION` (همه) | `READ_PROCESS_DEFINITION`، `CREATE_PROCESS_INSTANCE`، `READ_PROCESS_INSTANCE`، `UPDATE_PROCESS_INSTANCE`، `CANCEL_PROCESS_INSTANCE`، `MODIFY_PROCESS_INSTANCE`، `SUSPEND_PROCESS_INSTANCE`، `READ_USER_TASK`، `UPDATE_USER_TASK`، `CLAIM_USER_TASK`، `COMPLETE_USER_TASK` |
+  | `RESOURCE` (همه) | `CREATE`، `READ` (استقرار مدل و فرم) |
+  | `MESSAGE` (همه) | `CREATE`، `READ` |
+
+  پس کاربر سرویس نه کاربر و نقش می‌سازد، نه دسترسی می‌دهد و نه Operate را باز می‌کند. لغو، تعلیق و جابه‌جایی نمونه در STORY-097 تا STORY-105 می‌آیند ولی از همین حالا در نقش هستند، چون موتور کاربرها، نقش و دسترسی‌ها را فقط بار اول از تنظیمات می‌سازد و دسترسی‌ای که بعداً به تنظیمات اضافه شود، به نصب موجود نمی‌رسد. دسترسی تازه در نصب موجود با کاربر مدیر و `POST /v2/authorizations` داده می‌شود و استوری‌ای که آن را لازم دارد، این قدم را در راهنمای ارتقا می‌نویسد.
 
 ## آزمون دستی
 
@@ -177,6 +187,16 @@ STORY-091 این پیکربندی را در هر دو فایل Compose گذاش�
 - **Compose سرور:** با رمز `change-me`، `camunda-init` با پیام «Set CAMUNDA_DB_PASSWORD in .env to a new password.» ایستاد و موتور بالا نیامد. با رمزهای تازه، پوشه‌ی `storage/camunda` مال کاربر 1001 شد و موتور سالم بالا آمد.
 - **پلاگین در ایمیج:** در ایمیجی که `plugin-bpm` را دارد ولی جزو پلاگین‌های پیش‌فرض نیست، پلاگین در «مدیریت پلاگین‌ها» دیده نمی‌شود. `yarn nocobase pm enable @persian-erp/plugin-bpm` آن را بدون راه‌اندازی دوباره روشن کرد.
 
+### آزمون STORY-092
+
+روی همان نسخه با `docker-compose.yml` همین مخزن، ۵ آبان ۱۴۰۵:
+
+- آزمون قرارداد موتور (`engines.test.ts`) با کاربر سرویس و نقش `bpm_service` سبز شد: استقرار مدل و فرم، شروع و شروع تکراری، کار انسانی با فرم پیوندی، پیام، و کار سرویس با تکمیل و شکست.
+- کاربر سرویس برای ساختن کاربر ۴۰۳ گرفت و در Operate صفحه‌ی «You don’t have access to this component» دید. کاربر مدیر کاربر ساخت (۲۰۱) و داشبورد Operate را دید.
+- کاربر سرویس رمز خودش را نمی‌تواند عوض کند (۴۰۳). کاربر مدیر رمز هر دو کاربر را با `PUT /v2/users/{username}` عوض کرد و رمز تازه چند ثانیه بعد کار کرد.
+- دسترسی‌ای که پس از بار اول به تنظیمات اضافه شد (`CANCEL_PROCESS_INSTANCE`)، پس از راه‌اندازی دوباره در `/v2/authorizations/search` نیامد. برای همین همه‌ی دسترسی‌های پیش‌بینی‌شده از اول در نقش هستند.
+- `docker/camunda/check.sh` حالا ۴۰۳ کاربر سرویس و ۲۰۰ کاربر مدیر را هم می‌سنجد.
+
 تصویرها در [بخش ۷ طرح سکوی فرایند](../plan/05-process-platform.md#۷-ابزار-خود-موتور-operate-و-tasklist) آمده‌اند.
 
 ## پیامدها
@@ -201,4 +221,3 @@ STORY-091 این پیکربندی را در هر دو فایل Compose گذاش�
 - **پشتیبان بدون خاموشی.** پشتیبان سرد موتور را چند ده ثانیه خاموش می‌کند. اگر نصبی خاموشی را نپذیرد، روش رسمی Camunda با فضای ذخیره‌ی پشتیبان لازم است (بخش ۲). پیش‌فرض: پشتیبان سرد.
 - **مجوز برای استفاده‌ی واقعی.** پیش از اولین استفاده‌ی واقعی، صاحب پروژه یکی را انتخاب می‌کند: درخواست مجوز غیرتجاری از Camunda، یا اجرای همان نصب با `BPM_ENGINE=operaton`. تا آن وقت، توسعه و آزمون بی‌کلید ادامه دارد.
 - **نگهداری بلندمدت آداپتور Operaton.** پیش‌فرض: می‌ماند، با آزمون قرارداد مشترک، تا وقتی نصبی بخواهد بدون کلید مجوز Camunda در محیط عملیاتی کار کند.
-- **کمترین دسترسی کاربر سرویس.** پیش‌فرض: نقش admin. STORY-092 بررسی می‌کند که دسترسی‌های محدودتر Camunda کافی است یا نه.

@@ -96,7 +96,7 @@ interface BpmEngine {
 | نود «شروع فرایند BPMN» | `registerInstruction('bpm-start', ...)` در `plugin-workflow` ([`Plugin.ts`](https://github.com/nocobase/nocobase/blob/v2.2.22/packages/plugins/%40nocobase/plugin-workflow/src/server/Plugin.ts#L320)) | STORY-080 |
 | Worker و رویداد گردش‌کار «کار سرویس BPMN» | `plugin-bpm/src/server/worker.ts` و یک trigger گردش‌کار | STORY-081 |
 | صندوق کار | اکشن‌های `bpmTasks` و بلوک صفحه‌ی مدرن | STORY-082 |
-| فرایند نمونه | [`bpmn/purchase-request.bpmn`](../../bpmn/purchase-request.bpmn) و یک ماژول ERP | STORY-083 |
+| فرایند نمونه | [`bpmn/purchase-request.bpmn`](../../bpmn/operaton/purchase-request.bpmn) و یک ماژول ERP | STORY-083 |
 
 پلاگین اختیاری است. Operaton در Compose پشت profile `bpm` می‌آید و نصب بدون آن دست نمی‌خورد.
 
@@ -105,7 +105,7 @@ interface BpmEngine {
 روی `operaton/operaton:2.1.5` و `postgres:16`، با پیکربندی بخش ۲:
 - بدون احراز هویت `GET /engine-rest/version` ۴۰۱ می‌دهد و با کاربر سرویس ۲۰۰ و `{"version":"2.1.5"}`.
 - با schema `operaton`، موتور ۴۹ جدول در همان schema ساخت.
-- مدل [`purchase-request.bpmn`](../../bpmn/purchase-request.bpmn) مستقر شد. استقرار دوباره‌ی همان فایل با `enable-duplicate-filtering` نسخه‌ی تازه نساخت.
+- مدل [`purchase-request.bpmn`](../../bpmn/operaton/purchase-request.bpmn) مستقر شد. استقرار دوباره‌ی همان فایل با `enable-duplicate-filtering` نسخه‌ی تازه نساخت.
 - شروع با business key `purchase_requests:1` ← کار «تأیید مدیر» با `candidateGroup=purchase_manager` پیدا شد ← تکمیل با `approved=true` ← کار سرویس `place-order` با `fetchAndLock` و متغیر `recordId` گرفته و تکمیل شد ← نمونه `COMPLETED`.
 - شروع دوباره با همان business key، نمونه‌ی دوم ساخت. این دلیل قاعده‌ی بخش ۶ است.
 - مصرف حافظه‌ی موتور پس از راه‌اندازی حدود ۶۲۰ مگابایت بود.

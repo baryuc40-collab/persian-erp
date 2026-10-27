@@ -1,5 +1,7 @@
 import { createMockServer, MockServer } from '@nocobase/test';
+import { Camunda8Engine } from '../camunda8';
 import { BpmEngine, BpmEngineError } from '../engine';
+import { OperatonEngine } from '../operaton';
 import PluginBpmServer from '../plugin';
 
 // Settings > BPMN engine on the server (STORY-079), with a stand-in engine; operaton.test.ts uses the real one.
@@ -48,6 +50,7 @@ describe('bpm settings', () => {
   });
 
   afterEach(async () => {
+    delete process.env.BPM_ENGINE;
     delete process.env.BPM_ENGINE_URL;
     delete process.env.BPM_ENGINE_USERNAME;
     delete process.env.BPM_ENGINE_PASSWORD;
@@ -57,15 +60,17 @@ describe('bpm settings', () => {
   it('saves the connection and never sends the password back', async () => {
     const agent = await rootAgent(app);
     expect((await agent.resource('bpm').getSettings()).body.data).toEqual({
+      engine: 'camunda8',
       url: '',
       username: '',
       hasPassword: false,
       fromEnv: true,
     });
-    const saved = await agent
-      .resource('bpm')
-      .saveSettings({ values: { url: 'http://operaton:8080/', username: 'nocobase', password: 'secret' } });
+    const saved = await agent.resource('bpm').saveSettings({
+      values: { engine: 'operaton', url: 'http://operaton:8080/', username: 'nocobase', password: 'secret' },
+    });
     expect(saved.body.data).toEqual({
+      engine: 'operaton',
       url: 'http://operaton:8080/',
       username: 'nocobase',
       hasPassword: true,
@@ -74,23 +79,45 @@ describe('bpm settings', () => {
     expect(JSON.stringify(saved.body)).not.toContain('secret');
 
     // An empty password keeps the saved one.
-    await agent
-      .resource('bpm')
-      .saveSettings({ values: { url: 'http://operaton:8080', username: 'nocobase', password: '' } });
+    await agent.resource('bpm').saveSettings({
+      values: { engine: 'operaton', url: 'http://operaton:8080', username: 'nocobase', password: '' },
+    });
     expect((await agent.resource('bpm').test()).body.data).toEqual({ version: '2.1.5' });
-    expect(seen.at(-1)).toMatchObject({ url: 'http://operaton:8080', username: 'nocobase', password: 'secret' });
+    expect(seen.at(-1)).toMatchObject({
+      engine: 'operaton',
+      url: 'http://operaton:8080',
+      username: 'nocobase',
+      password: 'secret',
+    });
 
     const bad = await agent.resource('bpm').saveSettings({ values: { url: 'operaton:8080' } });
     expect(bad.status).toBe(400);
     expect(errorOf(bad)).toBe('The engine address must start with http:// or https://');
+    const unknown = await agent.resource('bpm').saveSettings({ values: { engine: 'jbpm', url: 'http://x:8080' } });
+    expect(errorOf(unknown)).toBe('Choose Camunda 8 or Operaton as the engine');
+  });
+
+  it('takes a connection saved before the engine choice as Operaton', async () => {
+    await app.db.getRepository('bpmSettings').create({ values: { id: 1, url: 'http://operaton:8080' } });
+    const agent = await rootAgent(app);
+    expect((await agent.resource('bpm').getSettings()).body.data).toMatchObject({ engine: 'operaton' });
+  });
+
+  it('builds the adapter of the chosen engine', async () => {
+    // A plugin of its own: the one of the app has the stand-in engine of beforeEach.
+    const { createEngine } = new PluginBpmServer(app, {});
+    expect(createEngine({ engine: 'camunda8', url: 'http://camunda:8080' })).toBeInstanceOf(Camunda8Engine);
+    expect(createEngine({ engine: 'operaton', url: 'http://operaton:8080' })).toBeInstanceOf(OperatonEngine);
   });
 
   it('uses the server environment until a connection is saved', async () => {
+    process.env.BPM_ENGINE = 'operaton';
     process.env.BPM_ENGINE_URL = 'http://operaton:8080';
     process.env.BPM_ENGINE_USERNAME = 'svc';
     process.env.BPM_ENGINE_PASSWORD = 'from-env';
     const agent = await rootAgent(app);
     expect((await agent.resource('bpm').getSettings()).body.data).toEqual({
+      engine: 'operaton',
       url: 'http://operaton:8080',
       username: 'svc',
       hasPassword: true,
@@ -113,11 +140,22 @@ describe('bpm settings', () => {
     res = await agent.resource('bpm').test();
     expect(res.status).toBe(400);
     expect(errorOf(res)).toBe('The BPMN engine did not accept the user name or password');
+
+    // The engine's own message stays as it is.
+    engine.version = async () => {
+      throw new BpmEngineError('The user of the BPMN engine may not do this: {{message}}', {
+        message: "Insufficient permissions to perform operation 'CREATE'",
+      });
+    };
+    res = await agent.resource('bpm').test();
+    expect(errorOf(res)).toBe(
+      "The user of the BPMN engine may not do this: Insufficient permissions to perform operation 'CREATE'",
+    );
   });
 
-  it('lists and deploys process models, and refuses what is not a BPMN file', async () => {
+  it('lists and deploys process models and forms, and refuses what is neither', async () => {
     const agent = await rootAgent(app);
-    await agent.resource('bpm').saveSettings({ values: { url: 'http://operaton:8080' } });
+    await agent.resource('bpm').saveSettings({ values: { url: 'http://camunda:8080' } });
     expect((await agent.resource('bpm').processes()).body.data).toEqual([
       expect.objectContaining({ key: 'purchase_request', version: 1 }),
     ]);
@@ -125,7 +163,18 @@ describe('bpm settings', () => {
     const res = await agent.resource('bpm').deploy({ values: { name: 'purchase-request.bpmn', content } });
     expect(res.body.data.processes[0]).toMatchObject({ key: 'purchase-request', name: 'purchase-request.bpmn' });
     const notBpmn = await agent.resource('bpm').deploy({ values: { name: 'notes.txt', content } });
-    expect(errorOf(notBpmn)).toBe('This is not a BPMN file');
+    expect(errorOf(notBpmn)).toBe('This is not a BPMN or form file');
+
+    const form = JSON.stringify({ id: 'purchase-approve', components: [{ type: 'checkbox', key: 'approved' }] });
+    const deployed = await agent.resource('bpm').deploy({ values: { name: 'purchase-approve.form', content: form } });
+    expect(deployed.status).toBe(200);
+    const notForm = await agent.resource('bpm').deploy({ values: { name: 'x.form', content: '{"title":"x"}' } });
+    expect(errorOf(notForm)).toBe('This is not a BPMN or form file');
+
+    // Operaton has no Camunda forms.
+    await agent.resource('bpm').saveSettings({ values: { engine: 'operaton', url: 'http://operaton:8080' } });
+    const refused = await agent.resource('bpm').deploy({ values: { name: 'purchase-approve.form', content: form } });
+    expect(errorOf(refused)).toBe('Only Camunda 8 takes form files');
   });
 
   it('is only for administrators', async () => {

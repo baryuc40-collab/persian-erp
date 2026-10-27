@@ -3405,7 +3405,7 @@
   "format": "persian-erp-module",
   "formatVersion": 1,
   "module": {
-    "description": "درخواست خرید با تأیید مدیر در فرایند BPMN (نمونه‌ی اثبات مفهوم اپیک 016). به پلاگین موتور BPMN و استقرار مدل bpmn/purchase-request.bpmn نیاز دارد.",
+    "description": "درخواست خرید با تأیید مدیر در فرایند BPMN (نمونه‌ی اثبات مفهوم اپیک 016). به پلاگین موتور BPMN و استقرار مدل bpmn/purchase-request.bpmn و فرم bpmn/purchase-approve.form نیاز دارد (با Operaton، مدل bpmn/operaton/purchase-request.bpmn).",
     "key": "purchase",
     "title": "درخواست خرید",
     "version": "1.0.0"

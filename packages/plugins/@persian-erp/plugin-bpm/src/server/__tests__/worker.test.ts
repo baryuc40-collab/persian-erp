@@ -138,7 +138,7 @@ describe('service task worker', () => {
       ['first', 3],
       ['again', 1],
     ]);
-    expect(failed[0].message).toMatch(/^NocoBase: workflow \w+ execution \d+ did not succeed$/);
+    expect(failed[0].message).toMatch(/^The workflow "\w+" did not succeed \(execution \d+\)\.$/);
   });
 
   it('splits business keys into collection and record ID', () => {
