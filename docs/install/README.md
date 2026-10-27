@@ -84,6 +84,15 @@ docker compose exec app yarn nocobase pm enable @persian-erp/plugin-bpm
 - نمونه‌های تمام‌شده‌ی فرایند پس از `CAMUNDA_HISTORY_TTL` از تاریخچه‌ی موتور پاک می‌شوند. پیش‌فرض `P180D` یعنی ۱۸۰ روز است. نمونه‌های باز هیچ‌وقت پاک نمی‌شوند.
 - لاگ موتور با `docker compose logs -f camunda` دیده می‌شود. Docker آن را در پنج فایل ۵۰ مگابایتی نگه می‌دارد.
 - هر تبادل برنامه با موتور که چیزی را عوض می‌کند (استقرار، شروع فرایند، انجام کار، کار سرویس) و هر تبادل ناموفق، با نام کاربر و یک شناسه‌ی پیگیری در جدول `bpmEvents` و لاگ برنامه (`docker compose logs app`) نوشته می‌شود. داده‌ی فرم و رمز در آن نیست. ردیف‌ها پس از `BPM_EVENTS_RETENTION_DAYS` روز (پیش‌فرض ۹۰) هر شب ساعت ۳ پاک می‌شوند.
+- اگر موتور خاموش یا در حال راه‌اندازی باشد، ثبت رکورد خراب نمی‌شود. شروع فرایند و پیام در جدول `bpmOutbox` (صف ارسال) می‌مانند و برنامه آن‌ها را با فاصله‌ی رو به افزایش (از ۵ ثانیه تا ۱۵ دقیقه) دوباره می‌فرستد. گردش‌کار هم منتظر می‌ماند و پس از فرستاده شدن ادامه می‌دهد. پس از `BPM_OUTBOX_MAX_ATTEMPTS` تلاش (پیش‌فرض ۵۰، حدود ۱۱ ساعت)، مورد «ناموفق» می‌شود و منتظر مدیر فنی می‌ماند. موردهای منتظر را این‌طور ببینید:
+
+  ```bash
+  docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+  select id, kind, status, "businessKey", attempts, "lastError" from "bpmOutbox" where status in ('pending', 'failed');
+  SQL
+  ```
+
+  دوباره فرستادن یا کنار گذاشتن یک مورد، تا صفحه‌ی «پایش و هشدارها» (STORY-099)، با API است: `POST /api/bpmOutbox:resend?filterByTk=<id>` یا `bpmOutbox:discard`، با کاربری که تکه‌ی دسترسی `pm.bpm` را دارد.
 - سلامت موتور: `docker compose exec camunda wget -q -O - http://localhost:9600/actuator/health`.
 
 ### Operate و Tasklist

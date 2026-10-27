@@ -186,7 +186,10 @@ export class BpmEvents {
     return removed;
   }
 
-  /** Every night at CLEANUP_HOUR; each app instance runs it, and a second run in a cluster finds nothing left. */
+  /**
+   * The plugin's cleanup (this log and the outbox) every night at CLEANUP_HOUR; each app instance runs it, and a second
+   * run in a cluster finds nothing left.
+   */
   startCleanup() {
     this.stopCleanup();
     const next = new Date();
@@ -194,11 +197,9 @@ export class BpmEvents {
     if (next.getTime() <= Date.now()) next.setTime(next.getTime() + DAY_MS);
     this.timer = setTimeout(async () => {
       try {
-        await this.cleanup();
+        await this.bpm.cleanup();
       } catch (error) {
-        this.logger.warn(`bpm: the cleanup of connection events failed: ${(error as Error).message}`, {
-          module: 'bpm',
-        });
+        this.logger.warn(`bpm: the nightly cleanup failed: ${(error as Error).message}`, { module: 'bpm' });
       }
       this.startCleanup();
     }, next.getTime() - Date.now());

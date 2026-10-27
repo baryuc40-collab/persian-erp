@@ -12,7 +12,7 @@ export default class StartProcessInstruction extends Instruction {
   type = START_INSTRUCTION;
   group = 'extended';
   description = tExpr(
-    'Starts a process of the BPMN engine for a business key, or finds the one already running for it.',
+    'Starts a process of the BPMN engine for a business key, or finds the one already running for it. When the engine is away, the start waits in the outbox and the workflow with it.',
   );
   icon = (<ApartmentOutlined />);
   FieldsetLoader = () => import('./StartProcessFieldset').then((module) => ({ default: module.StartProcessFieldset }));
@@ -35,6 +35,8 @@ export default class StartProcessInstruction extends Instruction {
         { [value]: 'instanceId', [label]: tExpr('Process instance ID') },
         { [value]: 'businessKey', [label]: tExpr('Business key') },
         { [value]: 'created', [label]: tExpr('Started now') },
+        { [value]: 'queued', [label]: tExpr('Waiting in the outbox') },
+        { [value]: 'correlationId', [label]: tExpr('Correlation ID') },
       ],
     };
   }
