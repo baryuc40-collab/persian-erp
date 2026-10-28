@@ -54,6 +54,8 @@ interface EngineCase {
   keepsMessages: boolean;
   /** An instance ID of the engine's form that no instance has. */
   unknownInstance: string;
+  /** What health() says of an engine that is up: UP from Camunda's check, null from Operaton, which has none. */
+  health: string | null;
   incidentMessages(settings: EngineSettings, instanceId: string): Promise<string[]>;
 }
 
@@ -71,6 +73,7 @@ const CASES: EngineCase[] = [
     workerOwnsLock: true,
     keepsMessages: false,
     unknownInstance: '00000000-0000-0000-0000-000000000000',
+    health: null,
     incidentMessages: async (settings, instanceId) =>
       (
         await engineRequest(settings, `${settings.url}/engine-rest/incident?processInstanceId=${instanceId}`, {
@@ -85,12 +88,14 @@ const CASES: EngineCase[] = [
       username: process.env.CAMUNDA_USER || 'nocobase',
       password: process.env.CAMUNDA_PASSWORD || 'secret',
     },
-    create: (settings) => new Camunda8Engine(settings),
+    // The management port 9600 is published apart from the API, e.g. as localhost:18096 in CI.
+    create: (settings) => new Camunda8Engine({ ...settings, healthUrl: process.env.CAMUNDA_HEALTH_URL }),
     files: [read('purchase-request.bpmn'), read('purchase-approve.form')],
     eventual: true,
     workerOwnsLock: false,
     keepsMessages: true,
     unknownInstance: '2251799813000001',
+    health: process.env.CAMUNDA_HEALTH_URL ? 'UP' : null,
     incidentMessages: async (settings, instanceId) =>
       (
         await engineRequest(settings, `${settings.url}/v2/incidents/search`, {
@@ -272,6 +277,55 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
       expect(await engineCase.incidentMessages(engineCase.settings, order.processInstanceId)).toEqual(['خطای آخر']);
     });
   }, 120000);
+
+  it('lists an incident and tries it again, which resolves it (STORY-099)', async () => {
+    await engine.start('purchase_request', key(6), { recordId: 6 });
+    const task = await openTask(key(6));
+    await engine.completeUserTask(task.id, { approved: true });
+    const topics = [{ name: 'place-order', lockMs: 60000 }];
+    const mine = async () =>
+      (await engine.fetchServiceTasks('test-worker', topics, 10)).filter((t) => t.businessKey === key(6));
+    const order = await later(async () => {
+      const [found] = await mine();
+      expect(found).toBeTruthy();
+      return found;
+    });
+    await engine.failServiceTask('test-worker', order.id, { message: 'خطای پایش', retries: 0, retryMs: 0 });
+    const incident = await later(async () => {
+      const found = (await engine.listIncidents(1000)).find((i) => i.instanceId === order.processInstanceId);
+      expect(found).toBeTruthy();
+      return found;
+    });
+    expect(incident).toMatchObject({
+      processKey: 'purchase_request',
+      elementId: 'order',
+      elementName: 'ثبت سفارش',
+      jobId: order.id,
+      message: 'خطای پایش',
+      createdAt: expect.any(String),
+    });
+    expect(await engine.getIncident(incident.id)).toMatchObject({ id: incident.id, jobId: order.id });
+    expect(await engine.getIncident(engineCase.unknownInstance)).toBeNull();
+
+    // One more try: the same service task comes back, and once it is done the incident is gone.
+    await engine.retryIncident(incident, 1);
+    const again = await later(async () => {
+      const [found] = await mine();
+      expect(found).toBeTruthy();
+      return found;
+    });
+    expect(again).toMatchObject({ id: order.id, retries: 1 });
+    await engine.completeServiceTask('test-worker', again.id);
+    await later(async () => {
+      expect(await engine.getIncident(incident.id)).toBeNull();
+      expect((await engine.listIncidents(1000)).map((i) => i.id)).not.toContain(incident.id);
+      expect((await engine.getInstance(order.processInstanceId))?.status).toBe('completed');
+    });
+  }, 120000);
+
+  it('says how its health check sees it (STORY-099)', async () => {
+    expect(await engine.health()).toBe(engineCase.health);
+  });
 
   it('says when a message reaches no instance', async () => {
     expect(await engine.sendMessage(`nothing-waits-${run}`, key(4))).toEqual({ delivered: false });

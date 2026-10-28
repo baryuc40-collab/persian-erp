@@ -1,6 +1,7 @@
 import {
   BpmEngine,
   BpmEngineError,
+  EngineIncident,
   FormField,
   InstanceState,
   ProcessDefinition,
@@ -81,6 +82,12 @@ const attributes = (text: string) =>
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const FORM_TYPES = ['string', 'long', 'boolean', 'date', 'enum'];
+
+/** The name of an element of a BPMN model, by its ID. */
+export function elementName(xml: string, id: string): string | null {
+  const element = new RegExp(`<(?:[\\w-]+:)?\\w+\\b([^>]*\\bid="${escapeRegExp(id)}"[^>]*)>`).exec(xml);
+  return (element && attributes(element[1]).name) || null;
+}
 
 /**
  * The form fields of a user task in a BPMN model (operaton:formField, as Camunda Modeler writes them). The models are
@@ -192,8 +199,7 @@ export class OperatonEngine implements BpmEngine {
     return this.definitions.get(id);
   }
 
-  async getTaskForm(task: UserTask) {
-    const id = task.processDefinitionId;
+  private model(id: string) {
     if (!this.models.has(id)) {
       const xml = this.call<Row>('GET', `/process-definition/${encodeURIComponent(id)}/xml`).then(
         (row) => row.bpmn20Xml as string,
@@ -201,7 +207,11 @@ export class OperatonEngine implements BpmEngine {
       xml.catch(() => this.models.delete(id));
       this.models.set(id, xml);
     }
-    return parseFormFields(await this.models.get(id), task.taskKey);
+    return this.models.get(id);
+  }
+
+  async getTaskForm(task: UserTask) {
+    return parseFormFields(await this.model(task.processDefinitionId), task.taskKey);
   }
 
   private async userTask(row: Row): Promise<UserTask> {
@@ -348,6 +358,52 @@ export class OperatonEngine implements BpmEngine {
     if (!processKeys.length) return [];
     const rows = await this.all('POST', '/process-instance', { processDefinitionKeyIn: processKeys });
     return rows.map((row) => String(row.id));
+  }
+
+  private async incident(row: Row): Promise<EngineIncident> {
+    const elementId = row.failedActivityId || row.activityId || null;
+    const [definition, xml] = await Promise.all([
+      this.definition(row.processDefinitionId).catch((): Row => null),
+      elementId ? this.model(row.processDefinitionId).catch((): string => '') : '',
+    ]);
+    return {
+      id: row.id,
+      processKey: definition?.key ?? String(row.processDefinitionId).split(':')[0],
+      instanceId: row.processInstanceId,
+      elementId,
+      elementName: elementId && xml ? elementName(xml, elementId) : null,
+      // The external task of a failedExternalTask incident, the job of a failedJob one.
+      jobId: ['failedExternalTask', 'failedJob'].includes(row.incidentType) ? row.configuration ?? null : null,
+      type: row.incidentType ?? null,
+      message: row.incidentMessage ?? null,
+      createdAt: fromOperatonDate(row.incidentTimestamp),
+    };
+  }
+
+  async listIncidents(max: number) {
+    const rows = await this.call<Row[]>(
+      'GET',
+      `/incident?sortBy=incidentTimestamp&sortOrder=desc&firstResult=0&maxResults=${max}`,
+    );
+    return Promise.all(rows.map((row) => this.incident(row)));
+  }
+
+  async getIncident(incidentId: string) {
+    const [row] = await this.call<Row[]>('GET', `/incident?incidentId=${encodeURIComponent(incidentId)}`);
+    return row ? this.incident(row) : null;
+  }
+
+  // New retries resolve the incident of a failed external task or job; Operaton has no other retry.
+  async retryIncident(incident: EngineIncident, retries: number) {
+    const path =
+      incident.type === 'failedExternalTask' ? '/external-task' : incident.type === 'failedJob' ? '/job' : null;
+    if (!path || !incident.jobId) throw new BpmEngineError('This incident cannot be tried again');
+    await this.call('PUT', `${path}/${encodeURIComponent(incident.jobId)}/retries`, { retries });
+  }
+
+  // Operaton has no health check of its own; version() tells whether it answers.
+  async health(): Promise<string | null> {
+    return null;
   }
 
   async completeServiceTask(workerId: string, taskId: string, variables?: Variables) {
