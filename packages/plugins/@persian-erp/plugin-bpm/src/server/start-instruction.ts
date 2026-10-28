@@ -21,6 +21,18 @@ const simple = (value: unknown): Variables[string] => {
 };
 
 /**
+ * The NocoBase user behind the execution: the user of an action event, else who last changed or made the record of a
+ * collection event; none for a schedule.
+ */
+function userOf(processor: Processor) {
+  const context = (processor.execution?.context || {}) as {
+    user?: { id?: number | string };
+    data?: { updatedById?: number | string; createdById?: number | string };
+  };
+  return context.user?.id ?? context.data?.updatedById ?? context.data?.createdById ?? null;
+}
+
+/**
  * The workflow node «Start a BPMN process» (STORY-080): starts the process for a business key, or finds the instance
  * already running for it, and fails the node with a message when the engine cannot be reached.
  */
@@ -44,24 +56,34 @@ export class StartProcessInstruction extends Instruction {
     for (const variable of config.variables || []) {
       if (variable?.name) variables[variable.name] = simple(variable.value);
     }
-    try {
-      const engine = await this.bpm.getEngine();
-      // Operaton does not keep business keys unique, so two starts for one key at once would make two instances
-      // (decision 0007, section 6); Camunda 8 refuses the second, which then has to find the first by search. The app's
-      // lock manager makes them wait for each other; across a cluster it needs the shared lock adapter of NocoBase's
-      // cluster mode.
-      const started = await this.bpm.app.lockManager.runExclusive(
-        `bpm-start:${processKey}:${businessKey}`,
-        () => engine.start(processKey, businessKey, variables),
-        30 * 1000,
-      );
-      return { status: JOB_STATUS.RESOLVED, result: { ...started, processKey, businessKey } };
-    } catch (error) {
-      if (!(error instanceof BpmEngineError)) throw error;
-      const message = await this.bpm.translate(error.message, error.values);
-      processor.logger.warn(`bpm-start (#${node.id}) failed: ${message}`);
-      return { status: JOB_STATUS.FAILED, result: { error: message } };
-    }
+    // The execution's result and the connection log (STORY-093) share one correlation ID.
+    return this.bpm.events.trace(async (correlationId) => {
+      try {
+        const started = await this.bpm.events.track(
+          'start',
+          { processKey, businessKey, userId: userOf(processor), detail: { variables: Object.keys(variables) } },
+          async () => {
+            const engine = await this.bpm.getEngine();
+            // Operaton does not keep business keys unique, so two starts for one key at once would make two instances
+            // (decision 0007, section 6); Camunda 8 refuses the second, which then has to find the first by search.
+            // The app's lock manager makes them wait for each other; across a cluster it needs the shared lock
+            // adapter of NocoBase's cluster mode.
+            return this.bpm.app.lockManager.runExclusive(
+              `bpm-start:${processKey}:${businessKey}`,
+              () => engine.start(processKey, businessKey, variables),
+              30 * 1000,
+            );
+          },
+          { after: (result) => ({ instanceId: result.instanceId, detail: { created: result.created } }) },
+        );
+        return { status: JOB_STATUS.RESOLVED, result: { ...started, processKey, businessKey, correlationId } };
+      } catch (error) {
+        if (!(error instanceof BpmEngineError)) throw error;
+        const message = await this.bpm.translate(error.message, error.values);
+        processor.logger.warn(`bpm-start (#${node.id}) failed [${correlationId}]: ${message}`);
+        return { status: JOB_STATUS.FAILED, result: { error: message, correlationId } };
+      }
+    });
   }
 }
 

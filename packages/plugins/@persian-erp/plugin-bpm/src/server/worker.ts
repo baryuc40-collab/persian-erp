@@ -74,7 +74,10 @@ export class ServiceTaskWorker {
           ? await this.bpm.translate(error.message, error.values)
           : (error as Error).message;
       // Once per outage, not on every poll while the engine is down.
-      if (message !== this.lastError) this.logger.warn(`bpm worker: ${message}`);
+      if (message !== this.lastError) {
+        this.logger.warn(`bpm worker: ${message}`);
+        await this.bpm.events.fail('serviceTask.fetch', {}, error);
+      }
       this.lastError = message;
     }
     // Right away when there may be more tasks, else after the interval.
@@ -113,11 +116,29 @@ export class ServiceTaskWorker {
     return tasks.length;
   }
 
-  private async handle(engine: BpmEngine, task: ServiceTask, workflows: WorkflowRow[]) {
+  // One correlation ID from receiving the task to reporting on it; the workflows get it in their context too.
+  private handle(engine: BpmEngine, task: ServiceTask, workflows: WorkflowRow[]) {
+    return this.bpm.events.trace((correlationId) => this.run(engine, task, workflows, correlationId));
+  }
+
+  private async run(engine: BpmEngine, task: ServiceTask, workflows: WorkflowRow[], correlationId: string) {
+    const fields = {
+      processKey: task.processKey,
+      businessKey: task.businessKey,
+      instanceId: task.processInstanceId,
+      taskId: task.id,
+    };
+    await this.bpm.events.note('serviceTask.received', { ...fields, detail: { topic: task.topic } }, 'in');
     const workflowPlugin = (this.bpm.app.pm.get('workflow') as unknown) as WorkflowPlugin;
     const [collection, recordId] = splitBusinessKey(task.businessKey);
     const context = {
-      task: { id: task.id, topic: task.topic, processKey: task.processKey, businessKey: task.businessKey },
+      task: {
+        id: task.id,
+        topic: task.topic,
+        processKey: task.processKey,
+        businessKey: task.businessKey,
+        correlationId,
+      },
       collection,
       recordId,
       variables: task.variables,
@@ -136,16 +157,17 @@ export class ServiceTaskWorker {
       }
     }
     if (!failures.length) {
-      await engine.completeServiceTask(this.workerId, task.id);
+      await this.bpm.events.track('serviceTask.complete', fields, () =>
+        engine.completeServiceTask(this.workerId, task.id),
+      );
       return;
     }
     // The first failure sets the number of retries; after that the engine counts them down.
     const retries = Math.max((task.retries ?? this.options.retries) - (task.retries === null ? 0 : 1), 0);
-    await engine.failServiceTask(this.workerId, task.id, {
-      message: failures.join(' '),
-      retries,
-      retryMs: this.options.retryMs,
-    });
+    const message = failures.join(' ');
+    await this.bpm.events.track('serviceTask.fail', { ...fields, detail: { retries, message } }, () =>
+      engine.failServiceTask(this.workerId, task.id, { message, retries, retryMs: this.options.retryMs }),
+    );
   }
 }
 

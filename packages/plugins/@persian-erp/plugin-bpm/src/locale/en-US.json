@@ -70,5 +70,6 @@
   "No": "No",
   "Submit": "Submit",
   "Cancel": "Cancel",
-  "The workflow \"{{title}}\" did not succeed (execution {{execution}}).": "The workflow \"{{title}}\" did not succeed (execution {{execution}})."
+  "The workflow \"{{title}}\" did not succeed (execution {{execution}}).": "The workflow \"{{title}}\" did not succeed (execution {{execution}}).",
+  "The connection log is read-only": "The connection log is read-only"
 }

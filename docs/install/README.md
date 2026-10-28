@@ -83,6 +83,7 @@ docker compose exec app yarn nocobase pm enable @persian-erp/plugin-bpm
 - هیچ درگاهی از موتور بیرون نمی‌آید. فقط برنامه با `http://camunda:8080` به آن وصل می‌شود.
 - نمونه‌های تمام‌شده‌ی فرایند پس از `CAMUNDA_HISTORY_TTL` از تاریخچه‌ی موتور پاک می‌شوند. پیش‌فرض `P180D` یعنی ۱۸۰ روز است. نمونه‌های باز هیچ‌وقت پاک نمی‌شوند.
 - لاگ موتور با `docker compose logs -f camunda` دیده می‌شود. Docker آن را در پنج فایل ۵۰ مگابایتی نگه می‌دارد.
+- هر تبادل برنامه با موتور که چیزی را عوض می‌کند (استقرار، شروع فرایند، انجام کار، کار سرویس) و هر تبادل ناموفق، با نام کاربر و یک شناسه‌ی پیگیری در جدول `bpmEvents` و لاگ برنامه (`docker compose logs app`) نوشته می‌شود. داده‌ی فرم و رمز در آن نیست. ردیف‌ها پس از `BPM_EVENTS_RETENTION_DAYS` روز (پیش‌فرض ۹۰) هر شب ساعت ۳ پاک می‌شوند.
 - سلامت موتور: `docker compose exec camunda wget -q -O - http://localhost:9600/actuator/health`.
 
 ### Operate و Tasklist
