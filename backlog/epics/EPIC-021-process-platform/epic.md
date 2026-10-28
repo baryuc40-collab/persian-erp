@@ -90,7 +90,7 @@ owner: mmsh
 | [STORY-096](STORY-096-processes-menu.md) | منوی «فرایندها» و صفحه‌ی مدیریت فرایندها | ۱ | todo |
 | [STORY-097](STORY-097-process-page.md) | صفحه‌ی یک فرایند: نمودار با شمار نمونه‌ها | ۱ | todo |
 | [STORY-098](STORY-098-instance-page.md) | صفحه‌ی یک نمونه و کارهای مدیر فرایند | ۱ | todo |
-| [STORY-099](STORY-099-monitoring-alerts.md) | پایش و هشدارها | ۱ | todo |
+| [STORY-099](STORY-099-monitoring-alerts.md) | پایش و هشدارها | ۱ | in-progress |
 | [STORY-100](STORY-100-process-in-menus.md) | وصل کردن فرایند به منوها و «درخواست‌های من» | ۲ | todo |
 | [STORY-101](STORY-101-unified-inbox.md) | کارتابل یکپارچه در مرکز کار NocoBase | ۲ | todo |
 | [STORY-102](STORY-102-working-calendar.md) | تقویم کاری شمسی و مهلت کارها | ۲ | todo |

@@ -76,6 +76,23 @@ export interface InstanceState {
   }[];
 }
 
+/** An open incident of the engine: where an instance stopped and waits for a person (STORY-099). */
+export interface EngineIncident {
+  id: string;
+  processKey: string;
+  instanceId: string;
+  /** The element of the model where it stopped, and its name when the engine gives it. */
+  elementId: string | null;
+  elementName: string | null;
+  /** The service task (Camunda 8 job, Operaton external task or job) whose retries ran out; null for other kinds. */
+  jobId: string | null;
+  /** The engine's own kind, such as JOB_NO_RETRIES of Camunda 8 or failedExternalTask of Operaton. */
+  type: string | null;
+  message: string | null;
+  /** An ISO date in UTC. */
+  createdAt: string | null;
+}
+
 export interface BpmEngine {
   version(): Promise<string>;
   deploy(
@@ -127,6 +144,17 @@ export interface BpmEngine {
   changedInstances(processKeys: string[], since: Date): Promise<string[]>;
   /** The running instances of these processes, for the nightly check. */
   activeInstances(processKeys: string[]): Promise<string[]>;
+  /** The open incidents of every process, newest first, up to `max`. */
+  listIncidents(max: number): Promise<EngineIncident[]>;
+  /** One open incident; null when the engine does not know it or it is resolved. */
+  getIncident(incidentId: string): Promise<EngineIncident | null>;
+  /** Gives the service task of an incident `retries` more tries and resolves the incident, so the instance goes on. */
+  retryIncident(incident: EngineIncident, retries: number): Promise<void>;
+  /**
+   * The engine's own health, such as UP or DOWN of Camunda's /actuator/health; null when the engine has no such check
+   * or it cannot be read. version() tells whether the API answers.
+   */
+  health(): Promise<string | null>;
 }
 
 /** An engine error with a message the plugin translates; `values` fill its placeholders. */

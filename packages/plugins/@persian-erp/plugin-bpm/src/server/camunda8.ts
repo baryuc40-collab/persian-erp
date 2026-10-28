@@ -1,6 +1,7 @@
 import {
   BpmEngine,
   BpmEngineError,
+  EngineIncident,
   FormField,
   InstanceState,
   ProcessDefinition,
@@ -10,7 +11,13 @@ import {
 } from './engine';
 import { EngineSettings, engineRequest } from './http';
 
-export type Camunda8Settings = EngineSettings;
+export interface Camunda8Settings extends EngineSettings {
+  /**
+   * The engine's health check (BPM_ENGINE_HEALTH_URL). Camunda serves it on its management port, not the API's, so by
+   * default it is the address of the API on port 9600: http://camunda:9600/actuator/health.
+   */
+  healthUrl?: string;
+}
 
 type Row = Record<string, any>;
 
@@ -102,6 +109,8 @@ export class Camunda8Engine implements BpmEngine {
   private base: string;
   // Process definitions never change once deployed, so their names are kept by key.
   private definitions = new Map<string, Promise<Row | null>>();
+  // The names of the elements of a process definition, by element ID; a name never changes within a definition.
+  private elementNames = new Map<string, Promise<string | null>>();
   private completed = new Map<string, number>();
 
   constructor(private settings: Camunda8Settings) {
@@ -405,6 +414,92 @@ export class Camunda8Engine implements BpmEngine {
       filter: { processDefinitionId: { $in: processKeys }, state: 'ACTIVE' },
     });
     return rows.map((row) => String(row.processInstanceKey));
+  }
+
+  /** The name of an element; the incident does not carry it, its element instance does. */
+  private elementName(row: Row) {
+    const key = `${row.processDefinitionKey}:${row.elementId}`;
+    if (!this.elementNames.has(key)) {
+      const name = this.call<Row>('GET', `/element-instances/${encodeURIComponent(row.elementInstanceKey)}`).then(
+        (element) => element?.elementName ?? null,
+        () => {
+          this.elementNames.delete(key);
+          return null;
+        },
+      );
+      this.elementNames.set(key, name);
+    }
+    return this.elementNames.get(key);
+  }
+
+  private async incident(row: Row): Promise<EngineIncident> {
+    return {
+      id: String(row.incidentKey),
+      processKey: row.processDefinitionId,
+      instanceId: String(row.processInstanceKey),
+      elementId: row.elementId ?? null,
+      elementName: row.elementInstanceKey ? await this.elementName(row) : null,
+      jobId: row.jobKey ? String(row.jobKey) : null,
+      type: row.errorType ?? null,
+      message: row.errorMessage ?? null,
+      createdAt: row.creationTime ?? null,
+    };
+  }
+
+  async listIncidents(max: number) {
+    const rows = await this.searchAll(
+      '/incidents/search',
+      { filter: { state: 'ACTIVE' }, sort: [{ field: 'creationTime', order: 'desc' }] },
+      max,
+    );
+    return Promise.all(rows.slice(0, max).map((row) => this.incident(row)));
+  }
+
+  async getIncident(incidentId: string) {
+    let row: Row;
+    try {
+      row = await this.call<Row>('GET', `/incidents/${encodeURIComponent(incidentId)}`);
+    } catch (error) {
+      if (error instanceof BpmEngineError && (error.status === 404 || error.status === 400)) return null;
+      throw error;
+    }
+    return row.state === 'ACTIVE' ? this.incident(row) : null;
+  }
+
+  // Tested on 8.10.7: the job gets its retries first, else the resolved incident comes straight back.
+  async retryIncident(incident: EngineIncident, retries: number) {
+    if (incident.jobId) {
+      await this.call('PATCH', `/jobs/${encodeURIComponent(incident.jobId)}`, { changeset: { retries } });
+    }
+    await this.call('POST', `/incidents/${encodeURIComponent(incident.id)}/resolution`, {});
+  }
+
+  private get healthUrl() {
+    if (this.settings.healthUrl) return this.settings.healthUrl;
+    const url = new URL(this.settings.url);
+    url.port = '9600';
+    url.pathname = '/actuator/health';
+    url.search = '';
+    return url.toString();
+  }
+
+  async health() {
+    try {
+      const result = await engineRequest<Row>({ ...this.settings, username: '', timeout: 5000 }, this.healthUrl, {
+        method: 'GET',
+      });
+      return (result?.status as string) ?? null;
+    } catch (error) {
+      // 503 is the answer of a check that is not UP; its body names the state.
+      if (error instanceof BpmEngineError && error.status === 503) {
+        try {
+          return JSON.parse(String(error.values.message)).status || 'DOWN';
+        } catch {
+          return 'DOWN';
+        }
+      }
+      return null;
+    }
   }
 
   async completeServiceTask(workerId: string, taskId: string, variables: Variables = {}) {

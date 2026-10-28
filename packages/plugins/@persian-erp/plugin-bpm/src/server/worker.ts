@@ -34,6 +34,10 @@ export class ServiceTaskWorker {
   private timer: NodeJS.Timeout | null = null;
   private running = false;
   private lastError: string | null = null;
+  /** For the monitoring page (STORY-099): the last poll, the last fetch the engine answered, the topics polled. */
+  lastPollAt: Date | null = null;
+  lastFetchAt: Date | null = null;
+  topics = 0;
   options: WorkerOptions;
 
   constructor(private bpm: PluginBpmServer, options: Partial<WorkerOptions> = {}) {
@@ -43,6 +47,17 @@ export class ServiceTaskWorker {
 
   private get logger() {
     return this.bpm.app.logger;
+  }
+
+  status() {
+    return {
+      running: this.running,
+      workerId: this.workerId,
+      topics: this.topics,
+      lastPollAt: this.lastPollAt,
+      lastFetchAt: this.lastFetchAt,
+      error: this.lastError,
+    };
   }
 
   start() {
@@ -100,7 +115,9 @@ export class ServiceTaskWorker {
 
   /** Fetches and handles one batch of tasks; returns how many it handled. */
   async runOnce() {
+    this.lastPollAt = new Date();
     const byTopic = await this.workflowsByTopic();
+    this.topics = byTopic.size;
     if (!byTopic.size) return 0;
     const settings = await this.bpm.settings();
     if (!settings.url) return 0;
@@ -110,6 +127,7 @@ export class ServiceTaskWorker {
       [...byTopic.keys()].map((name) => ({ name, lockMs: this.options.lockMs })),
       this.options.maxTasks,
     );
+    this.lastFetchAt = new Date();
     for (const task of tasks) {
       await this.handle(engine, task, byTopic.get(task.topic) || []);
     }

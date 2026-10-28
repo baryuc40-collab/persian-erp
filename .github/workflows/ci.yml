@@ -119,10 +119,11 @@ jobs:
           sed -i "s#^APP_KEY=.*#APP_KEY=ci-$(openssl rand -hex 32)#" .env
           cp .env .env.test
           sed -i "s#^APP_ENV=.*#APP_ENV=test#" .env.test
-      # Camunda 8 of the bpm profile (decision 0008) with its API on localhost:18088; it starts while the rest installs.
+      # Camunda 8 of the bpm profile (decision 0008) with its API on localhost:18088 and its health check on
+      # localhost:18096; it starts while the rest installs.
       - name: Start Camunda 8
         run: |
-          printf 'services:\n  camunda:\n    ports: ["127.0.0.1:18088:8080"]\n' > "$RUNNER_TEMP/camunda-port.yml"
+          printf 'services:\n  camunda:\n    ports: ["127.0.0.1:18088:8080", "127.0.0.1:18096:9600"]\n' > "$RUNNER_TEMP/camunda-port.yml"
           docker compose -f docker-compose.yml -f "$RUNNER_TEMP/camunda-port.yml" --profile bpm up -d camunda
       - name: Install
         run: yarn install --ignore-engines --network-timeout 600000
@@ -160,6 +161,7 @@ jobs:
           OPERATON_URL: http://localhost:18080
           CAMUNDA_URL: http://localhost:18088
           CAMUNDA_PASSWORD: change-me
+          CAMUNDA_HEALTH_URL: http://localhost:18096/actuator/health
         run: yarn test --server packages/plugins/@persian-erp --run
       - name: Client tests
         run: yarn test --client packages/plugins/@persian-erp --run

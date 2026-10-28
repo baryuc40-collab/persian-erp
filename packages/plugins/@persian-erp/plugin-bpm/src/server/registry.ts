@@ -441,7 +441,15 @@ export class BpmRegistry {
    * instance the engine no longer knows is logged; open rows of NocoBase executions are read from the executions.
    */
   async reconcile() {
+    // Logged as one row with what it read, which the monitoring page shows (STORY-099).
+    return this.bpm.events.track('reconcile', {}, () => this.reconcileAll(), {
+      after: (result) => ({ detail: result }),
+    });
+  }
+
+  private async reconcileAll() {
     let read = 0;
+    let missing = 0;
     const keys = await this.keysOf('camunda');
     const open = async (builder: Builder) =>
       (await this.instances.find({ filter: { builder, status: { $in: OPEN_STATUSES } }, fields: ['instanceId'] })).map(
@@ -456,6 +464,7 @@ export class BpmRegistry {
           if (await this.refreshEngineInstance(id, 'instance.reconcile')) return;
           const row = await this.instances.findOne({ filter: { builder: 'camunda', instanceId: id } });
           if (row && OPEN_STATUSES.includes(row.get('status'))) {
+            missing++;
             await this.bpm.events.fail(
               'instance.missing',
               { processKey: row.get('processKey'), businessKey: row.get('businessKey'), instanceId: id },
@@ -472,7 +481,7 @@ export class BpmRegistry {
         await this.refreshExecution(id);
       }),
     );
-    return read;
+    return { read, missing };
   }
 
   start() {

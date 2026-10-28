@@ -95,6 +95,44 @@ docker compose exec app yarn nocobase pm enable @persian-erp/plugin-bpm
   دوباره فرستادن یا کنار گذاشتن یک مورد، تا صفحه‌ی «پایش و هشدارها» (STORY-099)، با API است: `POST /api/bpmOutbox:resend?filterByTk=<id>` یا `bpmOutbox:discard`، با کاربری که تکه‌ی دسترسی `pm.bpm` را دارد.
 - سلامت موتور: `docker compose exec camunda wget -q -O - http://localhost:9600/actuator/health`.
 
+### پایش و هشدارها
+
+برنامه هر ۳۰ ثانیه (`BPM_MONITOR_INTERVAL`) موتور را می‌سنجد: پاسخ API و بررسی سلامت Camunda روی `http://camunda:9600/actuator/health` (`BPM_ENGINE_HEALTH_URL`). از کار افتادن و برگشتن موتور یک بار با `engine.down` و `engine.up` در `bpmEvents` نوشته می‌شود. در همان دور، قاعده‌های هشدار جدول `bpmAlertRules` بررسی می‌شوند و هر مشکل یک ردیف در `bpmAlerts` می‌شود که تا رفع مشکل باز می‌ماند:
+
+| نوع (`kind`) | کی هشدار می‌دهد | پیش‌فرض |
+|---|---|---|
+| `engineDown` | موتور این مدت پاسخ ندهد یا سلامتش UP نباشد | ۲ دقیقه |
+| `worker` | کارگر کار سرویس این مدت کاری دریافت نکند، با موتوری که پاسخ می‌دهد | ۵ دقیقه |
+| `outbox` | بیش از این تعداد مورد در صف ارسال باشد یا قدیمی‌ترین بیش از این مدت مانده باشد | ۱۰ مورد یا ۱۰ دقیقه |
+| `incident` | هر خطای تازه‌ی موتور یا اجرای ناموفق گردش‌کار NocoBase | هر مورد |
+| `overdue` | هر نمونه‌ای که مهلت کار بازش گذشته | هر مورد |
+
+هشدارهای تازه‌ی هر نوع در یک دور با یک اعلان به کاربرانِ نقش‌های `roleNames` قاعده (پیش‌فرض `admin`) می‌روند، از کانال‌های `channels` (پیش‌فرض کانال درون‌برنامه‌ی `bpm-alerts` که خود برنامه می‌سازد). رفع موتور، کارگر و صف ارسال هم اعلان «رفع شد» دارد. هر ارسال با `alert.sent` یا `alert.failed` در `bpmEvents` ثبت می‌شود. برای ایمیل، در «تنظیمات > اعلان‌ها» یک کانال ایمیل بسازید و نامش را به قاعده بدهید. کاربران باید ایمیل داشته باشند:
+
+```bash
+curl -X POST "https://<سرور>/api/bpmAlertRules:update?filter[kind]=engineDown" \
+  -H "Authorization: Bearer <توکن کاربر با pm.bpm>" -H "Content-Type: application/json" \
+  -d '{"channels": ["bpm-alerts", "<نام کانال ایمیل>"], "roleNames": ["admin"], "minutes": 2}'
+```
+
+تا صفحه‌ی «پایش و هشدارها» بیاید، همین‌ها با API هستند، برای کاربری که تکه‌ی دسترسی `pm.bpm` را دارد:
+- `GET /api/bpm:monitor`: سلامت و نسخه‌ی موتور، آخرین دریافت کارگر، شمار صف ارسال، نتیجه‌ی آخرین بازبینی شبانه، حجم پایگاه داده‌ی `camunda` و هشدارهای باز.
+- `GET /api/bpm:failures`: خطاهای موتور با فرایند، نمونه، مرحله، پیام و شمار تلاش‌ها، اجراهای ناموفق گردش‌کار در `BPM_FAILURES_DAYS` روز گذشته (پیش‌فرض ۷) با پیوند به اجرا، و موردهای ناموفق صف ارسال.
+- `POST /api/bpm:retryIncident` با `{"id": "<شناسه‌ی خطا>", "retries": 1}`: کار سرویس را دوباره امتحان می‌کند و خطا را رفع می‌کند. خطا پس از اجرای موفق از فهرست می‌رود.
+
+متریک Prometheus اختیاری و پیش‌فرض خاموش است. با `BPM_METRICS_KEY` در `.env` روشن می‌شود و با همین کلید خوانده می‌شود:
+
+```yaml
+scrape_configs:
+  - job_name: persian-erp-bpm
+    scheme: https
+    metrics_path: /api/bpm:metrics
+    authorization: { credentials: <BPM_METRICS_KEY> }
+    static_configs: [{ targets: ['<سرور>'] }]
+```
+
+متریک‌های خود Camunda روی `http://camunda:9600/actuator/prometheus` است و از شبکه‌ی Docker بیرون نمی‌آید.
+
 ### Operate و Tasklist
 
 ابزار خود موتور برای دیدن نمونه‌ها و کارها و رفع خطا، فقط برای مدیر فنی است. چون درگاه موتور بیرون نیست، با تونل SSH باز می‌شود. اول روی سرور نشانی موتور را در شبکه‌ی Docker بگیرید:

@@ -1,6 +1,8 @@
 import type { Context, Next } from '@nocobase/actions';
 import { Plugin } from '@nocobase/server';
-import { randomUUID } from 'crypto';
+import { randomUUID, timingSafeEqual } from 'crypto';
+import bpmAlertRulesCollection from './bpm-alert-rules-collection';
+import bpmAlertsCollection from './bpm-alerts-collection';
 import bpmEventsCollection from './bpm-events-collection';
 import bpmInstancesCollection from './bpm-instances-collection';
 import bpmOutboxCollection from './bpm-outbox-collection';
@@ -11,6 +13,7 @@ import { BpmEngine, BpmEngineError, EngineKind, ENGINES } from './engine';
 import { BpmEvents, EventFields, EVENTS_COLLECTION, TrackOptions } from './events';
 import { EngineSettings } from './http';
 import { MESSAGE_INSTRUCTION, SendMessageInstruction } from './message-instruction';
+import { ALERT_RULES_COLLECTION, ALERTS_COLLECTION, BpmMonitor } from './monitor';
 import { OperatonEngine } from './operaton';
 import { BpmOutbox, OUTBOX_COLLECTION } from './outbox';
 import { BpmRegistry, BUILDERS, INSTANCES_COLLECTION, PROCESSES_COLLECTION } from './registry';
@@ -33,12 +36,20 @@ const API_ACTIONS: Record<string, string[]> = {
   [OUTBOX_COLLECTION]: [...READ_ACTIONS, 'resend', 'discard'],
   // Kept by the plugin from the engine and the executions; «read again» compares one with its source now.
   [INSTANCES_COLLECTION]: [...READ_ACTIONS, 'refresh'],
+  // Opened and resolved by the monitor (STORY-099).
+  [ALERTS_COLLECTION]: READ_ACTIONS,
+  // One rule for each kind of alert, made by the plugin; an administrator changes them.
+  [ALERT_RULES_COLLECTION]: [...READ_ACTIONS, 'update'],
 };
 const READ_ONLY_MESSAGES: Record<string, string> = {
   [EVENTS_COLLECTION]: 'The connection log is read-only',
   [OUTBOX_COLLECTION]: 'An outbox item can only be sent again or put aside',
   [INSTANCES_COLLECTION]: 'The process instances are kept by the plugin and are read-only',
+  [ALERTS_COLLECTION]: 'The alerts are kept by the monitor and are read-only',
+  [ALERT_RULES_COLLECTION]: 'There is one alert rule for each kind; a rule can only be changed',
 };
+// «Try again» of an incident gives the service task this many tries at most.
+const MAX_RETRIES = 10;
 
 export interface BpmConnection extends EngineSettings {
   engine: EngineKind;
@@ -60,7 +71,9 @@ function isFormSchema(text: string) {
 export class PluginBpmServer extends Plugin {
   /** Builds the engine of the saved settings; another adapter can take its place in tests. */
   createEngine: (settings: BpmConnection) => BpmEngine = (settings) =>
-    settings.engine === 'operaton' ? new OperatonEngine(settings) : new Camunda8Engine(settings);
+    settings.engine === 'operaton'
+      ? new OperatonEngine(settings)
+      : new Camunda8Engine({ ...settings, healthUrl: process.env.BPM_ENGINE_HEALTH_URL || undefined });
 
   /** Runs the service tasks of the engine (STORY-081); off with BPM_WORKER=off. */
   worker = new ServiceTaskWorker(this, { interval: Number(process.env.BPM_WORKER_INTERVAL) || undefined });
@@ -77,12 +90,17 @@ export class PluginBpmServer extends Plugin {
   /** The processes and their instances, bpmProcesses and bpmInstances (STORY-095). */
   registry = new BpmRegistry(this, { interval: Number(process.env.BPM_SYNC_INTERVAL) || undefined });
 
+  /** The monitoring, the alerts and the metrics (STORY-099); off with BPM_MONITOR=off. */
+  monitor = new BpmMonitor(this, { interval: Number(process.env.BPM_MONITOR_INTERVAL) || undefined });
+
   async beforeLoad() {
     this.db.collection(bpmSettingsCollection);
     this.db.collection(bpmEventsCollection);
     this.db.collection(bpmOutboxCollection);
     this.db.collection(bpmProcessesCollection);
     this.db.collection(bpmInstancesCollection);
+    this.db.collection(bpmAlertRulesCollection);
+    this.db.collection(bpmAlertsCollection);
     this.app.acl.registerSnippet({
       name: BPM_SNIPPET,
       actions: [
@@ -93,6 +111,8 @@ export class PluginBpmServer extends Plugin {
     });
     // Open to every signed-in user; the actions return and accept only the user's own tasks (STORY-082).
     this.app.acl.allow(TASKS_RESOURCE, ['list', 'get', 'complete'], 'loggedIn');
+    // For Prometheus, with the key of BPM_METRICS_KEY instead of a user; off while it is not set.
+    this.app.acl.allow(BPM_RESOURCE, 'metrics', 'public');
     // A user whose roles may not read bpmInstances still reads the instances they started (STORY-095).
     this.app.acl.use(
       async (ctx: Context, next: Next) => {
@@ -136,6 +156,23 @@ export class PluginBpmServer extends Plugin {
       }
     }
 
+    // The rules and the in-app channel of the alerts on every start, then the monitoring round, which needs no workflow.
+    this.app.on('afterStart', async () => {
+      try {
+        await this.monitor.ensureRules();
+        await this.monitor.ensureChannel();
+      } catch (error) {
+        this.app.logger.warn(`bpm: the alert rules could not be set up: ${(error as Error).message}`, {
+          module: 'bpm',
+        });
+      }
+    });
+    if (process.env.BPM_WORKER !== 'off' && process.env.BPM_MONITOR !== 'off') {
+      this.app.on('afterStart', () => this.monitor.start());
+      this.app.on('beforeStop', () => this.monitor.stop());
+      this.app.on('beforeDestroy', () => this.monitor.stop());
+    }
+
     this.app.on('afterStart', () => this.events.startCleanup());
     this.app.on('beforeStop', () => this.events.stopCleanup());
     this.app.on('beforeDestroy', () => this.events.stopCleanup());
@@ -149,6 +186,7 @@ export class PluginBpmServer extends Plugin {
         if (resourceName === PROCESSES_COLLECTION && ['create', 'update'].includes(actionName)) {
           await this.checkProcess(ctx);
         }
+        if (resourceName === ALERT_RULES_COLLECTION && actionName === 'update') this.checkAlertRule(ctx);
         await next();
       },
       { tag: 'bpm-read-only', before: 'acl' },
@@ -168,6 +206,10 @@ export class PluginBpmServer extends Plugin {
         test: (ctx: Context, next: Next) => this.testAction(ctx, next),
         processes: (ctx: Context, next: Next) => this.processesAction(ctx, next),
         deploy: (ctx: Context, next: Next) => this.deployAction(ctx, next),
+        monitor: (ctx: Context, next: Next) => this.monitorAction(ctx, next),
+        failures: (ctx: Context, next: Next) => this.failuresAction(ctx, next),
+        retryIncident: (ctx: Context, next: Next) => this.retryIncidentAction(ctx, next),
+        metrics: (ctx: Context, next: Next) => this.metricsAction(ctx, next),
       },
     });
     this.app.resourceManager.define({ name: TASKS_RESOURCE, actions: new TaskInbox(this).actions });
@@ -287,6 +329,93 @@ export class PluginBpmServer extends Plugin {
     }
     values.key = key;
     ctx.action.params.values = values;
+  }
+
+  /** A rule keeps its kind; its limits are whole numbers, its roles and channels lists of names. */
+  private checkAlertRule(ctx: Context) {
+    const values = { ...(ctx.action.params.values || {}) } as Record<string, unknown>;
+    delete values.kind;
+    for (const name of ['minutes', 'count']) {
+      const value = values[name];
+      if (value === undefined || value === null) continue;
+      if (!Number.isInteger(Number(value)) || Number(value) < 0) {
+        ctx.throw(400, this.tr(ctx, 'The limits of a rule must be whole numbers, 0 or more'));
+      }
+      values[name] = Number(value);
+    }
+    for (const name of ['roleNames', 'channels']) {
+      const value = values[name];
+      if (value === undefined) continue;
+      if (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || !item.trim())) {
+        ctx.throw(400, this.tr(ctx, 'The roles and channels of a rule must be lists of names'));
+      }
+      values[name] = [...new Set((value as string[]).map((item) => item.trim()))];
+    }
+    ctx.action.params.values = values;
+  }
+
+  // The monitoring page (STORY-099): the engine, the worker, the outbox, the nightly check and the open alerts.
+  async monitorAction(ctx: Context, next: Next) {
+    ctx.body = await this.monitor.snapshot();
+    await next();
+  }
+
+  // The failures of both builders: incidents of the engine, failed executions and outbox items that ran out.
+  async failuresAction(ctx: Context, next: Next) {
+    ctx.body = await this.monitor.failures();
+    await next();
+  }
+
+  /**
+   * «Try again» of an incident: values {id, retries}, one more try by default. The service task gets the tries, the
+   * incident is resolved and the instance goes on; the incident leaves the list when its task succeeds.
+   */
+  async retryIncidentAction(ctx: Context, next: Next) {
+    const values = (ctx.action.params.values || {}) as Record<string, unknown>;
+    const id = String(ctx.action.params.filterByTk ?? values.id ?? '').trim();
+    if (!id) ctx.throw(400, this.tr(ctx, 'Choose the incident'));
+    const retries = values.retries === undefined || values.retries === null ? 1 : Number(values.retries);
+    if (!Number.isInteger(retries) || retries < 1 || retries > MAX_RETRIES) {
+      ctx.throw(400, this.tr(ctx, 'The tries must be a whole number from 1 to {{max}}', { max: MAX_RETRIES }));
+    }
+    const incident = await this.withEngine(
+      ctx,
+      'incident.retry',
+      async (engine) => {
+        const found = await engine.getIncident(id);
+        if (!found) throw new BpmEngineError('There is no open incident {{id}}', { id }, 404);
+        await engine.retryIncident(found, retries);
+        return found;
+      },
+      { detail: { incidentId: id, retries } },
+      {
+        after: (found) => ({
+          processKey: found.processKey,
+          instanceId: found.instanceId,
+          taskId: found.jobId,
+          detail: { element: found.elementId, type: found.type },
+        }),
+      },
+    );
+    this.registry.later('camunda', incident.instanceId);
+    ctx.body = incident;
+    await next();
+  }
+
+  /** The plugin's counts for Prometheus, with the key of BPM_METRICS_KEY as a bearer token or ?key=. */
+  async metricsAction(ctx: Context, next: Next) {
+    const key = process.env.BPM_METRICS_KEY || '';
+    if (!key) ctx.throw(404);
+    const given = String(
+      (ctx.get('Authorization') || '').replace(/^Bearer\s+/i, '') || ctx.action.params.key || ctx.query?.key || '',
+    );
+    const same =
+      Buffer.byteLength(given) === Buffer.byteLength(key) && timingSafeEqual(Buffer.from(given), Buffer.from(key));
+    if (!same) ctx.throw(401);
+    ctx.withoutDataWrapping = true;
+    ctx.type = 'text/plain; version=0.0.4; charset=utf-8';
+    ctx.body = await this.monitor.metrics();
+    await next();
   }
 
   // «Read again» of an instance on its page: compared with the engine or the execution now (STORY-095, STORY-098).
