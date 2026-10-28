@@ -358,5 +358,5 @@ Process instance,نمونه‌ی فرایند,workflow,اصطلاح BPMN
 Topic,موضوع,workflow,اصطلاح BPMN: موضوع کار سرویس بیرونی (external task)
 Service task,کار سرویس,workflow,اصطلاح BPMN
 Process,فرایند,workflow,اصطلاح BPMN
-Task inbox,صندوق کار,workflow,فهرست کارهای انسانی فرایند که مال کاربر است
+Task inbox,کارتابل,workflow,فهرست کارهای انسانی فرایند که مال کاربر است؛ همان کارتابل NocoBase (Todo)
 User task,کار انسانی,workflow,اصطلاح BPMN
