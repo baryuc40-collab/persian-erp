@@ -301,7 +301,9 @@ describe('bpm process registry', () => {
     states.set('pi-3', engineState('pi-3', { processKey: 'leave_request', status: 'completed' }));
     await mark('camunda', 'leave_request');
     await settle();
-    expect((await instances()).map((row) => [row.instanceId, row.recordCollection, row.recordId])).toEqual([
+    // The instances are read side by side, so their rows are made in any order.
+    const rows = (await instances()).map((row) => [row.instanceId, row.recordCollection, row.recordId]);
+    expect(rows.sort()).toEqual([
       ['pi-1', 'leaves', '1'],
       ['pi-2', 'leaves', '2'],
     ]);
