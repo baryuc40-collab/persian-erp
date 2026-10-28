@@ -18,15 +18,20 @@ AUTH='--user "$CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME" --password "$CA
 SEARCH='--post-data="{}" --header="Content-Type: application/json" http://localhost:8080/v2/process-instances/search'
 status() { in_camunda "wget -S -O /dev/null $1 2>&1 | awk '/HTTP\\//{code=\$2} END{print code}'"; }
 
+gateway_version() {
+  in_camunda "wget -q -O - $AUTH http://localhost:8080/v2/topology" 2>/dev/null | sed -n 's/.*"gatewayVersion":"\([^"]*\)".*/\1/p'
+}
+
+# Ready is not enough: the API can still refuse the service user for a moment after it.
 echo "Waiting for the engine to be ready"
 i=0
-until in_camunda 'wget -q -O /dev/null http://localhost:9600/actuator/health/readiness' 2>/dev/null; do
+until in_camunda 'wget -q -O /dev/null http://localhost:9600/actuator/health/readiness' 2>/dev/null && [ -n "$(gateway_version)" ]; do
   i=$((i + 1))
-  [ "$i" -le 60 ] || { docker compose logs --tail 200 camunda >&2; fail "the engine is not ready after 5 minutes"; }
+  [ "$i" -le 60 ] || { docker compose logs --tail 200 camunda >&2; fail "the engine is not ready, or refuses its service user, after 5 minutes"; }
   sleep 5
 done
 
-version="$(in_camunda "wget -q -O - $AUTH http://localhost:8080/v2/topology" | sed -n 's/.*"gatewayVersion":"\([^"]*\)".*/\1/p')"
+version="$(gateway_version)"
 [ "$version" = "$expected" ] || fail "the engine is version '$version', CAMUNDA_VERSION is '$expected'"
 echo "ok: version $version"
 
