@@ -3,6 +3,7 @@ import React from 'react';
 // @ts-ignore
 import pkg from '../../package.json';
 import { BpmTaskInboxBlockModel } from '../client-v2/TaskInboxBlockModel';
+import SendMessageInstruction, { MESSAGE_INSTRUCTION } from '../client-v2/SendMessageInstruction';
 import ServiceTaskTrigger, { SERVICE_TASK_TRIGGER } from '../client-v2/ServiceTaskTrigger';
 import StartProcessInstruction, { START_INSTRUCTION } from '../client-v2/StartProcessInstruction';
 import { BPM_SETTINGS_KEY, BpmSettings } from './BpmSettings';
@@ -24,6 +25,7 @@ export class PluginBpmClient extends Plugin {
         }
       | undefined;
     workflow?.registerInstruction?.(START_INSTRUCTION, StartProcessInstruction);
+    workflow?.registerInstruction?.(MESSAGE_INSTRUCTION, SendMessageInstruction);
     workflow?.registerTrigger?.(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
 
     // The task inbox block of modern pages (STORY-082).

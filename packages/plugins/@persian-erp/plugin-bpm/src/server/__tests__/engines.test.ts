@@ -15,6 +15,28 @@ import { OperatonEngine } from '../operaton';
 const BPMN = path.resolve(__dirname, '../../../../../../../bpmn');
 const read = (file: string) => ({ name: path.basename(file), content: fs.readFileSync(path.join(BPMN, file), 'utf8') });
 
+// A process that waits for the message contract-paid of its business key, then for a person (STORY-094).
+const messageModel = (camunda8: boolean) => ({
+  name: 'message-contract.bpmn',
+  content: `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="https://persian-erp.example/bpmn" id="defs">
+  <bpmn:message id="paid" name="contract-paid">${
+    camunda8 ? '<bpmn:extensionElements><zeebe:subscription correlationKey="=businessKey" /></bpmn:extensionElements>' : ''
+  }</bpmn:message>
+  <bpmn:process id="bpm_message_contract" name="پیام" isExecutable="true"${camunda8 ? '' : ' operaton:historyTimeToLive="1"'}>
+    <bpmn:startEvent id="start" />
+    <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="wait" />
+    <bpmn:intermediateCatchEvent id="wait"><bpmn:messageEventDefinition messageRef="paid" /></bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="f2" sourceRef="wait" targetRef="check" />
+    <bpmn:userTask id="check" name="بررسی پرداخت">${
+      camunda8 ? '<bpmn:extensionElements><zeebe:userTask /></bpmn:extensionElements>' : ''
+    }</bpmn:userTask>
+    <bpmn:sequenceFlow id="f3" sourceRef="check" targetRef="end" />
+    <bpmn:endEvent id="end" />
+  </bpmn:process>
+</bpmn:definitions>`,
+});
+
 interface EngineCase {
   name: string;
   settings: EngineSettings;
@@ -24,6 +46,8 @@ interface EngineCase {
   eventual: boolean;
   /** Operaton lets only the worker that locked a service task report on it; Camunda 8 jobs take any client. */
   workerOwnsLock: boolean;
+  /** Camunda 8 keeps a message no instance waits for yet; Operaton does not. */
+  keepsMessages: boolean;
   incidentMessages(settings: EngineSettings, instanceId: string): Promise<string[]>;
 }
 
@@ -39,6 +63,7 @@ const CASES: EngineCase[] = [
     files: [read('operaton/purchase-request.bpmn')],
     eventual: false,
     workerOwnsLock: true,
+    keepsMessages: false,
     incidentMessages: async (settings, instanceId) =>
       (
         await engineRequest(settings, `${settings.url}/engine-rest/incident?processInstanceId=${instanceId}`, {
@@ -57,6 +82,7 @@ const CASES: EngineCase[] = [
     files: [read('purchase-request.bpmn'), read('purchase-approve.form')],
     eventual: true,
     workerOwnsLock: false,
+    keepsMessages: true,
     incidentMessages: async (settings, instanceId) =>
       (
         await engineRequest(settings, `${settings.url}/v2/incidents/search`, {
@@ -102,6 +128,7 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
 
   beforeAll(async () => {
     for (const file of engineCase.files) await engine.deploy('purchase-request', [file]);
+    await engine.deploy('message-contract', [messageModel(engineCase.keepsMessages)]);
   }, 60000);
 
   it('reports its version, and a wrong password or address in words', async () => {
@@ -241,4 +268,17 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
   it('says when a message reaches no instance', async () => {
     expect(await engine.sendMessage(`nothing-waits-${run}`, key(4))).toEqual({ delivered: false });
   });
+
+  it('sends a message that may come before its instance waits, once for one message ID', async () => {
+    const options = { ttlMs: 60000, messageId: `contract-${run}` };
+    // Camunda 8 keeps it for the instance; Operaton says nobody took it, and the outbox sends it again later.
+    const early = await engine.publishMessage('contract-paid', key(5), { paid: true }, options);
+    expect(early).toEqual({ delivered: engineCase.keepsMessages });
+    await engine.start('bpm_message_contract', key(5));
+    // The same ID again, as after a lost answer: no error, and Camunda 8 does not take it a second time.
+    expect(await engine.publishMessage('contract-paid', key(5), { paid: true }, options)).toEqual({ delivered: true });
+    const task = await openTask(key(5));
+    expect(task).toMatchObject({ taskKey: 'check', processKey: 'bpm_message_contract' });
+    await engine.completeUserTask(task.id, {});
+  }, 60000);
 });

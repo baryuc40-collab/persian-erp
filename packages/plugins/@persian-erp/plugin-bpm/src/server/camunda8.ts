@@ -163,7 +163,8 @@ export class Camunda8Engine implements BpmEngine {
       const instance = await this.call<Row>('POST', '/process-instances', {
         processDefinitionId: processKey,
         businessId: businessKey,
-        variables,
+        // Also a variable, so a message event of the model correlates with =businessKey (STORY-094).
+        variables: { ...variables, businessKey },
       });
       return { instanceId: String(instance.processInstanceKey), created: true };
     } catch (error) {
@@ -187,6 +188,27 @@ export class Camunda8Engine implements BpmEngine {
       if (error instanceof BpmEngineError && error.code === 'NOT_FOUND') return { delivered: false };
       throw error;
     }
+  }
+
+  async publishMessage(
+    name: string,
+    businessKey: string,
+    variables: Variables = {},
+    options: { ttlMs: number; messageId: string },
+  ) {
+    try {
+      await this.call('POST', '/messages/publication', {
+        name,
+        correlationKey: businessKey,
+        timeToLive: options.ttlMs,
+        messageId: options.messageId,
+        variables,
+      });
+    } catch (error) {
+      // Published before, by a send whose answer was lost.
+      if (!(error instanceof BpmEngineError && error.code === 'ALREADY_EXISTS')) throw error;
+    }
+    return { delivered: true };
   }
 
   private definition(key: string) {

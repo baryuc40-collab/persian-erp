@@ -38,40 +38,45 @@ export function StartProcessFieldset() {
       >
         <WorkflowVariableInput />
       </Form.Item>
-      <Form.Item
-        label={t('Process variables')}
-        extra={t('Only IDs and decisions; the record itself stays in NocoBase.')}
-      >
-        <Form.List name={['config', 'variables']}>
-          {(fields, { add, remove }) => (
-            <>
-              {fields.map((field) => (
-                <Space key={field.key} align="baseline">
-                  <Form.Item name={[field.name, 'name']} rules={[{ required: true }]}>
-                    <Input dir="ltr" placeholder={t('Variable name')} />
-                  </Form.Item>
-                  <Form.Item name={[field.name, 'value']}>
-                    <WorkflowVariableInput />
-                  </Form.Item>
-                  <Button
-                    aria-label={t('Delete')}
-                    icon={<DeleteOutlined />}
-                    size="small"
-                    type="text"
-                    onClick={() => remove(field.name)}
-                  />
-                </Space>
-              ))}
-              <div>
-                <Button icon={<PlusOutlined />} size="small" type="dashed" onClick={() => add({})}>
-                  {t('Add a variable')}
-                </Button>
-              </div>
-            </>
-          )}
-        </Form.List>
-      </Form.Item>
+      <ProcessVariablesField />
     </>
+  );
+}
+
+/** The variables a start or message hands the process: a name and a value, often a variable of the workflow. */
+export function ProcessVariablesField() {
+  const t = useT();
+  return (
+    <Form.Item label={t('Process variables')} extra={t('Only IDs and decisions; the record itself stays in NocoBase.')}>
+      <Form.List name={['config', 'variables']}>
+        {(fields, { add, remove }) => (
+          <>
+            {fields.map((field) => (
+              <Space key={field.key} align="baseline">
+                <Form.Item name={[field.name, 'name']} rules={[{ required: true }]}>
+                  <Input dir="ltr" placeholder={t('Variable name')} />
+                </Form.Item>
+                <Form.Item name={[field.name, 'value']}>
+                  <WorkflowVariableInput />
+                </Form.Item>
+                <Button
+                  aria-label={t('Delete')}
+                  icon={<DeleteOutlined />}
+                  size="small"
+                  type="text"
+                  onClick={() => remove(field.name)}
+                />
+              </Space>
+            ))}
+            <div>
+              <Button icon={<PlusOutlined />} size="small" type="dashed" onClick={() => add({})}>
+                {t('Add a variable')}
+              </Button>
+            </div>
+          </>
+        )}
+      </Form.List>
+    </Form.Item>
   );
 }
 

@@ -72,6 +72,17 @@ export interface BpmEngine {
   ): Promise<{ instanceId: string | null; created: boolean }>;
   /** Correlates a message to the instance of a business key that waits for it; `delivered` is false when none does. */
   sendMessage(name: string, businessKey: string, variables?: Variables): Promise<{ delivered: boolean }>;
+  /**
+   * Sends a message that may come before its instance waits for it (STORY-094). Camunda 8 keeps it for ttlMs and
+   * delivers it when an instance waits; Operaton only delivers it to one waiting now, else `delivered` is false. The
+   * same messageId again does nothing, so a message sent twice after a lost answer arrives once.
+   */
+  publishMessage(
+    name: string,
+    businessKey: string,
+    variables: Variables,
+    options: { ttlMs: number; messageId: string },
+  ): Promise<{ delivered: boolean }>;
   listUserTasks(filter: { candidateGroups?: string[]; assignee?: string; businessKey?: string }): Promise<UserTask[]>;
   getUserTask(taskId: string): Promise<UserTask | null>;
   /** The form fields of the task in its model; none when the model declares no form. */

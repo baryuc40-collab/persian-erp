@@ -16,6 +16,8 @@ describe('workflow node bpm-start', () => {
   let workflow;
 
   beforeEach(async () => {
+    // The outbox is run by the tests themselves.
+    process.env.BPM_WORKER = 'off';
     app = await createMockServer({
       plugins: [
         'error-handler',
@@ -71,6 +73,7 @@ describe('workflow node bpm-start', () => {
   });
 
   afterEach(async () => {
+    delete process.env.BPM_WORKER;
     await app.destroy();
   });
 
@@ -103,19 +106,54 @@ describe('workflow node bpm-start', () => {
     });
   });
 
-  it('fails the node with the engine message and keeps the record', async () => {
+  it('fails the node with the engine message when the engine refuses the start, and keeps it in the outbox', async () => {
     engine.start = async () => {
-      throw new BpmEngineError('The BPMN engine cannot be reached: {{reason}}', { reason: 'connect ECONNREFUSED' });
+      throw new BpmEngineError(
+        'The BPMN engine answered {{status}}: {{message}}',
+        { status: 404, message: 'no process' },
+        404,
+      );
     };
     await app.db.getRepository('purchase_requests').create({ values: { title: 'میز' } });
     await sleep(500);
     const job = await lastJob();
     expect(job.status).toBe(JOB_FAILED);
+    const [row] = await app.db.getRepository('bpmOutbox').find();
     expect(job.result).toEqual({
-      error: 'The BPMN engine cannot be reached: connect ECONNREFUSED',
+      error: 'The BPMN engine answered 404: no process',
+      processKey: 'purchase_request',
+      businessKey: expect.stringMatching(/^purchase_requests:/),
       correlationId: expect.any(String),
+      outboxId: row.get('id'),
     });
+    expect(row.toJSON()).toMatchObject({ status: 'failed', kind: 'start', attempts: 1, jobId: null });
     expect(await app.db.getRepository('purchase_requests').count()).toBe(1);
+  });
+
+  it('waits in the outbox while the engine is away, and goes on once the start is sent', async () => {
+    const start = engine.start;
+    engine.start = async () => {
+      throw new BpmEngineError('The BPMN engine cannot be reached: {{reason}}', { reason: 'connect ECONNREFUSED' });
+    };
+    const record = await app.db.getRepository('purchase_requests').create({ values: { title: 'میز' } });
+    await sleep(500);
+    expect((await lastJob()).status).toBe(0);
+    engine.start = start;
+    const bpm = app.pm.get(PluginBpmServer) as PluginBpmServer;
+    await app.db
+      .getRepository('bpmOutbox')
+      .update({ filter: { status: 'pending' }, values: { nextAttemptAt: new Date() } });
+    expect(await bpm.outbox.runOnce()).toBe(1);
+    await sleep(500);
+    const job = await lastJob();
+    expect(job.status).toBe(JOB_RESOLVED);
+    expect(job.result).toMatchObject({
+      instanceId: 'pi-1',
+      created: true,
+      businessKey: `purchase_requests:${record.get('id')}`,
+    });
+    const [execution] = await app.db.getRepository('executions').find();
+    expect(execution.get('status')).toBe(1);
   });
 
   it('fails without a business key, before calling the engine', async () => {
@@ -141,7 +179,7 @@ describe('workflow node bpm-start', () => {
     const bpm = app.pm.get(PluginBpmServer) as PluginBpmServer;
     const instruction = new StartProcessInstruction(app.pm.get('workflow') as never, bpm);
     const node = { id: 1, config: { processKey: 'purchase_request', businessKey: 'purchase_requests:7' } };
-    const processor = { getParsedValue: (config) => config, logger: console };
+    const processor = { getParsedValue: (config) => config, logger: console, execution: {} };
     const results = await Promise.all([
       instruction.run(node as never, null, processor as never),
       instruction.run(node as never, null, processor as never),

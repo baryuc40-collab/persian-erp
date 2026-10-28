@@ -2,12 +2,15 @@ import type { Context, Next } from '@nocobase/actions';
 import { Plugin } from '@nocobase/server';
 import { randomUUID } from 'crypto';
 import bpmEventsCollection from './bpm-events-collection';
+import bpmOutboxCollection from './bpm-outbox-collection';
 import bpmSettingsCollection from './bpm-settings-collection';
 import { Camunda8Engine } from './camunda8';
 import { BpmEngine, BpmEngineError, EngineKind, ENGINES } from './engine';
 import { BpmEvents, EventFields, EVENTS_COLLECTION, TrackOptions } from './events';
 import { EngineSettings } from './http';
+import { MESSAGE_INSTRUCTION, SendMessageInstruction } from './message-instruction';
 import { OperatonEngine } from './operaton';
+import { BpmOutbox, OUTBOX_COLLECTION } from './outbox';
 import { SERVICE_TASK_TRIGGER, ServiceTaskTrigger } from './service-task-trigger';
 import { START_INSTRUCTION, StartProcessInstruction } from './start-instruction';
 import { traces } from './trace';
@@ -19,8 +22,13 @@ export const BPM_SNIPPET = 'pm.bpm';
 const NAMESPACE = '@persian-erp/plugin-bpm';
 const SETTINGS_ID = 1;
 const MAX_MODEL_BYTES = 2 * 1024 * 1024;
-// The connection log can be read, never changed through the API.
-const EVENTS_READ_ACTIONS = ['list', 'get', 'count', 'export'];
+// The connection log and the outbox can be read, never changed through the API; outbox rows only by «send again» and
+// «put aside».
+const READ_ACTIONS = ['list', 'get', 'count', 'export'];
+const API_ACTIONS: Record<string, string[]> = {
+  [EVENTS_COLLECTION]: READ_ACTIONS,
+  [OUTBOX_COLLECTION]: [...READ_ACTIONS, 'resend', 'discard'],
+};
 
 export interface BpmConnection extends EngineSettings {
   engine: EngineKind;
@@ -50,12 +58,22 @@ export class PluginBpmServer extends Plugin {
   /** The connection log bpmEvents (STORY-093). */
   events = new BpmEvents(this);
 
+  /** The outbox bpmOutbox for starts and messages the engine could not take (STORY-094). */
+  outbox = new BpmOutbox(this, {
+    interval: Number(process.env.BPM_OUTBOX_INTERVAL) || undefined,
+    maxAttempts: Number(process.env.BPM_OUTBOX_MAX_ATTEMPTS) || undefined,
+  });
+
   async beforeLoad() {
     this.db.collection(bpmSettingsCollection);
     this.db.collection(bpmEventsCollection);
+    this.db.collection(bpmOutboxCollection);
     this.app.acl.registerSnippet({
       name: BPM_SNIPPET,
-      actions: [`${BPM_RESOURCE}:*`, ...EVENTS_READ_ACTIONS.map((action) => `${EVENTS_COLLECTION}:${action}`)],
+      actions: [
+        `${BPM_RESOURCE}:*`,
+        ...Object.entries(API_ACTIONS).flatMap(([name, actions]) => actions.map((action) => `${name}:${action}`)),
+      ],
     });
     // Open to every signed-in user; the actions return and accept only the user's own tasks (STORY-082).
     this.app.acl.allow(TASKS_RESOURCE, ['list', 'get', 'complete'], 'loggedIn');
@@ -71,11 +89,14 @@ export class PluginBpmServer extends Plugin {
       | undefined;
     if (workflow) {
       workflow.registerInstruction(START_INSTRUCTION, new StartProcessInstruction(workflow as never, this));
+      workflow.registerInstruction(MESSAGE_INSTRUCTION, new SendMessageInstruction(workflow as never, this));
       workflow.registerTrigger(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
       if (process.env.BPM_WORKER !== 'off') {
-        this.app.on('afterStart', () => this.worker.start());
-        this.app.on('beforeStop', () => this.worker.stop());
-        this.app.on('beforeDestroy', () => this.worker.stop());
+        for (const runner of [this.worker, this.outbox]) {
+          this.app.on('afterStart', () => runner.start());
+          this.app.on('beforeStop', () => runner.stop());
+          this.app.on('beforeDestroy', () => runner.stop());
+        }
       }
     }
 
@@ -86,13 +107,25 @@ export class PluginBpmServer extends Plugin {
     this.app.resourceManager.use(
       async (ctx: Context, next: Next) => {
         const { resourceName, actionName } = ctx.action || {};
-        if (resourceName === EVENTS_COLLECTION && !EVENTS_READ_ACTIONS.includes(actionName)) {
-          ctx.throw(403, this.tr(ctx, 'The connection log is read-only'));
+        if (API_ACTIONS[resourceName] && !API_ACTIONS[resourceName].includes(actionName)) {
+          ctx.throw(
+            403,
+            this.tr(
+              ctx,
+              resourceName === OUTBOX_COLLECTION
+                ? 'An outbox item can only be sent again or put aside'
+                : 'The connection log is read-only',
+            ),
+          );
         }
         await next();
       },
-      { tag: 'bpm-events-read-only', before: 'acl' },
+      { tag: 'bpm-read-only', before: 'acl' },
     );
+    this.app.resourceManager.registerActionHandlers({
+      [`${OUTBOX_COLLECTION}:resend`]: (ctx: Context, next: Next) => this.outboxAction(ctx, next, 'resend'),
+      [`${OUTBOX_COLLECTION}:discard`]: (ctx: Context, next: Next) => this.outboxAction(ctx, next, 'discard'),
+    });
 
     // Not a collection, so the resource is defined here with its actions.
     this.app.resourceManager.define({
@@ -178,6 +211,26 @@ export class PluginBpmServer extends Plugin {
       if (error instanceof BpmEngineError) ctx.throw(400, this.tr(ctx, error.message, error.values));
       throw error;
     }
+  }
+
+  /** Every night: the old rows of the connection log and the outbox. */
+  async cleanup(now = new Date()) {
+    await this.events.cleanup(now);
+    await this.outbox.cleanup(now);
+  }
+
+  // «Send again» and «put aside» of an outbox row, on the monitoring page (STORY-094, STORY-099).
+  async outboxAction(ctx: Context, next: Next, action: 'resend' | 'discard') {
+    let row: unknown;
+    try {
+      row = await this.outbox[action](ctx.action.params.filterByTk, ctx.state.currentUser?.id ?? null);
+    } catch (error) {
+      if (error instanceof BpmEngineError) ctx.throw(400, this.tr(ctx, error.message, error.values));
+      throw error;
+    }
+    if (!row) ctx.throw(404);
+    ctx.body = row;
+    await next();
   }
 
   async getSettingsAction(ctx: Context, next: Next) {

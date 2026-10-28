@@ -110,6 +110,7 @@ STORY-091 این پیکربندی را در هر دو فایل Compose گذاش�
 | استقرار | `POST /v2/deployments` (multipart) | |
 | شروع | `POST /v2/process-instances` با `processDefinitionId` و `businessId` | کلید تکراری ۴۰۹ `ALREADY_EXISTS` می‌گیرد. آداپتور نمونه‌ی باز را با `/v2/process-instances/search` پیدا می‌کند و `created: false` برمی‌گرداند. قفل محلی تصمیم ۰۰۰۷ فقط برای Operaton می‌ماند. |
 | پیام | `POST /v2/messages/correlation` با `correlationKey` برابر کلید کسب‌وکار | اگر نمونه‌ای منتظر نباشد ۴۰۴ `NOT_FOUND` می‌گیرد. آداپتور آن را «پیام به جایی نرسید» گزارش می‌کند. |
+| پیام با انتظار (STORY-094) | `POST /v2/messages/publication` با `timeToLive` و `messageId` | Camunda 8 پیام را تا `timeToLive` برای نمونه‌ای که بعداً منتظرش شود نگه می‌دارد و همان `messageId` را دوباره نمی‌پذیرد (۴۰۹ `ALREADY_EXISTS`، که آداپتور «رسید» حساب می‌کند). Operaton نگه نمی‌دارد و صف ارسال تا همان مدت دوباره می‌فرستد. |
 | کار سرویس | `POST /v2/jobs/activation` با `requestTimeout` (long polling)؛ `/v2/jobs/{key}/completion`، `/failure` (با `retries` و `retryBackOff`)، `/error` (خطای کسب‌وکار) | «موضوع» Operaton همان `type` کار است. هر کار `businessId` دارد. |
 | کار انسانی | `POST /v2/user-tasks/search` با `candidateGroups`، `assignee` یا `businessId`؛ `/assignment`؛ `/completion` | فقط `zeebe:userTask` پشتیبانی می‌شود. کار انسانی قدیمی بر پایه‌ی job نه. |
 | آمار و مدیریت | `/v2/process-definitions/{key}/statistics/element-instances`، `/v2/incidents/search`، `/v2/process-instances/{key}/cancellation`، `/suspension`، `/resumption`، `/modification`، `/migration`، `PATCH /v2/jobs/{key}` و `/v2/incidents/{key}/resolution` | متدهای تازه‌ی `BpmEngine` برای STORY-097 تا STORY-099 و STORY-105 |
@@ -128,6 +129,7 @@ STORY-091 این پیکربندی را در هر دو فایل Compose گذاش�
 | `operaton:type="external" operaton:topic="place-order"` | `<zeebe:taskDefinition type="place-order" retries="3"/>` |
 | شرط `${approved}` (JUEL) | `=approved = true` (FEEL) |
 | `operaton:historyTimeToLive` | ندارد؛ TTL برای کل موتور تنظیم می‌شود. |
+| پیام با کلید کسب‌وکار نمونه جفت می‌شود. | `<zeebe:subscription correlationKey="=businessKey"/>` روی پیام. آداپتور هنگام شروع، کلید کسب‌وکار را متغیر `businessKey` هم می‌کند (STORY-094). |
 | `operaton:formField` | فرم Camunda در فایل `.form` که کار با `zeebe:formDefinition formId` به آن وصل است (STORY-092)، مثل [`purchase-approve.form`](../../bpmn/purchase-approve.form). فرم جاسازی‌شده در مدل برای کار انسانی Camunda پذیرفته نیست. فرم NocoBase با `externalReference` در STORY-101 می‌آید. |
 
 ### ۶. هویت، دسترسی و ممیزی

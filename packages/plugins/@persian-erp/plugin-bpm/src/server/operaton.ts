@@ -147,6 +147,12 @@ export class OperatonEngine implements BpmEngine {
     }
   }
 
+  // Operaton keeps no message for later: it is delivered to an instance waiting now, or not at all. Correlating a
+  // message twice delivers it twice, so the outbox sends it again only when the first one was not delivered.
+  publishMessage(name: string, businessKey: string, variables: Variables = {}) {
+    return this.sendMessage(name, businessKey, variables);
+  }
+
   private definition(id: string) {
     if (!this.definitions.has(id)) {
       const row = this.call<Row>('GET', `/process-definition/${encodeURIComponent(id)}`);
