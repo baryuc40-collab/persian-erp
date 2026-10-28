@@ -2,7 +2,7 @@
 id: STORY-092
 epic: EPIC-021
 title: آداپتور Camunda 8 و انتقال اثبات مفهوم به آن
-status: in-review
+status: done
 model: opus
 ---
 
@@ -59,4 +59,4 @@ model: opus
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد
