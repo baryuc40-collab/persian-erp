@@ -2,9 +2,10 @@ import { Plugin } from '@nocobase/client-v2';
 import React from 'react';
 import { BPM_SETTINGS_KEY, BpmSettings } from '../client/BpmSettings';
 import { BpmTaskInboxBlockModel } from './TaskInboxBlockModel';
-import SendMessageInstruction, { MESSAGE_INSTRUCTION } from './SendMessageInstruction';
-import ServiceTaskTrigger, { SERVICE_TASK_TRIGGER } from './ServiceTaskTrigger';
-import StartProcessInstruction, { START_INSTRUCTION } from './StartProcessInstruction';
+
+const START_INSTRUCTION = 'bpm-start';
+const MESSAGE_INSTRUCTION = 'bpm-message';
+const SERVICE_TASK_TRIGGER = 'bpm-service-task';
 
 export class PluginBpmClientV2 extends Plugin {
   async load() {
@@ -28,9 +29,33 @@ export class PluginBpmClientV2 extends Plugin {
           registerTrigger?: (type: string, trigger: unknown) => void;
         }
       | undefined;
-    workflow?.registerInstruction?.(START_INSTRUCTION, StartProcessInstruction);
-    workflow?.registerInstruction?.(MESSAGE_INSTRUCTION, SendMessageInstruction);
-    workflow?.registerTrigger?.(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
+    if (workflow?.registerInstruction || workflow?.registerTrigger) {
+      // The node classes extend `Instruction`/`Trigger` from `@nocobase/plugin-workflow/client-v2`,
+      // which that package only provides once the app has finished loading its externals; importing
+      // them at module scope could run before then (seen in `yarn dev`) and crash the whole app with
+      // "Cannot read properties of undefined (reading 'Instruction')". Loading them here, after the
+      // app and its externals are up, avoids that race; if they still fail to load, skip them instead
+      // of taking the app down.
+      try {
+        const [
+          { default: StartProcessInstruction },
+          { default: SendMessageInstruction },
+          { default: ServiceTaskTrigger },
+        ] = await Promise.all([
+          import('./StartProcessInstruction'),
+          import('./SendMessageInstruction'),
+          import('./ServiceTaskTrigger'),
+        ]);
+        workflow.registerInstruction?.(START_INSTRUCTION, StartProcessInstruction);
+        workflow.registerInstruction?.(MESSAGE_INSTRUCTION, SendMessageInstruction);
+        workflow.registerTrigger?.(SERVICE_TASK_TRIGGER, ServiceTaskTrigger);
+      } catch (err) {
+        console.warn(
+          '[plugin-bpm] BPMN workflow nodes were skipped: @nocobase/plugin-workflow/client-v2 failed to load.',
+          err,
+        );
+      }
+    }
 
     // The task inbox block of modern pages (STORY-082).
     this.flowEngine.registerModels({ BpmTaskInboxBlockModel });
