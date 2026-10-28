@@ -54,9 +54,8 @@ const DEFAULTS: OutboxOptions = {
   leaseMs: 5 * 60 * 1000,
 };
 
-type Attempt =
-  | { ok: true; result: Record<string, unknown> }
-  | { ok: false; retry: boolean; error: unknown; message: string };
+// The answer when ok; else the error, its message in words, and whether it is worth waiting out.
+type Attempt = { ok: boolean; result?: Record<string, unknown>; retry?: boolean; error?: unknown; message?: string };
 
 /**
  * Failures worth waiting out: the engine away, slow or busy, its service user refused (fixed in the settings), no
@@ -169,6 +168,22 @@ export class BpmOutbox {
           }),
         },
       );
+      if (item.kind === 'start') {
+        // The instance in bpmInstances (STORY-095); a failure there does not undo the start.
+        await this.bpm.registry
+          .noteStarted({
+            processKey: item.processKey,
+            businessKey: item.businessKey,
+            instanceId: (result.instanceId as string) ?? null,
+            created: !!result.created,
+            userId: extra.userId,
+          })
+          .catch((error) =>
+            this.logger.warn(`bpm: the instance of ${item.businessKey} was not noted: ${error.message}`, {
+              module: 'bpm',
+            }),
+          );
+      }
       return { ok: true, result } as Attempt;
     } catch (error) {
       const message =

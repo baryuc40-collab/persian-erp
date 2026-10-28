@@ -1,4 +1,13 @@
-import { BpmEngine, BpmEngineError, FormField, ProcessDefinition, ServiceTask, UserTask, Variables } from './engine';
+import {
+  BpmEngine,
+  BpmEngineError,
+  FormField,
+  InstanceState,
+  ProcessDefinition,
+  ServiceTask,
+  UserTask,
+  Variables,
+} from './engine';
 import { EngineSettings, engineRequest } from './http';
 
 export type Camunda8Settings = EngineSettings;
@@ -11,6 +20,8 @@ const OPEN_TASK_STATES = ['CREATED', 'ASSIGNING', 'UPDATING'];
 // A task completed here stays hidden this long, so the inbox does not show it again in the meantime.
 const COMPLETED_HIDE_MS = 60 * 1000;
 const SEARCH_LIMIT = 1000;
+// Where an instance waits is a task or event inside it, not the process or a container around them.
+const CONTAINERS = ['PROCESS', 'SUB_PROCESS', 'EVENT_SUB_PROCESS', 'AD_HOC_SUB_PROCESS', 'MULTI_INSTANCE_BODY'];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -104,6 +115,20 @@ export class Camunda8Engine implements BpmEngine {
   private async search(path: string, body: Row): Promise<Row[]> {
     const result = await this.call<Row>('POST', path, { ...body, page: { limit: SEARCH_LIMIT, ...body.page } });
     return result?.items || [];
+  }
+
+  /** Every page of a search, up to `max` rows. */
+  private async searchAll(path: string, body: Row, max = 100 * SEARCH_LIMIT): Promise<Row[]> {
+    const rows: Row[] = [];
+    let after: string | undefined;
+    while (rows.length < max) {
+      const result = await this.call<Row>('POST', path, { ...body, page: { limit: SEARCH_LIMIT, after } });
+      const items: Row[] = result?.items || [];
+      rows.push(...items);
+      after = result?.page?.endCursor;
+      if (items.length < SEARCH_LIMIT || !after) break;
+    }
+    return rows;
   }
 
   async version() {
@@ -317,6 +342,71 @@ export class Camunda8Engine implements BpmEngine {
   }
 
   // Jobs are not bound to a worker for reports: any client may complete or fail an activated job.
+  async getInstance(instanceId: string): Promise<InstanceState | null> {
+    let row: Row;
+    try {
+      row = await this.call<Row>('GET', `/process-instances/${encodeURIComponent(instanceId)}`);
+    } catch (error) {
+      if (error instanceof BpmEngineError && error.status === 404) return null;
+      throw error;
+    }
+    const running = row.state === 'ACTIVE';
+    const [elements, tasks] = running
+      ? await Promise.all([
+          this.searchAll('/element-instances/search', { filter: { processInstanceKey: instanceId, state: 'ACTIVE' } }),
+          this.searchAll('/user-tasks/search', {
+            filter: { processInstanceKey: instanceId, state: { $in: OPEN_TASK_STATES } },
+          }),
+        ])
+      : [[], []];
+    let status: InstanceState['status'] = 'completed';
+    if (row.state === 'TERMINATED') status = 'canceled';
+    else if (running) status = row.hasIncident ? 'incident' : row.suspendedDate ? 'suspended' : 'active';
+    return {
+      instanceId: String(row.processInstanceKey),
+      processKey: row.processDefinitionId,
+      version: row.processDefinitionVersion ?? null,
+      businessKey: row.businessId ?? null,
+      status,
+      startedAt: row.startDate ?? null,
+      endedAt: row.endDate ?? null,
+      steps: elements
+        .filter((element) => !CONTAINERS.includes(element.type))
+        .map((element) => ({ id: element.elementId, name: element.elementName ?? null })),
+      tasks: tasks
+        .filter((task) => !this.hidden(String(task.userTaskKey)))
+        .map((task) => ({
+          id: String(task.userTaskKey),
+          name: task.name ?? null,
+          assignee: task.assignee ?? null,
+          candidateGroups: task.candidateGroups || [],
+          dueAt: task.dueDate ?? null,
+        })),
+    };
+  }
+
+  async changedInstances(processKeys: string[], since: Date) {
+    if (!processKeys.length) return [];
+    const after = { $gt: since.toISOString() };
+    const processes = { processDefinitionId: { $in: processKeys } };
+    const searches = await Promise.all([
+      this.searchAll('/process-instances/search', { filter: { ...processes, startDate: after } }),
+      this.searchAll('/process-instances/search', { filter: { ...processes, endDate: after } }),
+      this.searchAll('/user-tasks/search', { filter: { ...processes, creationDate: after } }),
+      this.searchAll('/user-tasks/search', { filter: { ...processes, completionDate: after } }),
+      this.searchAll('/incidents/search', { filter: { ...processes, creationTime: after } }),
+    ]);
+    return [...new Set(searches.flat().map((row) => String(row.processInstanceKey)))];
+  }
+
+  async activeInstances(processKeys: string[]) {
+    if (!processKeys.length) return [];
+    const rows = await this.searchAll('/process-instances/search', {
+      filter: { processDefinitionId: { $in: processKeys }, state: 'ACTIVE' },
+    });
+    return rows.map((row) => String(row.processInstanceKey));
+  }
+
   async completeServiceTask(workerId: string, taskId: string, variables: Variables = {}) {
     await this.call('POST', `/jobs/${encodeURIComponent(taskId)}/completion`, { variables });
   }
