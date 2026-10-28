@@ -2,7 +2,7 @@
 id: STORY-091
 epic: EPIC-021
 title: Camunda 8.10 در Compose و تنظیمات عملیاتی
-status: in-review
+status: done
 model: sonnet
 ---
 
@@ -60,4 +60,4 @@ model: sonnet
 ## تعریف انجام‌شده
 - [x] کد و آزمون در یک PR
 - [x] PR به این استوری لینک دارد
-- [ ] بازبینی شد و ادغام شد
+- [x] بازبینی شد و ادغام شد
