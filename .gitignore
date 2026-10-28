@@ -33,3 +33,4 @@ dist/
 tsconfig.paths.json
 /docker/plugin-fa.tgz
 /docker/plugin-modules.tgz
+/docker/plugin-bpm.tgz

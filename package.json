@@ -21,7 +21,7 @@
     "tar": "nocobase-v1 tar",
     "postinstall": "nocobase-v1 postinstall",
     "lint": "eslint .",
-    "check:version": "node tools/check-nocobase-version.js",
+    "check:version": "node tools/check-nocobase-version.js && node tools/check-camunda-version",
     "check:glossary": "node tools/check-glossary.js",
     "check:i18n": "node tools/glossary-check packages/plugins/@persian-erp",
     "check:module": "node tools/check-module",

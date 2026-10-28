@@ -2,6 +2,7 @@
 # Run: cp .env.example .env, set the passwords and APP_KEY, then docker compose up -d
 # Address: http://<server>:${HTTP_PORT}
 # For development from source use docker-compose.yml in the repository root instead.
+# The process engine Camunda 8 is optional: set COMPOSE_PROFILES=bpm in .env (docs/install/README.md).
 
 services:
   app:
@@ -12,6 +13,11 @@ services:
       DB_DIALECT: postgres
       DB_HOST: postgres
       DB_PORT: 5432
+      # The engine plugin-bpm connects to until its settings page is saved.
+      BPM_ENGINE: ${BPM_ENGINE:-camunda8}
+      BPM_ENGINE_URL: ${BPM_ENGINE_URL:-http://camunda:8080}
+      BPM_ENGINE_USERNAME: ${BPM_ENGINE_USERNAME:-nocobase}
+      BPM_ENGINE_PASSWORD: ${BPM_ENGINE_PASSWORD:-}
     volumes:
       - ./storage:/app/nocobase/storage
     ports:
@@ -36,3 +42,83 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  # Creates the database and user of the engine on the same PostgreSQL and gives the engine's folder to its user
+  # (1001). Runs before every start of the engine; it only adds what is missing and sets the password of .env.
+  # It stops the engine from starting while a password of .env is empty or still change-me.
+  camunda-init:
+    image: postgres:16
+    profiles: [bpm]
+    user: root
+    environment:
+      PGHOST: postgres
+      PGUSER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: ${DB_DATABASE}
+      CAMUNDA_DB_PASSWORD: ${CAMUNDA_DB_PASSWORD:-}
+      BPM_ENGINE_PASSWORD: ${BPM_ENGINE_PASSWORD:-}
+    volumes:
+      - ./storage/camunda:/camunda-data
+    entrypoint: ['sh', '-c']
+    command:
+      - |
+        set -eu
+        for name in CAMUNDA_DB_PASSWORD BPM_ENGINE_PASSWORD; do
+          value="$$(printenv "$$name" || true)"
+          if [ -z "$$value" ] || [ "$$value" = change-me ]; then echo "Set $$name in .env to a new password." >&2; exit 1; fi
+        done
+        chown 1001:1001 /camunda-data
+        psql -v ON_ERROR_STOP=1 -v password="$$CAMUNDA_DB_PASSWORD" <<'SQL'
+        SELECT 'CREATE ROLE camunda LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'camunda') \gexec
+        SELECT format('ALTER ROLE camunda PASSWORD %L', :'password') \gexec
+        SELECT 'CREATE DATABASE camunda OWNER camunda' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'camunda') \gexec
+        REVOKE ALL ON DATABASE camunda FROM PUBLIC;
+        SQL
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Camunda 8 (decision 0008): Zeebe, Operate, Tasklist and the REST API in one container. Its history is in the
+  # camunda database, so no Elasticsearch. No port is published; only app reaches it, as http://camunda:8080.
+  # The Camunda License 1.0 allows non-production use only, unless CAMUNDA_LICENSE_KEY holds a license.
+  camunda:
+    image: camunda/camunda:8.10.7
+    profiles: [bpm]
+    restart: always
+    environment:
+      CAMUNDA_DATA_SECONDARYSTORAGE_TYPE: rdbms
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_URL: jdbc:postgresql://postgres:5432/camunda
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_USERNAME: camunda
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_PASSWORD: ${CAMUNDA_DB_PASSWORD:-}
+      # Finished instances are removed from the history after this long (ISO-8601).
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_HISTORY_DEFAULTHISTORYTTL: ${CAMUNDA_HISTORY_TTL:-P180D}
+      # One running instance per business key; a second start gets 409.
+      CAMUNDA_PROCESSINSTANCECREATION_BUSINESSIDUNIQUENESSENABLED: 'true'
+      CAMUNDA_SECURITY_AUTHENTICATION_METHOD: basic
+      CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI: 'false'
+      CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED: 'true'
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME: ${BPM_ENGINE_USERNAME:-nocobase}
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_PASSWORD: ${BPM_ENGINE_PASSWORD:-}
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_NAME: NocoBase
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_EMAIL: nocobase@example.com
+      CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_USERS_0: ${BPM_ENGINE_USERNAME:-nocobase}
+      CAMUNDA_LICENSE_KEY: ${CAMUNDA_LICENSE_KEY:-}
+      JAVA_TOOL_OPTIONS: -Xmx${CAMUNDA_HEAP:-2g}
+      TZ: ${TZ:-Asia/Tehran}
+    volumes:
+      - ./storage/camunda:/usr/local/camunda/data
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:9600/actuator/health/readiness']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: '5'
+    depends_on:
+      camunda-init:
+        condition: service_completed_successfully
