@@ -6,6 +6,8 @@ import { defineCollection } from '@nocobase/database';
 export default defineCollection({
   name: 'bpmSettings',
   fields: [
+    // camunda8 or operaton; empty in a row saved before the choice existed, which means operaton.
+    { type: 'string', name: 'engine' },
     { type: 'string', name: 'url' },
     { type: 'string', name: 'username' },
     { type: 'string', name: 'password', hidden: true },

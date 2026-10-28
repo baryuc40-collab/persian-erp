@@ -4,8 +4,9 @@ import path from 'path';
 import { Api, apiAs, enablePersian } from '../helpers';
 import { removeImportedModule } from '../modules/remove-module';
 
-// The purchase request of the BPMN proof of concept (STORY-083), end to end against a real Operaton: the «درخواست
-// خرید» module and the model bpmn/purchase-request.bpmn. A requester writes a request, sees no task and cannot decide
+// The purchase request of the BPMN proof of concept (STORY-083), end to end against a real engine: the «درخواست
+// خرید» module and the model bpmn/purchase-request.bpmn with its form on Camunda 8 (STORY-092), or
+// bpmn/operaton/purchase-request.bpmn on Operaton. A requester writes a request, sees no task and cannot decide
 // it; the purchase manager approves one request and rejects another in the Persian task inbox (STORY-082); the
 // service tasks of the process write «سفارش داده شد» and «ردشده» back on the requests (STORY-081).
 // Runs only where plugin-bpm and the engine are up (the "E2E (BPMN)" CI job sets BPM_E2E=1).
@@ -14,7 +15,12 @@ test.describe.configure({ mode: 'serial' });
 test.skip(!process.env.BPM_E2E, 'Needs plugin-bpm and a BPMN engine (BPM_E2E=1)');
 
 const FILE = path.resolve(__dirname, '../../modules/purchase/purchase.erp-module.json');
-const MODEL = path.resolve(__dirname, '../../bpmn/purchase-request.bpmn');
+const BPMN = path.resolve(__dirname, '../../bpmn');
+// The files of each engine, in the order they are deployed: a Camunda form before the model that links it.
+const MODELS: Record<string, string[]> = {
+  camunda8: ['purchase-approve.form', 'purchase-request.bpmn'],
+  operaton: ['operaton/purchase-request.bpmn'],
+};
 const COLLECTION = 'purchase_requests';
 const PASSWORD = 'Purchase-e2e-123';
 const REQUESTER = { email: 'requester@purchase.e2e', nickname: 'کارمند خرید', roles: ['purchase_requester'] };
@@ -28,7 +34,13 @@ const INBOX_TITLE = /^\s*کارتابل\s*$/;
 test.beforeAll(async ({ playwright, baseURL }) => {
   const api = await apiAs(playwright, baseURL as string);
   await enablePersian(api);
-  await api.call('bpm:deploy', { name: 'purchase-request.bpmn', content: fs.readFileSync(MODEL, 'utf8') });
+  const { engine } = await api.call('bpm:getSettings');
+  for (const file of MODELS[engine]) {
+    await api.call('bpm:deploy', {
+      name: path.basename(file),
+      content: fs.readFileSync(path.join(BPMN, file), 'utf8'),
+    });
+  }
   // A fresh install imports the file; a local rerun finds the module already there.
   if (!(await api.call(`erpModules:list?${query({ key: 'purchase' })}`)).length) {
     const result = await api.call('erpModules:import', JSON.parse(fs.readFileSync(FILE, 'utf8')));

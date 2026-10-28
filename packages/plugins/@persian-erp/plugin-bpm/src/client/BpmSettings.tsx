@@ -1,7 +1,7 @@
 // Settings > BPMN engine (STORY-079): the connection to the engine and the process models deployed to it.
 // The page only talks to the server through `api`, so the v1 and v2 clients both use it.
 
-import { Alert, App, Button, Card, Form, Input, Space, Table, Upload } from 'antd';
+import { Alert, App, Button, Card, Form, Input, Select, Space, Table, Upload } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 // @ts-ignore
@@ -14,6 +14,7 @@ export interface BpmApi {
 }
 
 export interface BpmSettingsValues {
+  engine: 'camunda8' | 'operaton';
   url: string;
   username: string;
   hasPassword: boolean;
@@ -41,6 +42,7 @@ export const BpmSettings = ({ api }: { api: BpmApi }) => {
   const [testing, setTesting] = useState(false);
   const [processes, setProcesses] = useState<ProcessDefinition[]>([]);
   const [processError, setProcessError] = useState('');
+  const engine = Form.useWatch('engine', form) || settings?.engine || 'camunda8';
 
   const loadProcesses = useCallback(async () => {
     try {
@@ -55,7 +57,12 @@ export const BpmSettings = ({ api }: { api: BpmApi }) => {
 
   const show = (values: BpmSettingsValues) => {
     setSettings(values);
-    form.setFieldsValue({ url: values.url, username: values.username, password: '' });
+    form.setFieldsValue({
+      engine: values.engine || 'camunda8',
+      url: values.url,
+      username: values.username,
+      password: '',
+    });
   };
 
   useEffect(() => {
@@ -100,7 +107,9 @@ export const BpmSettings = ({ api }: { api: BpmApi }) => {
         data: { name: file.name, content: await file.text() },
       });
       const keys = (data?.data?.processes || []).map((p: ProcessDefinition) => p.key).join('، ');
-      message.success(keys ? t('Deployed: {{keys}}', { keys }) : t('The model has not changed'));
+      if (keys) message.success(t('Deployed: {{keys}}', { keys }));
+      else if (/\.form$/i.test(file.name)) message.success(t('The form is deployed'));
+      else message.success(t('The model has not changed'));
       await loadProcesses();
     } catch (error) {
       message.error(errorMessage(error));
@@ -120,10 +129,22 @@ export const BpmSettings = ({ api }: { api: BpmApi }) => {
           />
         )}
         <Form form={form} layout="vertical" style={{ maxWidth: 520 }}>
+          <Form.Item name="engine" label={t('Engine')} initialValue="camunda8">
+            <Select
+              options={[
+                { value: 'camunda8', label: 'Camunda 8' },
+                { value: 'operaton', label: 'Operaton' },
+              ]}
+            />
+          </Form.Item>
           <Form.Item
             name="url"
             label={t('Engine address')}
-            extra={t('For example http://operaton:8080, without /engine-rest')}
+            extra={
+              engine === 'operaton'
+                ? t('For example http://operaton:8080, without /engine-rest')
+                : t('For example http://camunda:8080, without /v2')
+            }
             rules={[{ required: true, message: t('Enter the engine address') }]}
           >
             <Input dir="ltr" />
@@ -152,8 +173,15 @@ export const BpmSettings = ({ api }: { api: BpmApi }) => {
         title={t('Process models')}
         bordered={false}
         extra={
-          <Upload accept=".bpmn" showUploadList={false} beforeUpload={deploy} disabled={!settings?.url}>
-            <Button disabled={!settings?.url}>{t('Deploy a BPMN file')}</Button>
+          <Upload
+            accept={settings?.engine === 'operaton' ? '.bpmn' : '.bpmn,.form'}
+            showUploadList={false}
+            beforeUpload={deploy}
+            disabled={!settings?.url}
+          >
+            <Button disabled={!settings?.url}>
+              {settings?.engine === 'operaton' ? t('Deploy a BPMN file') : t('Deploy a BPMN or form file')}
+            </Button>
           </Upload>
         }
       >

@@ -8,7 +8,7 @@
 
 | قطعه | استوری | جا |
 | --- | --- | --- |
-| تصمیم موتور، مدل نمونه | STORY-078 | [تصمیم ۰۰۰۷](../decisions/0007-bpmn-engine.md)، [`bpmn/purchase-request.bpmn`](../../bpmn/purchase-request.bpmn) |
+| تصمیم موتور، مدل نمونه | STORY-078 | [تصمیم ۰۰۰۷](../decisions/0007-bpmn-engine.md)، [`bpmn/purchase-request.bpmn`](../../bpmn/operaton/purchase-request.bpmn) |
 | پلاگین، تنظیمات اتصال، استقرار مدل | STORY-079 | `packages/plugins/@persian-erp/plugin-bpm` |
 | نود گردش‌کار «شروع فرایند BPMN» | STORY-080 | `src/server/start-instruction.ts` |
 | رویداد «کار سرویس BPMN» و Worker | STORY-081 | `src/server/worker.ts` |

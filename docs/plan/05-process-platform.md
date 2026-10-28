@@ -122,7 +122,7 @@ ProcessMaker مجوز AGPL دارد و ویرایشگرش bpmn-js نیست. پس
   - «استقرار نسخه‌ی تازه» مدل را با `POST /v2/deployments` به موتور می‌دهد. موتور فایل یکسان با همان نام را نسخه‌ی تازه حساب نمی‌کند، ولی همان فایل با نام دیگر نسخه‌ی تازه می‌سازد (آزموده روی 8.10.7). پس نام فایل هر فرایند ثابت است: `<processId>.bpmn`.
   - نمونه‌های باز روی نسخه‌ی خودشان می‌مانند تا مدیر آن‌ها را منتقل کند.
   - هر استقرار با نام کاربر و زمان در لاگ می‌ماند.
-- **نمودار همیشه DI دارد.** فایل BPMN بدون بخش نقشه (BPMN DI) در هیچ نمایشگری دیده نمی‌شود. مدل فعلی [`bpmn/purchase-request.bpmn`](../../bpmn/purchase-request.bpmn) DI ندارد. نسخه‌ی Camunda 8 آن با DI در [`docs/bpm/camunda8-purchase-request.bpmn`](../bpm/camunda8-purchase-request.bpmn) است و در Operate درست دیده شد (بخش ۷).
+- **نمودار همیشه DI دارد.** فایل BPMN بدون بخش نقشه (BPMN DI) در هیچ نمایشگری دیده نمی‌شود. مدل Operaton [`bpmn/operaton/purchase-request.bpmn`](../../bpmn/operaton/purchase-request.bpmn) DI ندارد. نسخه‌ی Camunda 8 آن با DI در [`bpmn/purchase-request.bpmn`](../../bpmn/purchase-request.bpmn) است و در Operate درست دیده شد (بخش ۷).
 - **فرایند در ماژول ERP:**
   - قالب ماژول ([تصمیم ۰۰۰۵](../decisions/0005-erp-module-format.md)) مدل BPMN یا گردش‌کار فرایند را هم با خودش می‌برد.
   - ورود ماژول فرایند را مستقر می‌کند.

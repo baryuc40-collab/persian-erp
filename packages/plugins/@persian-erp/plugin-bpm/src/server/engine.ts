@@ -1,5 +1,10 @@
-// The engine interface of decision 0007, section 3. The plugin talks to a BPMN engine only through it, so another
-// engine needs another adapter and nothing else.
+// The engine interface of decision 0007, section 3, and decision 0008, section 4. The plugin talks to a BPMN engine
+// only through it, so another engine needs another adapter and nothing else. IDs are text: the keys of Camunda 8 are
+// 64-bit numbers.
+
+/** The engines with an adapter: Camunda 8 (camunda8.ts) and Operaton (operaton.ts). */
+export const ENGINES = ['camunda8', 'operaton'] as const;
+export type EngineKind = typeof ENGINES[number];
 
 /** Simple values only: text, numbers, booleans, and dates as ISO strings in UTC. */
 export type Variables = Record<string, string | number | boolean | null>;
@@ -27,7 +32,7 @@ export interface UserTask {
   created: string;
 }
 
-/** A field of a user task's form, as the model declares it (operaton:formField). */
+/** A field of a user task's form, as the model declares it (operaton:formField, or a linked Camunda form). */
 export interface FormField {
   id: string;
   label: string | null;
@@ -56,13 +61,17 @@ export interface BpmEngine {
   ): Promise<{ id: string; processes: ProcessDefinition[] }>;
   /** The latest version of each process. */
   listProcesses(): Promise<ProcessDefinition[]>;
-  /** Starts a process for a business key, or returns the instance already running for it. */
+  /**
+   * Starts a process for a business key, or returns the instance already running for it. The instance ID is null when
+   * the engine refused a second instance but does not list the first one yet.
+   */
   start(
     processKey: string,
     businessKey: string,
     variables?: Variables,
-  ): Promise<{ instanceId: string; created: boolean }>;
-  sendMessage(name: string, businessKey: string, variables?: Variables): Promise<void>;
+  ): Promise<{ instanceId: string | null; created: boolean }>;
+  /** Correlates a message to the instance of a business key that waits for it; `delivered` is false when none does. */
+  sendMessage(name: string, businessKey: string, variables?: Variables): Promise<{ delivered: boolean }>;
   listUserTasks(filter: { candidateGroups?: string[]; assignee?: string; businessKey?: string }): Promise<UserTask[]>;
   getUserTask(taskId: string): Promise<UserTask | null>;
   /** The form fields of the task in its model; none when the model declares no form. */
@@ -79,6 +88,9 @@ export interface BpmEngine {
 
 /** An engine error with a message the plugin translates; `values` fill its placeholders. */
 export class BpmEngineError extends Error {
+  /** The engine's own error code, such as ALREADY_EXISTS or NOT_FOUND of Camunda 8. */
+  code?: string;
+
   constructor(message: string, public values: Record<string, unknown> = {}, public status?: number) {
     super(message);
   }

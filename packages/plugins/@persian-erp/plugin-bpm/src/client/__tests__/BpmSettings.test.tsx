@@ -18,7 +18,15 @@ describe('Settings > BPMN engine', () => {
       request: vi.fn(async ({ url }) => {
         if (url === 'bpm:getSettings') {
           return {
-            data: { data: { url: 'http://operaton:8080', username: 'nocobase', hasPassword: true, fromEnv: false } },
+            data: {
+              data: {
+                engine: 'operaton',
+                url: 'http://operaton:8080',
+                username: 'nocobase',
+                hasPassword: true,
+                fromEnv: false,
+              },
+            },
           };
         }
         if (url === 'bpm:processes') {
@@ -31,6 +39,9 @@ describe('Settings > BPMN engine', () => {
     expect(await screen.findByText('purchase_request')).toBeTruthy();
     expect(screen.getByText('درخواست خرید')).toBeTruthy();
     expect((screen.getByLabelText('Engine address') as HTMLInputElement).value).toBe('http://operaton:8080');
+    expect(screen.getByText('Operaton')).toBeTruthy();
+    expect(screen.getByText('For example http://operaton:8080, without /engine-rest')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Deploy a BPMN file' })).toBeTruthy();
     expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
     expect(screen.getByText('Leave empty to keep the saved password')).toBeTruthy();
     expect(screen.queryByText(/comes from the server environment/)).toBeNull();
@@ -41,7 +52,7 @@ describe('Settings > BPMN engine', () => {
       request: vi.fn(async ({ url, data }) => {
         if (url === 'bpm:getSettings') {
           return {
-            data: { data: { url: 'http://operaton:8080', username: 'nocobase', hasPassword: true, fromEnv: true } },
+            data: { data: { url: 'http://camunda:8080', username: 'nocobase', hasPassword: true, fromEnv: true } },
           };
         }
         if (url === 'bpm:saveSettings') return { data: { data: { ...data, hasPassword: true, fromEnv: false } } };
@@ -57,7 +68,7 @@ describe('Settings > BPMN engine', () => {
       expect(api.request).toHaveBeenCalledWith({
         url: 'bpm:saveSettings',
         method: 'post',
-        data: { url: 'http://bpm.local:8080', username: 'nocobase', password: '' },
+        data: { engine: 'camunda8', url: 'http://bpm.local:8080', username: 'nocobase', password: '' },
       }),
     );
     await waitFor(() => expect(screen.queryByText(/comes from the server environment/)).toBeNull());

@@ -3,7 +3,7 @@ import { Trigger } from '@nocobase/plugin-workflow';
 export const SERVICE_TASK_TRIGGER = 'bpm-service-task';
 
 export interface ServiceTaskTriggerConfig {
-  /** The topic of the external service tasks in the BPMN model (operaton:topic). */
+  /** The service task type in the BPMN model: the type of zeebe:taskDefinition, or operaton:topic in Operaton. */
   topic?: string;
 }
 
