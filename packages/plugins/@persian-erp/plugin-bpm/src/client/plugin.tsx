@@ -4,6 +4,7 @@ import React from 'react';
 import pkg from '../../package.json';
 import { BpmTaskInboxBlockModel } from '../client-v2/TaskInboxBlockModel';
 import { BPM_SETTINGS_KEY, BpmSettings } from './BpmSettings';
+import { MonitorPage } from './MonitorPage';
 
 const START_INSTRUCTION = 'bpm-start';
 const MESSAGE_INSTRUCTION = 'bpm-message';
@@ -15,6 +16,12 @@ export class PluginBpmClient extends Plugin {
       icon: 'ApartmentOutlined',
       title: `{{t("BPMN engine", { ns: "${pkg.name}" })}}`,
       Component: () => <BpmSettings api={this.app.apiClient} />,
+      aclSnippet: 'pm.bpm',
+    });
+    // The monitoring and alerts page (STORY-099), nested under the same settings entry.
+    this.app.pluginSettingsManager.add(`${BPM_SETTINGS_KEY}.monitor`, {
+      title: `{{t("Monitoring and alerts", { ns: "${pkg.name}" })}}`,
+      Component: () => <MonitorPage api={this.app.apiClient} />,
       aclSnippet: 'pm.bpm',
     });
 
