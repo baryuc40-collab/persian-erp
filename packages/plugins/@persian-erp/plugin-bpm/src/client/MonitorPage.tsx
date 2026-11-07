@@ -112,7 +112,8 @@ const bytesText = (bytes: number | null) => {
     value /= 1024;
     unit++;
   }
-  return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+  const digits = value >= 10 || unit === 0 ? 0 : 1;
+  return `${Number(value.toFixed(digits))} ${units[unit]}`;
 };
 
 export const MonitorPage = ({ api }: { api: MonitorApi }) => {
