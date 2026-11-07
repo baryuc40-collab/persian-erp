@@ -1,6 +1,7 @@
 import { Plugin } from '@nocobase/client-v2';
 import React from 'react';
 import { BPM_SETTINGS_KEY, BpmSettings } from '../client/BpmSettings';
+import { MonitorPage } from '../client/MonitorPage';
 import { BpmTaskInboxBlockModel } from './TaskInboxBlockModel';
 
 const START_INSTRUCTION = 'bpm-start';
@@ -21,6 +22,13 @@ export class PluginBpmClientV2 extends Plugin {
       key: 'index',
       title,
       Component: () => <BpmSettings api={this.app.apiClient} />,
+    });
+    // The monitoring and alerts page (STORY-099), as a second tab of the same settings entry.
+    this.pluginSettingsManager.addPageTabItem({
+      menuKey: BPM_SETTINGS_KEY,
+      key: 'monitor',
+      title: this.t('Monitoring and alerts'),
+      Component: () => <MonitorPage api={this.app.apiClient} />,
     });
 
     const workflow = (this.app.pm.get('workflow') || this.app.pm.get('@nocobase/plugin-workflow')) as
