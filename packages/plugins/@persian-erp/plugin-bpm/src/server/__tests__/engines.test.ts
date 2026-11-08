@@ -90,7 +90,7 @@ const CASES: EngineCase[] = [
     },
     // The management port 9600 is published apart from the API, e.g. as localhost:18096 in CI.
     create: (settings) => new Camunda8Engine({ ...settings, healthUrl: process.env.CAMUNDA_HEALTH_URL }),
-    files: [read('purchase-request.bpmn'), read('purchase-approve.form')],
+    files: [read('purchase-request.bpmn'), read('purchase-approve.form'), read('purchase-approve-finance.form')],
     eventual: true,
     workerOwnsLock: false,
     keepsMessages: true,
@@ -165,10 +165,10 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
   });
 
   it('runs the purchase request: approval by the group, then the service task', async () => {
-    const started = await engine.start('purchase_request', key(1), { recordId: 1 });
+    const started = await engine.start('purchase_request', key(1), { recordId: 1, needsFinance: false });
     expect(started).toMatchObject({ created: true, instanceId: expect.any(String) });
     // The same business key again gives the running instance back.
-    expect(await engine.start('purchase_request', key(1), { recordId: 1 })).toEqual({
+    expect(await engine.start('purchase_request', key(1), { recordId: 1, needsFinance: false })).toEqual({
       instanceId: started.instanceId,
       created: false,
     });
@@ -230,7 +230,7 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
     await engine.completeServiceTask('test-worker', again.id, { orderNumber: 'PO-1' });
     // The instance is done, so the key starts a new one.
     const next = await later(async () => {
-      const result = await engine.start('purchase_request', key(1));
+      const result = await engine.start('purchase_request', key(1), { needsFinance: false });
       expect(result.created).toBe(true);
       return result;
     });
@@ -254,7 +254,7 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
   }, 120000);
 
   it('locks a service task to one worker, and makes an incident after the last retry', async () => {
-    await engine.start('purchase_request', key(3), { recordId: 3 });
+    await engine.start('purchase_request', key(3), { recordId: 3, needsFinance: false });
     const task = await openTask(key(3));
     await engine.completeUserTask(task.id, { approved: true });
     const topics = [{ name: 'place-order', lockMs: 60000 }];
@@ -279,7 +279,7 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
   }, 120000);
 
   it('lists an incident and tries it again, which resolves it (STORY-099)', async () => {
-    await engine.start('purchase_request', key(6), { recordId: 6 });
+    await engine.start('purchase_request', key(6), { recordId: 6, needsFinance: false });
     const task = await openTask(key(6));
     await engine.completeUserTask(task.id, { approved: true });
     const topics = [{ name: 'place-order', lockMs: 60000 }];
@@ -333,7 +333,7 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
 
   it('reads an instance: where it waits, its tasks, and whether the searches have it (STORY-095)', async () => {
     const since = new Date(Date.now() - 60000);
-    const { instanceId } = await engine.start('purchase_request', key(6), { recordId: 6, amount: 10 });
+    const { instanceId } = await engine.start('purchase_request', key(6), { recordId: 6, amount: 10, needsFinance: false });
     const state = await later(async () => {
       const found = await engine.getInstance(instanceId);
       expect(found).toMatchObject({
@@ -378,5 +378,127 @@ describe.each(GIVEN)('BpmEngine contract: $name', (engineCase) => {
     const task = await openTask(key(5));
     expect(task).toMatchObject({ taskKey: 'check', processKey: 'bpm_message_contract' });
     await engine.completeUserTask(task.id, {});
+  }, 60000);
+
+  it('runs the two-tier purchase request: finance approval too, then the service task (STORY-107)', async () => {
+    await engine.start('purchase_request', key(7), { recordId: 7, needsFinance: true });
+    const managerTask = await openTask(key(7));
+    expect(managerTask).toMatchObject({ taskKey: 'approve', candidateGroups: ['purchase_manager'] });
+    await engine.completeUserTask(managerTask.id, { approved: true });
+
+    const financeTask = await later(async () => {
+      const [found] = await engine.listUserTasks({ candidateGroups: ['purchase_finance'], businessKey: key(7) });
+      expect(found).toBeTruthy();
+      return found;
+    });
+    expect(financeTask).toMatchObject({
+      name: 'تأیید مالی',
+      taskKey: 'approveFinance',
+      candidateGroups: ['purchase_finance'],
+      businessKey: key(7),
+    });
+    expect(await engine.getTaskForm(financeTask)).toEqual([
+      {
+        id: 'approved',
+        label: 'درخواست تأیید می‌شود؟',
+        type: 'boolean',
+        required: true,
+        defaultValue: null,
+        options: [],
+      },
+      { id: 'financeNote', label: 'یادداشت مالی', type: 'string', required: false, defaultValue: null, options: [] },
+    ]);
+
+    // Not ready for the order yet: still waiting on finance.
+    const topics = [{ name: 'place-order', lockMs: 1000 }];
+    expect(
+      (await engine.fetchServiceTasks('test-worker', topics, 10)).filter((t) => t.businessKey === key(7)),
+    ).toEqual([]);
+
+    await engine.completeUserTask(financeTask.id, { approved: true });
+    const order = await later(async () => {
+      const found = (await engine.fetchServiceTasks('test-worker', topics, 10)).find((t) => t.businessKey === key(7));
+      expect(found).toBeTruthy();
+      return found;
+    });
+    expect(order).toMatchObject({
+      topic: 'place-order',
+      variables: { recordId: 7, needsFinance: true, approved: true },
+    });
+  }, 120000);
+
+  it('sends a two-tier request that finance rejects to the reject task, not the order (STORY-107)', async () => {
+    await engine.start('purchase_request', key(8), { recordId: 8, needsFinance: true });
+    const managerTask = await openTask(key(8));
+    await engine.completeUserTask(managerTask.id, { approved: true });
+    const financeTask = await later(async () => {
+      const [found] = await engine.listUserTasks({ candidateGroups: ['purchase_finance'], businessKey: key(8) });
+      expect(found).toBeTruthy();
+      return found;
+    });
+    await engine.completeUserTask(financeTask.id, { approved: false });
+    const topics = [
+      { name: 'place-order', lockMs: 1000 },
+      { name: 'reject-request', lockMs: 1000 },
+    ];
+    const fetched = await later(async () => {
+      const mine = (await engine.fetchServiceTasks('test-worker', topics, 10)).filter((t) => t.businessKey === key(8));
+      expect(mine.length).toBeGreaterThan(0);
+      return mine;
+    });
+    expect(fetched.map((t) => t.topic)).toEqual(['reject-request']);
+  }, 120000);
+
+  it('cancels a purchase request the requester asked to cancel while it waits for the manager (STORY-107)', async () => {
+    const started = await engine.start('purchase_request', key(9), { recordId: 9, needsFinance: false });
+    const task = await openTask(key(9));
+    expect(await engine.sendMessage('purchase_request_cancel', key(9))).toEqual({ delivered: true });
+    await later(async () => {
+      expect(await engine.getUserTask(task.id)).toBeNull();
+    });
+    const topics = [{ name: 'cancel-request', lockMs: 1000 }];
+    const canceled = await later(async () => {
+      const found = (await engine.fetchServiceTasks('test-worker', topics, 10)).find((t) => t.businessKey === key(9));
+      expect(found).toBeTruthy();
+      return found;
+    });
+    expect(canceled).toMatchObject({ topic: 'cancel-request', processInstanceId: started.instanceId });
+  }, 120000);
+
+  it('cancels a purchase request the requester asked to cancel while it waits for finance (STORY-107)', async () => {
+    await engine.start('purchase_request', key(10), { recordId: 10, needsFinance: true });
+    const managerTask = await openTask(key(10));
+    await engine.completeUserTask(managerTask.id, { approved: true });
+    const financeTask = await later(async () => {
+      const [found] = await engine.listUserTasks({ candidateGroups: ['purchase_finance'], businessKey: key(10) });
+      expect(found).toBeTruthy();
+      return found;
+    });
+    expect(await engine.sendMessage('purchase_request_cancel', key(10))).toEqual({ delivered: true });
+    await later(async () => {
+      expect(await engine.getUserTask(financeTask.id)).toBeNull();
+    });
+    const topics = [{ name: 'cancel-request', lockMs: 1000 }];
+    const canceled = await later(async () => {
+      const found = (await engine.fetchServiceTasks('test-worker', topics, 10)).find((t) => t.businessKey === key(10));
+      expect(found).toBeTruthy();
+      return found;
+    });
+    expect(canceled).toMatchObject({ topic: 'cancel-request' });
+  }, 120000);
+
+  // Operaton's model has no due date on its approval tasks (documented limitation, decision left open in STORY-107).
+  it.runIf(engineCase.name === 'Camunda 8')('schedules a due date on the manager approval task (STORY-107)', async () => {
+    const { instanceId } = await engine.start('purchase_request', key(11), { recordId: 11, needsFinance: false });
+    const state = await later(async () => {
+      const found = await engine.getInstance(instanceId);
+      expect(found.tasks.length).toBeGreaterThan(0);
+      return found;
+    });
+    const dueAt = state.tasks[0].dueAt;
+    expect(dueAt).not.toBeNull();
+    const hours = (new Date(dueAt).getTime() - Date.now()) / (3600 * 1000);
+    expect(hours).toBeGreaterThan(40);
+    expect(hours).toBeLessThan(56);
   }, 60000);
 });

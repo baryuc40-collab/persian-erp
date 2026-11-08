@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" targetNamespace="https://persian-erp.example/bpmn" id="defs">
+  <bpmn:message id="msgCancel" name="purchase_request_cancel"><bpmn:extensionElements><zeebe:subscription correlationKey="=businessKey" /></bpmn:extensionElements></bpmn:message>
   <bpmn:process id="purchase_request" name="درخواست خرید" isExecutable="true">
     <bpmn:startEvent id="start" name="ثبت درخواست" />
     <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="approve" />
@@ -8,12 +9,36 @@
         <zeebe:userTask />
         <zeebe:formDefinition formId="purchase-approve" />
         <zeebe:assignmentDefinition candidateGroups="purchase_manager" />
+        <zeebe:taskSchedule dueDate='=now() + duration("P2D")' />
       </bpmn:extensionElements>
     </bpmn:userTask>
+    <bpmn:boundaryEvent id="cancelBoundary1" name="لغو توسط درخواست‌دهنده" attachedToRef="approve">
+      <bpmn:messageEventDefinition messageRef="msgCancel" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="cancelFlow1" sourceRef="cancelBoundary1" targetRef="cancel" />
     <bpmn:sequenceFlow id="f2" sourceRef="approve" targetRef="gw" />
     <bpmn:exclusiveGateway id="gw" name="تأیید شد؟" />
-    <bpmn:sequenceFlow id="yes" name="بله" sourceRef="gw" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=approved = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="yes" name="بله" sourceRef="gw" targetRef="gwFinance"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=approved = true</bpmn:conditionExpression></bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="no" name="خیر" sourceRef="gw" targetRef="reject"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=approved = false</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="gwFinance" name="نیاز به تأیید مالی؟" />
+    <bpmn:sequenceFlow id="needsFinance" name="بله" sourceRef="gwFinance" targetRef="approveFinance"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=needsFinance = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="skipFinance" name="خیر" sourceRef="gwFinance" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=needsFinance = false</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:userTask id="approveFinance" name="تأیید مالی">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="purchase-approve-finance" />
+        <zeebe:assignmentDefinition candidateGroups="purchase_finance" />
+        <zeebe:taskSchedule dueDate='=now() + duration("P2D")' />
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="cancelBoundary2" name="لغو توسط درخواست‌دهنده" attachedToRef="approveFinance">
+      <bpmn:messageEventDefinition messageRef="msgCancel" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="cancelFlow2" sourceRef="cancelBoundary2" targetRef="cancel" />
+    <bpmn:sequenceFlow id="f5" sourceRef="approveFinance" targetRef="gwFinanceDecision" />
+    <bpmn:exclusiveGateway id="gwFinanceDecision" name="تأیید شد؟" />
+    <bpmn:sequenceFlow id="yes2" name="بله" sourceRef="gwFinanceDecision" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=approved = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="no2" name="خیر" sourceRef="gwFinanceDecision" targetRef="reject"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=approved = false</bpmn:conditionExpression></bpmn:sequenceFlow>
     <bpmn:serviceTask id="order" name="ثبت سفارش">
       <bpmn:extensionElements><zeebe:taskDefinition type="place-order" retries="3" /></bpmn:extensionElements>
     </bpmn:serviceTask>
@@ -24,20 +49,40 @@
     </bpmn:serviceTask>
     <bpmn:sequenceFlow id="f4" sourceRef="reject" targetRef="rejected" />
     <bpmn:endEvent id="rejected" name="رد شد" />
+    <bpmn:serviceTask id="cancel" name="ثبت لغو">
+      <bpmn:extensionElements><zeebe:taskDefinition type="cancel-request" retries="3" /></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="f6" sourceRef="cancel" targetRef="canceled" />
+    <bpmn:endEvent id="canceled" name="لغو شد" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="d1"><bpmndi:BPMNPlane id="p1" bpmnElement="purchase_request">
     <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="150" y="180" width="36" height="36" /></bpmndi:BPMNShape>
     <bpmndi:BPMNShape id="approve_di" bpmnElement="approve"><dc:Bounds x="240" y="158" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="cancelBoundary1_di" bpmnElement="cancelBoundary1"><dc:Bounds x="272" y="220" width="36" height="36" /></bpmndi:BPMNShape>
     <bpmndi:BPMNShape id="gw_di" bpmnElement="gw" isMarkerVisible="true"><dc:Bounds x="400" y="173" width="50" height="50" /></bpmndi:BPMNShape>
-    <bpmndi:BPMNShape id="order_di" bpmnElement="order"><dc:Bounds x="510" y="80" width="100" height="80" /></bpmndi:BPMNShape>
-    <bpmndi:BPMNShape id="done_di" bpmnElement="done"><dc:Bounds x="672" y="102" width="36" height="36" /></bpmndi:BPMNShape>
-    <bpmndi:BPMNShape id="reject_di" bpmnElement="reject"><dc:Bounds x="510" y="240" width="100" height="80" /></bpmndi:BPMNShape>
-    <bpmndi:BPMNShape id="rejected_di" bpmnElement="rejected"><dc:Bounds x="672" y="262" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="gwFinance_di" bpmnElement="gwFinance" isMarkerVisible="true"><dc:Bounds x="510" y="173" width="50" height="50" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="approveFinance_di" bpmnElement="approveFinance"><dc:Bounds x="620" y="158" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="cancelBoundary2_di" bpmnElement="cancelBoundary2"><dc:Bounds x="652" y="220" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="gwFinanceDecision_di" bpmnElement="gwFinanceDecision" isMarkerVisible="true"><dc:Bounds x="780" y="173" width="50" height="50" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="order_di" bpmnElement="order"><dc:Bounds x="900" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="done_di" bpmnElement="done"><dc:Bounds x="1062" y="102" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="reject_di" bpmnElement="reject"><dc:Bounds x="700" y="290" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="rejected_di" bpmnElement="rejected"><dc:Bounds x="862" y="312" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="cancel_di" bpmnElement="cancel"><dc:Bounds x="670" y="420" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="canceled_di" bpmnElement="canceled"><dc:Bounds x="852" y="442" width="36" height="36" /></bpmndi:BPMNShape>
     <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="186" y="198" /><di:waypoint x="240" y="198" /></bpmndi:BPMNEdge>
     <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="340" y="198" /><di:waypoint x="400" y="198" /></bpmndi:BPMNEdge>
-    <bpmndi:BPMNEdge id="yes_di" bpmnElement="yes"><di:waypoint x="425" y="173" /><di:waypoint x="425" y="120" /><di:waypoint x="510" y="120" /></bpmndi:BPMNEdge>
-    <bpmndi:BPMNEdge id="no_di" bpmnElement="no"><di:waypoint x="425" y="223" /><di:waypoint x="425" y="280" /><di:waypoint x="510" y="280" /></bpmndi:BPMNEdge>
-    <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="610" y="120" /><di:waypoint x="672" y="120" /></bpmndi:BPMNEdge>
-    <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="610" y="280" /><di:waypoint x="672" y="280" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="yes_di" bpmnElement="yes"><di:waypoint x="450" y="198" /><di:waypoint x="510" y="198" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="no_di" bpmnElement="no"><di:waypoint x="425" y="223" /><di:waypoint x="425" y="330" /><di:waypoint x="700" y="330" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="needsFinance_di" bpmnElement="needsFinance"><di:waypoint x="560" y="198" /><di:waypoint x="620" y="198" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="skipFinance_di" bpmnElement="skipFinance"><di:waypoint x="535" y="173" /><di:waypoint x="535" y="120" /><di:waypoint x="900" y="120" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="720" y="198" /><di:waypoint x="780" y="198" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="yes2_di" bpmnElement="yes2"><di:waypoint x="805" y="173" /><di:waypoint x="805" y="120" /><di:waypoint x="900" y="120" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="no2_di" bpmnElement="no2"><di:waypoint x="805" y="223" /><di:waypoint x="805" y="330" /><di:waypoint x="800" y="330" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="1000" y="120" /><di:waypoint x="1062" y="120" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="800" y="330" /><di:waypoint x="862" y="330" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="cancelFlow1_di" bpmnElement="cancelFlow1"><di:waypoint x="290" y="256" /><di:waypoint x="290" y="460" /><di:waypoint x="670" y="460" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="cancelFlow2_di" bpmnElement="cancelFlow2"><di:waypoint x="670" y="256" /><di:waypoint x="670" y="420" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="770" y="460" /><di:waypoint x="852" y="460" /></bpmndi:BPMNEdge>
   </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
 </bpmn:definitions>

@@ -64,3 +64,4 @@ owner: mmsh
 | [STORY-081](STORY-081-service-task-worker.md) | Worker کارهای سرویس روی مجموعه‌ها | in-review |
 | [STORY-082](STORY-082-task-inbox.md) | کارتابل فارسی | in-review |
 | [STORY-083](STORY-083-purchase-request-poc.md) | فرایند نمونه‌ی «درخواست خرید» و بازبینی امنیت | in-review |
+| [STORY-107](STORY-107-purchase-request-two-tier-approval.md) | فرایند «درخواست خرید» حرفه‌ای‌تر؛ تأیید دومرحله‌ای، لغو، داده‌ی نمونه و راهنما | in-review |
