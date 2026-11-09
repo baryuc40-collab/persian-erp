@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="https://persian-erp.example/bpmn" id="defs">
+  <bpmn:message id="msgCancel" name="purchase_request_cancel" />
   <bpmn:process id="purchase_request" name="درخواست خرید" isExecutable="true" operaton:historyTimeToLive="180">
     <bpmn:startEvent id="start" />
     <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="approve" />
@@ -13,15 +14,43 @@
         </operaton:formData>
       </bpmn:extensionElements>
     </bpmn:userTask>
+    <bpmn:boundaryEvent id="cancelBoundary1" attachedToRef="approve">
+      <bpmn:messageEventDefinition messageRef="msgCancel" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="cancelFlow1" sourceRef="cancelBoundary1" targetRef="cancel" />
     <bpmn:sequenceFlow id="f2" sourceRef="approve" targetRef="gw" />
     <bpmn:exclusiveGateway id="gw" />
-    <bpmn:sequenceFlow id="yes" sourceRef="gw" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="yes" sourceRef="gw" targetRef="gwFinance"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="no" sourceRef="gw" targetRef="reject"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${!approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="gwFinance" />
+    <bpmn:sequenceFlow id="needsFinance" sourceRef="gwFinance" targetRef="approveFinance"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${needsFinance}</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="skipFinance" sourceRef="gwFinance" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${!needsFinance}</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:userTask id="approveFinance" name="تأیید مالی" operaton:candidateGroups="purchase_finance">
+      <bpmn:extensionElements>
+        <operaton:formData>
+          <operaton:formField id="approved" label="درخواست تأیید می‌شود؟" type="boolean">
+            <operaton:validation><operaton:constraint name="required" /></operaton:validation>
+          </operaton:formField>
+          <operaton:formField id="financeNote" label="یادداشت مالی" type="string" />
+        </operaton:formData>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="cancelBoundary2" attachedToRef="approveFinance">
+      <bpmn:messageEventDefinition messageRef="msgCancel" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="cancelFlow2" sourceRef="cancelBoundary2" targetRef="cancel" />
+    <bpmn:sequenceFlow id="f5" sourceRef="approveFinance" targetRef="gwFinanceDecision" />
+    <bpmn:exclusiveGateway id="gwFinanceDecision" />
+    <bpmn:sequenceFlow id="yes2" sourceRef="gwFinanceDecision" targetRef="order"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="no2" sourceRef="gwFinanceDecision" targetRef="reject"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${!approved}</bpmn:conditionExpression></bpmn:sequenceFlow>
     <bpmn:serviceTask id="order" name="ثبت سفارش" operaton:type="external" operaton:topic="place-order" />
     <bpmn:sequenceFlow id="f3" sourceRef="order" targetRef="done" />
     <bpmn:endEvent id="done" />
     <bpmn:serviceTask id="reject" name="ثبت رد" operaton:type="external" operaton:topic="reject-request" />
     <bpmn:sequenceFlow id="f4" sourceRef="reject" targetRef="rejected" />
     <bpmn:endEvent id="rejected" />
+    <bpmn:serviceTask id="cancel" name="ثبت لغو" operaton:type="external" operaton:topic="cancel-request" />
+    <bpmn:sequenceFlow id="f6" sourceRef="cancel" targetRef="canceled" />
+    <bpmn:endEvent id="canceled" />
   </bpmn:process>
 </bpmn:definitions>

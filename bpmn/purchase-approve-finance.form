@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/@bpmn-io/form-json-schema/resources/schema.json",
+  "id": "purchase-approve-finance",
+  "type": "default",
+  "schemaVersion": 16,
+  "components": [
+    {
+      "type": "checkbox",
+      "key": "approved",
+      "label": "درخواست تأیید می‌شود؟",
+      "id": "approved"
+    },
+    {
+      "type": "textarea",
+      "key": "financeNote",
+      "label": "یادداشت مالی",
+      "id": "financeNote"
+    }
+  ]
+}

@@ -18,13 +18,15 @@ const FILE = path.resolve(__dirname, '../../modules/purchase/purchase.erp-module
 const BPMN = path.resolve(__dirname, '../../bpmn');
 // The files of each engine, in the order they are deployed: a Camunda form before the model that links it.
 const MODELS: Record<string, string[]> = {
-  camunda8: ['purchase-approve.form', 'purchase-request.bpmn'],
+  camunda8: ['purchase-approve.form', 'purchase-approve-finance.form', 'purchase-request.bpmn'],
   operaton: ['operaton/purchase-request.bpmn'],
 };
 const COLLECTION = 'purchase_requests';
 const PASSWORD = 'Purchase-e2e-123';
 const REQUESTER = { email: 'requester@purchase.e2e', nickname: 'کارمند خرید', roles: ['purchase_requester'] };
 const MANAGER = { email: 'manager@purchase.e2e', nickname: 'مدیر خرید', roles: ['purchase_manager'] };
+const FINANCE = { email: 'finance@purchase.e2e', nickname: 'مدیر مالی', roles: ['purchase_finance'] };
+const USERS = [REQUESTER, MANAGER, FINANCE];
 
 const query = (filter: object) => `paginate=false&filter=${encodeURIComponent(JSON.stringify(filter))}`;
 const run = Date.now().toString(36);
@@ -44,9 +46,12 @@ test.beforeAll(async ({ playwright, baseURL }) => {
   // A fresh install imports the file; a local rerun finds the module already there.
   if (!(await api.call(`erpModules:list?${query({ key: 'purchase' })}`)).length) {
     const result = await api.call('erpModules:import', JSON.parse(fs.readFileSync(FILE, 'utf8')));
-    expect(result).toMatchObject({ key: 'purchase', roles: ['purchase_manager', 'purchase_requester'] });
+    expect(result).toMatchObject({
+      key: 'purchase',
+      roles: ['purchase_finance', 'purchase_manager', 'purchase_requester'],
+    });
   }
-  for (const user of [REQUESTER, MANAGER]) {
+  for (const user of USERS) {
     if (!(await api.call(`users:list?${query({ email: user.email })}`)).length) {
       await api.call('users:create', { ...user, password: PASSWORD });
     }
@@ -56,7 +61,7 @@ test.beforeAll(async ({ playwright, baseURL }) => {
 
 test.afterAll(async ({ playwright, baseURL }) => {
   const api = await apiAs(playwright, baseURL as string);
-  for (const user of await api.call(`users:list?${query({ email: { $in: [REQUESTER.email, MANAGER.email] } })}`)) {
+  for (const user of await api.call(`users:list?${query({ email: { $in: USERS.map((u) => u.email) } })}`)) {
     await api.call(`users:destroy?filterByTk=${user.id}`);
   }
   await removeImportedModule(api, JSON.parse(fs.readFileSync(FILE, 'utf8')));
@@ -166,7 +171,7 @@ test('a purchase request is approved or rejected by the purchase manager', async
   const drawer = manager.getByRole('dialog');
   await expect(drawer.getByText(approved)).toBeVisible();
   await expect(drawer.getByText('شرح کالا')).toBeVisible();
-  await drawer.getByText('بله', { exact: true }).click();
+  await drawer.locator('#approved').getByText('بله', { exact: true }).click();
   await drawer.locator('textarea').fill('از تأمین‌کننده‌ی همیشگی بخرید');
   await drawer.getByRole('button', { name: 'ثبت', exact: true }).click();
   await expect(manager.getByText('کار انجام شد')).toBeVisible();
@@ -174,7 +179,7 @@ test('a purchase request is approved or rejected by the purchase manager', async
   // Reject the second.
   await (await inboxRow(manager, rejected)).getByRole('button', { name: 'تأیید مدیر' }).click();
   await expect(drawer.getByText(rejected)).toBeVisible();
-  await drawer.getByText('خیر', { exact: true }).click();
+  await drawer.locator('#approved').getByText('خیر', { exact: true }).click();
   await drawer.getByRole('button', { name: 'ثبت', exact: true }).click();
   await expect(manager.getByText('کار انجام شد').last()).toBeVisible();
 
@@ -185,4 +190,84 @@ test('a purchase request is approved or rejected by the purchase manager', async
   await openMenu(requester, 'درخواست‌های خرید');
   await expect(requests.filter({ hasText: approved })).toContainText('سفارش داده شد');
   await expect(requests.filter({ hasText: rejected })).toContainText('ردشده');
+});
+
+test('a large purchase request needs finance approval too, before it is ordered (STORY-107)', async ({
+  browser,
+  playwright,
+  baseURL,
+}) => {
+  test.setTimeout(300 * 1000);
+  const api = await apiAs(playwright, baseURL as string);
+  const title = `سرور ${run}`;
+
+  const requester = await browser.newPage();
+  await signIn(requester, REQUESTER.email);
+  await openMenu(requester, 'درخواست‌های خرید');
+  await writeRequest(requester, title, '60000000');
+
+  const manager = await browser.newPage();
+  await signIn(manager, MANAGER.email);
+  await openMenu(manager, 'کارتابل خرید');
+  const managerDrawer = manager.getByRole('dialog');
+  await (await inboxRow(manager, title)).getByRole('button', { name: 'تأیید مدیر' }).click();
+  await expect(managerDrawer.getByText(title)).toBeVisible();
+  await managerDrawer.locator('#approved').getByText('بله', { exact: true }).click();
+  await managerDrawer.getByRole('button', { name: 'ثبت', exact: true }).click();
+  await expect(manager.getByText('کار انجام شد')).toBeVisible();
+  // Not ordered yet: still waiting on the finance manager.
+  expect(await statusOf(api, title)).toBe('pending');
+
+  const finance = await browser.newPage();
+  await signIn(finance, FINANCE.email);
+  await openMenu(finance, 'کارتابل خرید');
+  const financeDrawer = finance.getByRole('dialog');
+  await (await inboxRow(finance, title)).getByRole('button', { name: 'تأیید مالی' }).click();
+  await expect(financeDrawer.getByText(title)).toBeVisible();
+  await financeDrawer.locator('#approved').getByText('بله', { exact: true }).click();
+  await financeDrawer.getByRole('button', { name: 'ثبت', exact: true }).click();
+  await expect(finance.getByText('کار انجام شد')).toBeVisible();
+
+  await eventually(async () => expect(await statusOf(api, title)).toBe('ordered'));
+  await openMenu(requester, 'درخواست‌های خرید');
+  await expect(
+    requester.locator('.ant-table-tbody tr.ant-table-row').filter({ hasText: title }),
+  ).toContainText('سفارش داده شد');
+});
+
+test('a requester cancels a still-pending purchase request (STORY-107)', async ({ browser, playwright, baseURL }) => {
+  test.setTimeout(300 * 1000);
+  const api = await apiAs(playwright, baseURL as string);
+  const title = `صندلی ${run}`;
+
+  const requester = await browser.newPage();
+  await signIn(requester, REQUESTER.email);
+  await openMenu(requester, 'درخواست‌های خرید');
+  await writeRequest(requester, title, '8000000');
+  const row = requester.locator('.ant-table-tbody tr.ant-table-row').filter({ hasText: title });
+  await expect(row).toContainText('در انتظار تأیید');
+
+  const manager = await browser.newPage();
+  await signIn(manager, MANAGER.email);
+  await openMenu(manager, 'کارتابل خرید');
+  await expect(await inboxRow(manager, title)).toContainText('درخواست خرید');
+
+  await row.getByRole('button', { name: 'لغو درخواست' }).click();
+  // The button only sets a flag; the collection-trigger workflow that sends the cancel message and the service
+  // task that writes «لغوشده» back run after it. The table's own «تازه‌سازی» does not pick up the new status on an
+  // already-mounted row, so, as with the approved and rejected requests above, the page is opened again.
+  await eventually(async () => {
+    await openMenu(requester, 'درخواست‌های خرید');
+    await expect(row).toContainText('لغوشده');
+  });
+  expect(await statusOf(api, title)).toBe('canceled');
+
+  // The manager's own task for it is gone: canceled before any decision.
+  const inbox = manager
+    .locator('.ant-card')
+    .filter({ has: manager.locator('.ant-card-head-title', { hasText: INBOX_TITLE }) });
+  await eventually(async () => {
+    await inbox.getByRole('button', { name: 'تازه‌سازی' }).click();
+    await expect(inbox.locator('tr', { hasText: title })).toHaveCount(0);
+  });
 });

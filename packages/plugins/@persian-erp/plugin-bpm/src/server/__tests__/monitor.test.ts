@@ -514,7 +514,7 @@ describe.skipIf(!CAMUNDA.url)('bpm failures and «try again» with Camunda 8', (
   });
 
   it('lists a service task that ran out of retries, and runs it again', async () => {
-    const { instanceId } = await engine.start('purchase_request', businessKey, { recordId: 1 });
+    const { instanceId } = await engine.start('purchase_request', businessKey, { recordId: 1, needsFinance: false });
     const task = await eventually(async () => {
       const [found] = await engine.listUserTasks({ businessKey });
       expect(found).toBeTruthy();
